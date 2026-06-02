@@ -25,6 +25,7 @@
   thead th{position:sticky;top:0;background:#fff;border-bottom:1px solid #e6e7eb;font-size:14px;text-align:left;padding:10px}
   tbody td{border-bottom:1px solid #f0f1f3;padding:10px;vertical-align:top}
   .tblwrap{overflow:auto;border:1px solid #e6e7eb;border-radius:12px}
+  .pill{display:inline-block;background:#f1f5f9;border-radius:999px;padding:2px 8px;font-size:12px}
   .split{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
   .notice{background:#fee2e2;color:#991b1b;border:1px solid #fecaca;border-radius:10px;padding:10px;margin:10px 0}
   @media (max-width:900px){.grid{grid-template-columns:repeat(3,1fr)}}
@@ -120,6 +121,7 @@
 </div>
 
 <script>
+// Local Storage Initialization
 let appData = JSON.parse(localStorage.getItem('swiftStagingData')) || { staging: [], shipped: [] };
 
 const $ = sel => document.querySelector(sel);
