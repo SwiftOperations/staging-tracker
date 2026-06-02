@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Swift Staging Tracker — v2.65 (Live Sync)</title>
+<title>Swift Staging Tracker — v2.65</title>
 <style>
   :root{--brand:#dd4d25;}
   *{box-sizing:border-box}
   body{margin:0;font:16px/1.4 system-ui,-apple-system,Segoe UI,Roboto,Arial;background:#f6f7f9;color:#222}
   .wrap{max-width:1100px;margin:24px auto;padding:0 16px}
-  h1{font-weight:700;margin:0 0 6px}
+  h1{font-weight:700;margin:0 0 18px}
   .muted{color:#667085;font-size:14px;margin:0 0 18px}
   .grid{display:grid;gap:12px;grid-template-columns:repeat(6,minmax(0,1fr))}
   .tile{background:#fff;border:1px solid #e6e7eb;border-radius:10px;padding:14px}
@@ -35,7 +35,6 @@
 <body>
 <div class="wrap">
   <h1>Swift Staging Tracker — v2.65</h1>
-  <p id="cloudStatus" class="muted">Cloud: connecting…</p>
   <div id="err" class="notice" style="display:none"></div>
 
   <div class="grid">
@@ -130,7 +129,6 @@ let appData = { staging: [], shipped: [] };
 const $ = sel => document.querySelector(sel);
 const errBox = $('#err');
 
-// Auto-uppercase fields for speed
 $('#so').addEventListener('input', function() { this.value = this.value.toUpperCase(); });
 $('#loc').addEventListener('input', function() { this.value = this.value.toUpperCase(); });
 
@@ -142,10 +140,11 @@ function showErr(msg){
 }
 
 async function loadCloudData() {
-  $('#cloudStatus').textContent = "Cloud: Fetching manifest...";
   try {
     const res = await fetch(CLOUD_URL, {
-      headers: { 'X-Master-Key': API_KEY } 
+      method: 'GET',
+      headers: { 'X-Access-Key': API_KEY },
+      cache: 'no-store' 
     });
     const json = await res.json();
     
@@ -153,128 +152,22 @@ async function loadCloudData() {
     
     appData = json.record || { staging: [], shipped: [] };
     renderTables();
-    $('#cloudStatus').textContent = "Cloud: Synced & Live";
   } catch (e) {
     showErr(`Sync Failure: ${e.message}. Data not loaded.`);
-    $('#cloudStatus').textContent = "Cloud: Disconnected";
   }
 }
 
 async function syncStorage() {
-  $('#cloudStatus').textContent = "Cloud: Saving...";
   try {
     const res = await fetch(CLOUD_URL, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
-        'X-Master-Key': API_KEY 
+        'X-Access-Key': API_KEY
       },
       body: JSON.stringify(appData)
     });
     
     if (!res.ok) {
       const errorJson = await res.json();
-      throw new Error(errorJson.message || `API Error: ${res.status}`);
-    }
-    
-    renderTables();
-    $('#cloudStatus').textContent = "Cloud: Synced & Live";
-  } catch (e) {
-    showErr(`Save Failure: ${e.message}.`);
-    $('#cloudStatus').textContent = "Cloud: Error Saving";
-  }
-}
-
-function renderCounts() {
-  const activeContainers = appData.staging;
-  const sumBy = t => activeContainers.reduce((a,c)=>a + (c.type===t?parseInt(c.qty):0),0);
-
-  $('#kOrders').textContent     = appData.staging.length;
-  $('#kContainers').textContent = activeContainers.reduce((a,c)=>a+parseInt(c.qty),0);
-  $('#kSkids').textContent      = sumBy('Skid');
-  $('#kBoxes').textContent      = sumBy('Box');
-  $('#kCrates').textContent     = sumBy('Crate');
-  $('#kShipped').textContent    = appData.shipped.length;
-}
-
-function td(txt){ const d=document.createElement('td'); d.textContent=txt; return d; }
-
-function renderTables(){
-  const queryText = $('#q').value.toLowerCase();
-  
-  const filteredStaging = appData.staging.filter(o => o.so.toLowerCase().includes(queryText) || o.customer.toLowerCase().includes(queryText) || o.location.toLowerCase().includes(queryText));
-  const filteredShipped = appData.shipped.filter(o => o.so.toLowerCase().includes(queryText) || o.customer.toLowerCase().includes(queryText));
-
-  const stagingBody = $('#tblStaging tbody');
-  const shippedBody = $('#tblShipped tbody');
-  
-  stagingBody.innerHTML='';
-  filteredStaging.forEach((o, index)=>{
-    const tr=document.createElement('tr');
-    tr.append(td(o.so), td(o.customer), td(o.dueDate), td(`${o.qty} ${o.type}(s)`), td(o.location), td(o.status));
-    
-    const shippedTd=document.createElement('td');
-    const chk=document.createElement('input'); chk.type='checkbox'; chk.style.width='20px'; chk.style.height='20px'; chk.style.cursor='pointer';
-    chk.addEventListener('change', () => {
-      if(chk.checked){
-        const moved = appData.staging.splice(index, 1)[0];
-        moved.shippedAt = new Date().toISOString();
-        appData.shipped.unshift(moved);
-        syncStorage();
-      }
-    });
-    shippedTd.append(chk); tr.append(shippedTd);
-    stagingBody.append(tr);
-  });
-
-  shippedBody.innerHTML='';
-  filteredShipped.forEach((o, index)=>{
-    const tr=document.createElement('tr');
-    tr.append(td(o.so), td(o.customer), td(o.dueDate), td(`${o.qty} ${o.type}(s)`), td(o.location), td(o.status));
-    tr.append(td(o.shippedAt ? new Date(o.shippedAt).toLocaleString() : ''));
-    
-    const undo=document.createElement('td');
-    const b=document.createElement('button'); b.className='btn'; b.style.padding='6px 10px'; b.textContent='Undo';
-    b.addEventListener('click', ()=>{
-      const rolledBack = appData.shipped.splice(index, 1)[0];
-      delete rolledBack.shippedAt;
-      appData.staging.push(rolledBack);
-      syncStorage(); 
-    });
-    undo.append(b); tr.append(undo);
-    shippedBody.append(tr);
-  });
-
-  renderCounts();
-}
-
-$('#add').addEventListener('click', () => {
-  const so  = $('#so').value.trim();
-  const cust= $('#customer').value.trim();
-  const due = $('#due').value;
-  const stat= $('#status').value;
-  const typ = $('#ctype').value;
-  const qty = Math.max(1, Number($('#qty').value||1));
-  const loc = $('#loc').value.trim();
-
-  if(!so || !cust || !due || !loc){ showErr("SO, Customer, Due Date, Location are required."); return; }
-
-  appData.staging.push({ so, customer: cust, dueDate: due, status: stat, type: typ, qty, location: loc });
-  syncStorage(); 
-  
-  $('#saved').textContent = `Success: Logged ${qty} ${typ}(s) for ${so} at ${loc}`;
-  setTimeout(()=>{ $('#saved').textContent = ''; }, 4000);
-  
-  $('#so').value = ''; $('#customer').value = ''; $('#loc').value = '';
-  $('#so').focus();
-});
-
-$('#q').addEventListener('input', renderTables);
-$('#expandStaging').onclick = () => window.open('stage.html', '_blank');
-$('#expandShipped').onclick = () => window.open('ship.html', '_blank');
-
-// Boot Sequence
-window.addEventListener('DOMContentLoaded', loadCloudData);
-</script>
-</body>
-</html>
+      throw new Error
