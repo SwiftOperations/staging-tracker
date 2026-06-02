@@ -9,7 +9,7 @@
   *{box-sizing:border-box}
   body{margin:0;font:16px/1.4 system-ui,-apple-system,Segoe UI,Roboto,Arial;background:#f6f7f9;color:#222}
   .wrap{max-width:1100px;margin:24px auto;padding:0 16px}
-  h1{font-weight:700;margin:0 0 18px}
+  h1{font-weight:700;margin:0 0 6px}
   .muted{color:#667085;font-size:14px;margin:0 0 18px}
   .grid{display:grid;gap:12px;grid-template-columns:repeat(6,minmax(0,1fr))}
   .tile{background:#fff;border:1px solid #e6e7eb;border-radius:10px;padding:14px}
@@ -33,141 +33,9 @@
 </style>
 </head>
 <body>
-<div class="wrap">
+<div id="app-container" class="wrap">
   <h1>Swift Staging Tracker — v2.65</h1>
   <div id="err" class="notice" style="display:none"></div>
 
   <div class="grid">
-    <div class="tile"><h4>Orders</h4><div id="kOrders" class="big">0</div></div>
-    <div class="tile"><h4>Containers</h4><div id="kContainers" class="big">0</div></div>
-    <div class="tile"><h4>Skids</h4><div id="kSkids" class="big">0</div></div>
-    <div class="tile"><h4>Boxes</h4><div id="kBoxes" class="big">0</div></div>
-    <div class="tile"><h4>Crates</h4><div id="kCrates" class="big">0</div></div>
-    <div class="tile"><h4>Shipped</h4><div id="kShipped" class="big">0</div></div>
-  </div>
-
-  <div class="card">
-    <div class="split">
-      <h3 style="margin:0">Quick search</h3>
-      <span class="muted">Examples: SO12345, BIN-104, SHIPPING-FLOOR</span>
-    </div>
-    <input id="q" placeholder="SO / Location / Container ID" />
-  </div>
-
-  <div class="card">
-    <div class="split"><h3 style="margin:0">Enter Staging Information</h3></div>
-    <div class="row">
-      <input id="so" class="uppercase" placeholder="SO number" />
-      <input id="customer" placeholder="Customer" />
-      <input id="due" type="date" />
-      <select id="status">
-        <option>Waiting on buyout</option>
-        <option>Same-day</option>
-        <option>Long-lead</option>
-      </select>
-      <select id="ctype">
-        <option>Skid</option>
-        <option>Box</option>
-        <option>Crate</option>
-      </select>
-      <input id="qty" type="number" min="1" value="1" />
-      <input id="loc" class="uppercase" placeholder="Location (A-02-A-1 / SHIPFLOOR)" />
-      <button id="add" class="btn">Add</button>
-    </div>
-    <p id="saved" class="muted" style="margin:8px 2px 0; color:#2e7d32; font-weight:bold;"></p>
-  </div>
-
-  <div class="card">
-    <div class="split">
-      <h3 style="margin:0">Staging Entries</h3>
-      <button id="expandStaging" class="btn" style="padding:8px 14px">Expand</button>
-    </div>
-    <div class="tblwrap">
-      <table id="tblStaging">
-        <thead>
-          <tr>
-            <th>SO</th><th>Customer</th><th>Due Date</th>
-            <th>Number of Containers</th><th>Staging Location(s)</th>
-            <th>Shipping Status</th>
-            <th style="width:90px;position:sticky;right:90px">Shipped</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </div>
-    <p class="muted">Swipe horizontally on phones.</p>
-  </div>
-
-  <div class="card">
-    <div class="split">
-      <h3 style="margin:0">Shipped</h3>
-      <button id="expandShipped" class="btn" style="padding:8px 14px">Expand</button>
-    </div>
-    <div class="tblwrap">
-      <table id="tblShipped">
-        <thead>
-          <tr>
-            <th>SO</th><th>Customer</th><th>Due Date</th>
-            <th>Number of Containers</th><th>Staging Location(s) at Ship</th>
-            <th>Status at Ship</th><th>Shipped At</th>
-            <th style="width:70px;position:sticky;right:0">Undo</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </div>
-  </div>
-</div>
-
-<script>
-// --- CLOUD CONFIGURATION ---
-const BIN_ID = '6a1e3ceeda38895dfe796129';
-const API_KEY = '$2a$10$n1Vcgiv1j.TUnVEhJhQCfu3Dq8s7cvg3tBRWgFs8tY9ReI5zjK3Bq';
-const CLOUD_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
-
-let appData = { staging: [], shipped: [] };
-const $ = sel => document.querySelector(sel);
-const errBox = $('#err');
-
-$('#so').addEventListener('input', function() { this.value = this.value.toUpperCase(); });
-$('#loc').addEventListener('input', function() { this.value = this.value.toUpperCase(); });
-
-function showErr(msg){
-  errBox.style.display = 'block';
-  errBox.textContent = msg;
-  console.error(msg);
-  setTimeout(()=>{errBox.style.display='none'}, 8000);
-}
-
-async function loadCloudData() {
-  try {
-    const res = await fetch(CLOUD_URL, {
-      method: 'GET',
-      headers: { 'X-Access-Key': API_KEY },
-      cache: 'no-store' 
-    });
-    const json = await res.json();
-    
-    if (!res.ok) throw new Error(json.message || `API Error: ${res.status}`);
-    
-    appData = json.record || { staging: [], shipped: [] };
-    renderTables();
-  } catch (e) {
-    showErr(`Sync Failure: ${e.message}. Data not loaded.`);
-  }
-}
-
-async function syncStorage() {
-  try {
-    const res = await fetch(CLOUD_URL, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Access-Key': API_KEY
-      },
-      body: JSON.stringify(appData)
-    });
-    
-    if (!res.ok) {
-      const errorJson = await res.json();
-      throw new Error
+    <div class="tile"><h4>Orders</h4><div id="kOrders"
