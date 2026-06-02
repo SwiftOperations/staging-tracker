@@ -1,8 +1,8 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Completed Dispatch Manifest</title>
 <style>
   :root { --border: #dcdfe6; }
@@ -49,16 +49,26 @@ async function fetchCloud() {
     const res = await fetch(URL, { headers: { 'X-Access-Key': API_KEY }, cache: 'no-store' });
     if (!res.ok) throw new Error('Fetch failed');
     const json = await res.json();
-    const data = json.record || { shipped: [] };
+    
+    const raw = json.record || {};
+    const vShipped = Array.isArray(raw.shipped) ? raw.shipped : [];
     
     tbody.innerHTML = '';
-    if(!data.shipped || data.shipped.length === 0) {
+    if (vShipped.length === 0) {
       tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px;">No historical manifest records found.</td></tr>';
     } else {
-      data.shipped.forEach(item => {
+      vShipped.forEach(item => {
         const tr = document.createElement('tr');
+        const so = item.so || '';
+        const cust = item.customer || '';
+        const due = item.due || item.dueDate || '';
+        const qty = item.qty || item.containerQty || 1;
+        const type = item.type || item.containerType || '';
+        const loc = item.loc || item.location || '';
+        const stat = item.stat || item.status || '';
         const timeStr = item.shippedAt ? new Date(item.shippedAt).toLocaleString() : '';
-        tr.innerHTML = `<td><b>${item.so}</b></td><td>${item.customer}</td><td>${item.due}</td><td><b>${item.qty}</b> ${item.type}</td><td>${item.loc}</td><td>${item.stat}</td><td><b>${timeStr}</b></td>`;
+
+        tr.innerHTML = `<td><b>${so}</b></td><td>${cust}</td><td>${due}</td><td><b>${qty}</b> ${type}</td><td>${loc}</td><td>${stat}</td><td><b>${timeStr}</b></td>`;
         tbody.appendChild(tr);
       });
     }
@@ -71,7 +81,7 @@ async function fetchCloud() {
 
 window.onload = () => {
   fetchCloud();
-  setInterval(fetchCloud, 10000); // Auto-refresh every 10s
+  setInterval(fetchCloud, 10000); 
 };
 </script>
 </body>
