@@ -10,10 +10,18 @@
   h2{margin:0 0 10px}
   .actions{display:flex;gap:8px;margin-bottom:10px}
   button{background:#dd4d25;color:#fff;border:0;border-radius:10px;height:36px;padding:0 12px;cursor:pointer}
-  .table-wrap{overflow:auto;border:1px solid #e5e7eb;border-radius:10px}
+  
+  .table-wrap{
+    overflow-x: auto; /* Replaced with explicit x axis constraint */
+    border:1px solid #e5e7eb;
+    border-radius:10px
+  }
+  .table-wrap::-webkit-scrollbar { height: 8px; }
+  .table-wrap::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+  
   table{width:100%;border-collapse:collapse}
   th,td{border-top:1px solid #e5e7eb;padding:10px 8px;white-space:nowrap;background:#fff;text-align:left}
-  th{position:sticky;top:0;background:#fafafa}
+  th{position:sticky;top:0;background:#fafafa;z-index: 1;}
 </style>
 </head>
 <body>
