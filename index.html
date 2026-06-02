@@ -122,8 +122,8 @@
 
 <script>
 // --- CLOUD CONFIGURATION ---
-const BIN_ID = 'PASTE_YOUR_BIN_ID_HERE';
-const API_KEY = '$2a$10$n1Vcgiv1j.TUnVEhJhQCfu3Dq8s7cvg3tBRWgFs8tY9ReI5zjK3Bq';
+const BIN_ID = '6a1e3ceeda38895dfe796129';
+const API_KEY = '$2a$10$3OYuGPALJgI/2VUrltTb0/hh8K6zsxERCBJVS6bgTMhlPUH96jFu';
 const CLOUD_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
 
 let appData = { staging: [], shipped: [] };
@@ -137,21 +137,25 @@ $('#loc').addEventListener('input', function() { this.value = this.value.toUpper
 function showErr(msg){
   errBox.style.display = 'block';
   errBox.textContent = msg;
-  setTimeout(()=>{errBox.style.display='none'}, 6000);
+  console.error(msg);
+  setTimeout(()=>{errBox.style.display='none'}, 8000);
 }
 
 async function loadCloudData() {
   $('#cloudStatus').textContent = "Cloud: Fetching manifest...";
   try {
     const res = await fetch(CLOUD_URL, {
-      headers: { 'X-Access-Key': API_KEY }
+      headers: { 'X-Master-Key': API_KEY } 
     });
     const json = await res.json();
+    
+    if (!res.ok) throw new Error(json.message || `API Error: ${res.status}`);
+    
     appData = json.record || { staging: [], shipped: [] };
     renderTables();
     $('#cloudStatus').textContent = "Cloud: Synced & Live";
   } catch (e) {
-    showErr("Failed to pull from cloud. Check network connection.");
+    showErr(`Sync Failure: ${e.message}. Data not loaded.`);
     $('#cloudStatus').textContent = "Cloud: Disconnected";
   }
 }
@@ -159,18 +163,25 @@ async function loadCloudData() {
 async function syncStorage() {
   $('#cloudStatus').textContent = "Cloud: Saving...";
   try {
-    await fetch(CLOUD_URL, {
+    const res = await fetch(CLOUD_URL, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
-        'X-Access-Key': API_KEY
+        'X-Master-Key': API_KEY 
       },
       body: JSON.stringify(appData)
     });
+    
+    if (!res.ok) {
+      const errorJson = await res.json();
+      throw new Error(errorJson.message || `API Error: ${res.status}`);
+    }
+    
     renderTables();
     $('#cloudStatus').textContent = "Cloud: Synced & Live";
   } catch (e) {
-    showErr("Failed to sync change to cloud database.");
+    showErr(`Save Failure: ${e.message}.`);
+    $('#cloudStatus').textContent = "Cloud: Error Saving";
   }
 }
 
