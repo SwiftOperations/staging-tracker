@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Swift Staging Tracker — v2.65</title>
+<title>Swift Staging Tracker — v2.65 (Live Sync)</title>
 <style>
   :root{--brand:#dd4d25;}
   *{box-sizing:border-box}
@@ -18,6 +18,7 @@
   .card{background:#fff;border:1px solid #e6e7eb;border-radius:12px;padding:14px;margin:14px 0}
   .row{display:flex;gap:8px;flex-wrap:wrap}
   input,select{height:42px;padding:0 12px;border:1px solid #d1d5db;border-radius:10px;background:#fff;width:100%}
+  input.uppercase{text-transform: uppercase;}
   .row > *{flex:1 1 170px}
   .btn{background:var(--brand);color:#fff;border:0;border-radius:12px;padding:12px 20px;font-weight:700;cursor:pointer}
   .btn:disabled{opacity:.5;cursor:not-allowed}
@@ -57,7 +58,7 @@
   <div class="card">
     <div class="split"><h3 style="margin:0">Enter Staging Information</h3></div>
     <div class="row">
-      <input id="so" placeholder="SO number" />
+      <input id="so" class="uppercase" placeholder="SO number" />
       <input id="customer" placeholder="Customer" />
       <input id="due" type="date" />
       <select id="status">
@@ -71,10 +72,10 @@
         <option>Crate</option>
       </select>
       <input id="qty" type="number" min="1" value="1" />
-      <input id="loc" placeholder="Location (A-02-A-1 / SHIPFLOOR)" />
+      <input id="loc" class="uppercase" placeholder="Location (A-02-A-1 / SHIPFLOOR)" />
       <button id="add" class="btn">Add</button>
     </div>
-    <p id="saved" class="muted" style="margin:8px 2px 0"></p>
+    <p id="saved" class="muted" style="margin:8px 2px 0; color:#2e7d32; font-weight:bold;"></p>
   </div>
 
   <div class="card">
@@ -119,30 +120,19 @@
   </div>
 </div>
 
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, addDoc, onSnapshot, serverTimestamp, query, orderBy, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+<script>
+// --- CLOUD CONFIGURATION ---
+const BIN_ID = '$2a$10$n1Vcgiv1j.TUnVEhJhQCfu3Dq8s7cvg3tBRWgFs8tY9ReI5zjK3Bq';
+const API_KEY = '$2a$10$n1Vcgiv1j.TUnVEhJhQCfu3Dq8s7cvg3tBRWgFs8tY9ReI5zjK3Bq';
+const CLOUD_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
 
-const firebaseConfig = {
-  apiKey: "AIzaSyA3oZSmGJrc5iO4kjejm0lxqkEZ7bKuJQw",
-  authDomain: "swift-staging-tracker.firebaseapp.com",
-  projectId: "swift-staging-tracker"
-};
-
-const app = initializeApp(firebaseConfig);
-const db  = getFirestore(app);
-
-const cloudStatus = document.getElementById('cloudStatus');
-try {
-  await enableIndexedDbPersistence(db, { forceOwnership: false });
-  cloudStatus.textContent = "Cloud: ready (syncing)";
-} catch(e) {
-  cloudStatus.textContent = "Cloud: online (no cache)";
-}
-
+let appData = { staging: [], shipped: [] };
 const $ = sel => document.querySelector(sel);
 const errBox = $('#err');
-let allOrders = [];
+
+// Auto-uppercase fields for speed
+$('#so').addEventListener('input', function() { this.value = this.value.toUpperCase(); });
+$('#loc').addEventListener('input', function() { this.value = this.value.toUpperCase(); });
 
 function showErr(msg){
   errBox.style.display = 'block';
@@ -150,8 +140,104 @@ function showErr(msg){
   setTimeout(()=>{errBox.style.display='none'}, 6000);
 }
 
-const addBtn = $('#add');
-addBtn.addEventListener('click', async () => {
+async function loadCloudData() {
+  $('#cloudStatus').textContent = "Cloud: Fetching manifest...";
+  try {
+    const res = await fetch(CLOUD_URL, {
+      headers: { 'X-Access-Key': API_KEY }
+    });
+    const json = await res.json();
+    appData = json.record || { staging: [], shipped: [] };
+    renderTables();
+    $('#cloudStatus').textContent = "Cloud: Synced & Live";
+  } catch (e) {
+    showErr("Failed to pull from cloud. Check network connection.");
+    $('#cloudStatus').textContent = "Cloud: Disconnected";
+  }
+}
+
+async function syncStorage() {
+  $('#cloudStatus').textContent = "Cloud: Saving...";
+  try {
+    await fetch(CLOUD_URL, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Access-Key': API_KEY
+      },
+      body: JSON.stringify(appData)
+    });
+    renderTables();
+    $('#cloudStatus').textContent = "Cloud: Synced & Live";
+  } catch (e) {
+    showErr("Failed to sync change to cloud database.");
+  }
+}
+
+function renderCounts() {
+  const activeContainers = appData.staging;
+  const sumBy = t => activeContainers.reduce((a,c)=>a + (c.type===t?parseInt(c.qty):0),0);
+
+  $('#kOrders').textContent     = appData.staging.length;
+  $('#kContainers').textContent = activeContainers.reduce((a,c)=>a+parseInt(c.qty),0);
+  $('#kSkids').textContent      = sumBy('Skid');
+  $('#kBoxes').textContent      = sumBy('Box');
+  $('#kCrates').textContent     = sumBy('Crate');
+  $('#kShipped').textContent    = appData.shipped.length;
+}
+
+function td(txt){ const d=document.createElement('td'); d.textContent=txt; return d; }
+
+function renderTables(){
+  const queryText = $('#q').value.toLowerCase();
+  
+  const filteredStaging = appData.staging.filter(o => o.so.toLowerCase().includes(queryText) || o.customer.toLowerCase().includes(queryText) || o.location.toLowerCase().includes(queryText));
+  const filteredShipped = appData.shipped.filter(o => o.so.toLowerCase().includes(queryText) || o.customer.toLowerCase().includes(queryText));
+
+  const stagingBody = $('#tblStaging tbody');
+  const shippedBody = $('#tblShipped tbody');
+  
+  stagingBody.innerHTML='';
+  filteredStaging.forEach((o, index)=>{
+    const tr=document.createElement('tr');
+    tr.append(td(o.so), td(o.customer), td(o.dueDate), td(`${o.qty} ${o.type}(s)`), td(o.location), td(o.status));
+    
+    const shippedTd=document.createElement('td');
+    const chk=document.createElement('input'); chk.type='checkbox'; chk.style.width='20px'; chk.style.height='20px'; chk.style.cursor='pointer';
+    chk.addEventListener('change', () => {
+      if(chk.checked){
+        const moved = appData.staging.splice(index, 1)[0];
+        moved.shippedAt = new Date().toISOString();
+        appData.shipped.unshift(moved);
+        syncStorage();
+      }
+    });
+    shippedTd.append(chk); tr.append(shippedTd);
+    stagingBody.append(tr);
+  });
+
+  shippedBody.innerHTML='';
+  filteredShipped.forEach((o, index)=>{
+    const tr=document.createElement('tr');
+    tr.append(td(o.so), td(o.customer), td(o.dueDate), td(`${o.qty} ${o.type}(s)`), td(o.location), td(o.status));
+    tr.append(td(o.shippedAt ? new Date(o.shippedAt).toLocaleString() : ''));
+    
+    const undo=document.createElement('td');
+    const b=document.createElement('button'); b.className='btn'; b.style.padding='6px 10px'; b.textContent='Undo';
+    b.addEventListener('click', ()=>{
+      const rolledBack = appData.shipped.splice(index, 1)[0];
+      delete rolledBack.shippedAt;
+      appData.staging.push(rolledBack);
+      syncStorage(); 
+    });
+    undo.append(b); tr.append(undo);
+    shippedBody.append(tr);
+  });
+
+  renderCounts();
+}
+
+$('#add').addEventListener('click', () => {
   const so  = $('#so').value.trim();
   const cust= $('#customer').value.trim();
   const due = $('#due').value;
@@ -162,114 +248,22 @@ addBtn.addEventListener('click', async () => {
 
   if(!so || !cust || !due || !loc){ showErr("SO, Customer, Due Date, Location are required."); return; }
 
-  addBtn.disabled = true;
-  try {
-    const ordersCol = collection(db, "tenants","default","orders");
-    await addDoc(ordersCol, {
-      so, customer:cust, dueDate: due, status: stat,
-      containers: [{ type: typ, qty, locations: [loc] }],
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-      shipped: false
-    });
-    $('#saved').textContent = `Saved: ${qty} ${typ}(s) for ${so} @ ${loc}`;
-    $('#so').value = ''; $('#customer').value = ''; $('#loc').value = '';
-    $('#so').focus();
-  } catch(e) {
-    showErr(`Save error: ${e.message}`);
-  } finally {
-    addBtn.disabled = false;
-  }
-});
-
-const stagingBody = $('#tblStaging tbody');
-const shippedBody = $('#tblShipped tbody');
-
-function renderCounts(orders) {
-  const allContainers = orders.filter(o => !o.shipped).flatMap(o => o.containers);
-  const sumBy = t => allContainers.reduce((a,c)=>a + (c.type===t?c.qty:0),0);
-
-  $('#kOrders').textContent     = orders.filter(o => !o.shipped).length;
-  $('#kContainers').textContent = allContainers.reduce((a,c)=>a+c.qty,0);
-  $('#kSkids').textContent      = sumBy('Skid');
-  $('#kBoxes').textContent      = sumBy('Box');
-  $('#kCrates').textContent     = sumBy('Crate');
-  $('#kShipped').textContent    = orders.filter(o=>o.shipped).length;
-}
-
-function td(txt){ const d=document.createElement('td'); d.textContent=txt; return d; }
-
-function renderTables(){
-  const queryText = $('#q').value.toLowerCase();
-  const filtered = allOrders.filter(o => o.so.toLowerCase().includes(queryText) || o.customer.toLowerCase().includes(queryText));
-
-  const staging = filtered.filter(o=>!o.shipped);
-  const shipped = filtered.filter(o=>o.shipped);
-
-  stagingBody.innerHTML='';
-  staging.forEach(o=>{
-    const tr=document.createElement('tr');
-    tr.append(td(o.so), td(o.customer), td(o.dueDate));
-    tr.append(td(`${o.containers.reduce((a,c)=>a+c.qty,0)} ` + o.containers.map(c=>c.type).join(', ')));
-    tr.append(td(o.containers.map(c=>c.locations.join(' / ')).join(', ')));
-    tr.append(td(o.status));
-    
-    const shippedTd=document.createElement('td');
-    const chk=document.createElement('input'); chk.type='checkbox';
-    chk.addEventListener('change', async () => {
-      if(chk.checked){
-        await updateDoc(doc(db,"tenants","default","orders",o.id), {
-          shipped:true, shippedAt: serverTimestamp(), statusAtShip: o.status,
-          shippedLocations: o.containers.map(c=>c.locations).flat()
-        });
-      }
-    });
-    shippedTd.append(chk); tr.append(shippedTd);
-    stagingBody.append(tr);
-  });
-
-  shippedBody.innerHTML='';
-  shipped.forEach(o=>{
-    const tr=document.createElement('tr');
-    tr.append(td(o.so), td(o.customer), td(o.dueDate));
-    tr.append(td(`${o.containers.reduce((a,c)=>a+c.qty,0)} ` + o.containers.map(c=>c.type).join(', ')));
-    tr.append(td((o.shippedLocations||[]).join(' • ')));
-    tr.append(td(o.statusAtShip||''));
-    tr.append(td(o.shippedAt ? new Date(o.shippedAt.seconds*1000).toLocaleString() : ''));
-    
-    const undo=document.createElement('td');
-    const b=document.createElement('button'); b.className='btn'; b.style.padding='6px 10px'; b.textContent='Undo';
-    b.addEventListener('click', async ()=>{
-      await updateDoc(doc(db,"tenants","default","orders",o.id), {
-        shipped:false, shippedAt:null, statusAtShip:null, shippedLocations:null
-      });
-    });
-    undo.append(b); tr.append(undo);
-    shippedBody.append(tr);
-  });
-  renderCounts(allOrders);
-}
-
-function mapSnap(docSnap){
-  const d = docSnap.data();
-  return {
-    id: docSnap.id, so: d.so, customer:d.customer, dueDate:d.dueDate, status:d.status,
-    containers:d.containers||[], shipped: !!d.shipped,
-    shippedAt:d.shippedAt||null, statusAtShip:d.statusAtShip||'',
-    shippedLocations:d.shippedLocations||[]
-  };
-}
-
-const ordersQ = query(collection(db,"tenants","default","orders"), orderBy('createdAt','desc'));
-onSnapshot(ordersQ, (snap)=>{
-  allOrders = snap.docs.map(mapSnap);
-  renderTables();
-  cloudStatus.textContent = "Cloud: synced in real-time";
+  appData.staging.push({ so, customer: cust, dueDate: due, status: stat, type: typ, qty, location: loc });
+  syncStorage(); 
+  
+  $('#saved').textContent = `Success: Logged ${qty} ${typ}(s) for ${so} at ${loc}`;
+  setTimeout(()=>{ $('#saved').textContent = ''; }, 4000);
+  
+  $('#so').value = ''; $('#customer').value = ''; $('#loc').value = '';
+  $('#so').focus();
 });
 
 $('#q').addEventListener('input', renderTables);
 $('#expandStaging').onclick = () => window.open('stage.html', '_blank');
 $('#expandShipped').onclick = () => window.open('ship.html', '_blank');
+
+// Boot Sequence
+window.addEventListener('DOMContentLoaded', loadCloudData);
 </script>
 </body>
 </html>
