@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Swift Staging Tracker — v3.10 (BOL Standard)</title>
+<style>
+  :root{--brand:#dd4d25;--bg:#f4f5f7;--border:#dcdfe6;}
+  *{box-sizing:border-box;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;}
+  body{margin:0;background:var(--bg);color:#2d313d;padding:20px 16px;}
+  .wrap{max-width:1200px;margin:0 auto;}
+  .header-area{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:16px;border-bottom:2px solid var(--brand);padding-bottom:8px;}
+  h1{margin:0;font-size:24px;font-weight:800;letter-spacing:-0.5px;}
+  .status-pill{font-size:12px;background:#e1f5fe;color:#0288d1;padding:4px 10px;border-radius:12px;font-weight:600;}
+  .grid-stats{display:grid;gap:12px;grid-template-columns:repeat(auto-fit, minmax(150px, 1fr));margin-bottom:20px;}
+  .tile{background:#fff;border:1px solid var(--border);border-radius:8px;padding:12px;box-shadow:0 2px 4px rgba(0,0,0,0.02);}
+  .tile h4{margin:0 0 4px;color:#8a92a6;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;}
+  .big{font-size:26px;font-weight:800;color:#1a1d24;}
+  .card{background:#fff;border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:16px;box-shadow:0 2px 4px rgba(0,0,0,0.02);}
+  .section-title{margin:0 0 12px 0;font-size:16px;font-weight:700;display:flex;justify-content:space-between;align-items:center;}
+  .row-inputs{display:flex;gap:10px;flex-wrap:wrap;}
+  .field-group{flex:1 1 150px;display:flex;flex-direction:column;gap:4px;}
+  .field-group label{font-size:11px;font-weight:700;color:#5e6678;text-transform:uppercase;}
+  input,select{height:40px;padding:0 10px;border:1px solid var(--border);border-radius:6px;background:#fff;font-size:14px;color:#1a1d24;}
+  input:focus,select:focus{outline:2px solid var(--brand);outline-offset: -1px;}
+  input.uppercase{text-transform: uppercase;}
+  .btn{background:var(--brand);color:#fff;border:0;border-radius:6px;height:40px;padding:0 20px;font-weight:700;font-size:14px;cursor:pointer;transition:background 0.1s;}
+  .btn:hover{background:#c43f1c;}
+  .btn-secondary{background:#f0f1f4;color:#495060;border:1px solid var(--border);}
+  .btn-secondary:hover{background:#e4e6eb;}
+  .tbl-container{overflow-x:auto;border:1px solid var(--border);border-radius:6px;}
+  table{width:100%;border-collapse:separate;border-spacing:0;font-size:14px;text-align:left;}
+  thead th{position:sticky;top:0;background:#fafbfc;border-bottom:2px solid var(--border);font-weight:700;color:#495060;padding:10px;}
+  tbody td{border-bottom:1px solid var(--border);padding:12px 10px;background:#fff;}
+  tbody tr:last-child td{border-bottom:none;}
+  .badge-status{display:inline-block;padding:3px 8px;border-radius:4px;font-size:12px;font-weight:700;text-transform:uppercase;}
+  .status-waiting{background:#fff3e0;color:#e65100;}
+  .status-sameday{background:#ffebee;color:#c62828;}
+  .status-longlead{background:#e8f5e9;color:#2e7d32;}
+  .notice-banner{background:#ffebee;color:#c62828;border:1px solid #ffcdd2;border-radius:6px;padding:10px;margin-bottom:16px;font-size:14px;display:none;}
+  .success-banner{color:#2e7d32;font-size:13px;font-weight:600;margin:6px 0 0 0;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="header-area">
+    <h1>Swift Staging Tracker</h1>
+    <span id="appStatus" class="status-pill">Connecting to Workspace...</span>
+  </div>
+  
+  <div id="err" class="notice-banner"></div>
+
+  <div class="grid-stats">
+    <div class="tile"><h4>Active Orders</h4><div id="kOrders" class="big">0</div></div>
+    <div class="tile"><h4>Total Freight</h4><div id="kContainers" class="big">0</div></div>
+    <div class="tile"><h4>Skids Staged</h4><div id="kSkids" class="big">0</div></div>
+    <div class="tile"><h4>Boxes</h4><div id="kBoxes" class="big">0</div></div>
+    <div class="tile"><h4>Crates</h4><div id="kCrates" class="big">0</div></div>
+    <div class="tile"><h4>Shipped (Today)</h4><div id="kShipped" class="big">0</div></div>
+  </div>
+
+  <div class="card">
+    <div class="field-group">
+      <label for="q">Instant Lookup Filter</label>
+      <input id="q" placeholder="Type to filter by SO#, Customer, or Bay Location..." />
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-title">Log New Staging Assignment</div>
+    <div class="row-inputs">
+      <div class="field-group" style="flex:1 1 120px;">
+        <label>SO Number</label>
+        <input id="so" class="uppercase" placeholder="e.g. SO12345" />
+      </div>
+      <div class="field-group" style="flex:2 1 200px;">
+        <label>Customer</label>
+        <input id="customer" placeholder="Account Name" />
+      </div>
+      <div class="field-group" style="flex:1 1 140px;">
+        <label>Required Date</label>
+        <input id="due" type="date" />
+      </div>
+      <div class="field-group" style="flex:1 1 150px;">
+        <label>Priority Class</label>
+        <select id="status">
+          <option value="Same-day">Same-day Dispatch</option>
+          <option value="Waiting on buyout">Waiting on buyout</option>
+          <option value="Long-lead">Long-lead Storage</option>
+        </select>
+      </div>
+      <div class="field-group" style="flex:1 1 110px;">
+        <label>Unit Type</label>
+        <select id="ctype">
+          <option>Skid</option>
+          <option>Box</option>
+          <option>Crate</option>
+        </select>
+      </div>
+      <div class="field-group" style="flex:0 1 70px;">
+        <label>Count</label>
+        <input id="qty" type="number" min="1" value="1" />
+      </div>
+      <div class="field-group" style="flex:1 1 140px;">
+        <label>Bay/Floor Location</label>
+        <input id="loc" class="uppercase" placeholder="e.g. BAY-4 / SHIPFLOOR" />
+      </div>
+      <div class="field-group" style="flex:0 0 auto; justify-content: flex-end;">
+        <button id="add" class="btn">Stage Freight</button>
+      </div>
+    </div>
+    <p id="saved" class="success-banner"></p>
+  </div>
+
+  <div class="card">
+    <div class="section-title">
+      <span>Current Warehouse Floor Staging</span>
+      <button id="expandStaging" class="btn btn-secondary" style="height:32px; padding:0 12px; font-size:12px;">Full Screen Board</button>
+    </div>
+    <div class="tbl-container">
+      <table id="tblStaging">
+        <thead>
+          <tr>
+            <th>SO Number</th><th>Customer</th><th>Required Date</th>
+            <th>Type</th><th>Qty</th><th>Staging Location</th>
+            <th>Priority</th><th style="width:100px; text-align:center;">Ship Out</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-title">
+      <span>Completed Dispatches</span>
+      <button id="expandShipped" class="btn btn-secondary" style="height:32px; padding:0 12px; font-size:12px;">View Complete Manifest</button>
+    </div>
+    <div class="tbl-container">
+      <table id="tblShipped">
+        <thead>
+          <tr>
+            <th>SO Number</th><th>Customer</th><th>Required Date</th>
+            <th>Total Freight</th><th>Origin Bay</th><th>Priority</th><th>Loaded/Departed At</th>
+            <th style="width:80px; text-align:center;">Revert</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+const siteUrl = typeof _spPageContextInfo !== 'undefined' ? _spPageContextInfo.webAbsoluteUrl : '';
+const dataFileUrl = `${siteUrl}/SiteAssets/staging-data.json`;
+let appData = { staging: [], shipped: [] };
+
+const $ = sel => document.querySelector(sel);
+const errBox = $('#err');
+
+function showErr(msg){
+  errBox.style.display = 'block';
+  errBox.textContent = msg;
+  setTimeout(()=>{errBox.style.display='none'}, 6000);
+}
+
+// Enforce upper casing on critical match variables automatically
+$('#so').addEventListener('input', function() { this.value = this.value.toUpperCase(); });
+$('#loc').addEventListener('input', function() { this.value = this.value.toUpperCase(); });
+
+async function loadWorkspaceData() {
+  try {
+    const res = await fetch(dataFileUrl, { cache: "no-cache", headers: { "Accept": "application/json; charset=utf-8" }});
+    if (res.ok) {
+      appData = await res.json();
+    } else {
+      await saveWorkspaceData();
+    }
+    renderAppState();
+    $('#appStatus').textContent = "Workspace Platform: Live";
+  } catch (e) {
+    showErr("Workspace operational notice: Local environment ready. Database structural profile will generate on first transaction.");
+  }
+}
+
+async function saveWorkspaceData() {
+  try {
+    const digest = $('#__REQUESTDIGEST') ? $('#__REQUESTDIGEST').value : '';
+    await fetch(`${siteUrl}/_api/web/GetFolderByServerRelativeUrl('SiteAssets')/Files/Add(url='staging-data.json', overwrite=true)`, {
+      method: "POST",
+      body: JSON.stringify(appData, null, 2),
+      headers: {
+        "Accept": "application/json; odata=verbose",
+        "X-RequestDigest": digest
+      }
+    });
+  } catch (e) {
+    showErr(`Workspace Sync Failure: ${e.message}`);
+  }
+}
+
+function getPriorityClass(status) {
+  if(status === 'Same-day') return 'badge-status status-sameday';
+  if(status === 'Waiting on buyout') return 'badge-status status-waiting';
+  return 'badge-status status-longlead';
+}
+
+function renderAppState() {
+  const queryText = $('#q').value.toLowerCase();
+  
+  const filteredStaging = appData.staging.filter(o => o.so.toLowerCase().includes(queryText) || o.customer.toLowerCase().includes(queryText) || o.location.toLowerCase().includes(queryText));
+  const filteredShipped = appData.shipped.filter(o => o.so.toLowerCase().includes(queryText) || o.customer.toLowerCase().includes(queryText));
+
+  // Update dynamic metric totals
+  $('#kOrders').textContent = filteredStaging.length;
+  $('#kContainers').textContent = filteredStaging.reduce((a,c) => a + (parseInt(c.containerQty) || 0), 0);
+  $('#kSkids').textContent = filteredStaging.filter(o => o.containerType === 'Skid').reduce((a,c) => a + (parseInt(c.containerQty) || 0), 0);
+  $('#kBoxes').textContent = filteredStaging.filter(o => o.containerType === 'Box').reduce((a,c) => a + (parseInt(c.containerQty) || 0), 0);
+  $('#kCrates').textContent = filteredStaging.filter(o => o.containerType === 'Crate').reduce((a,c) => a + (parseInt(c.containerQty) || 0), 0);
+  $('#kShipped').textContent = appData.shipped.filter(s => {
+    if(!s.shippedAt) return false;
+    return new Date(s.shippedAt).toDateString() === new Date().toDateString();
+  }).length;
+
+  // Active Floor Grid Rendering
+  const stagingBody = $('#tblStaging tbody');
+  stagingBody.innerHTML = '';
+  filteredStaging.forEach((o, index) => {
+    const tr = document.createElement('tr');
+    
+    const soTd = document.createElement('td'); soTd.innerHTML = `<b>${o.so}</b>`;
+    const pTd = document.createElement('td'); pTd.innerHTML = `<span class="${getPriorityClass(o.status)}">${o.status}</span>`;
+    
+    const actionTd = document.createElement('td'); actionTd.style.textAlign = 'center';
+    const chk = document.createElement('input'); chk.type = 'checkbox'; chk.style.width='18px'; chk.style.height='18px'; chk.style.cursor='pointer';
+    chk.addEventListener('change', async () => {
+      const moved = appData.staging.splice(index, 1)[0];
+      moved.shippedAt = new Date().toISOString();
+      appData.shipped.unshift(moved);
+      await saveWorkspaceData();
+      renderAppState();
+    });
+    
+    actionTd.append(chk);
+    tr.append(soTd, td(o.customer), td(o.dueDate), td(o.containerType), td(o.containerQty), td(o.location), pTd, actionTd);
+    stagingBody.append(tr);
+  });
+
+  // Historical Grid Rendering
+  const shippedBody = $('#tblShipped tbody');
+  shippedBody.innerHTML = '';
+  filteredShipped.forEach((o, index) => {
+    const tr = document.createElement('tr');
+    const pTd = document.createElement('td'); pTd.innerHTML = `<span class="${getPriorityClass(o.status)}">${o.status}</span>`;
+    
+    const undoTd = document.createElement('td'); undoTd.style.textAlign = 'center';
+    const b = document.createElement('button'); b.className='btn btn-secondary'; b.style.height='28px'; b.style.padding='0 8px'; b.style.fontSize='12px'; b.textContent='Undo';
+    b.addEventListener('click', async () => {
+      const rolledBack = appData.shipped.splice(index, 1)[0];
+      delete rolledBack.shippedAt;
+      appData.staging.push(rolledBack);
+      await saveWorkspaceData();
+      renderAppState();
+    });
+    
+    undoTd.append(b);
+    tr.append(td(o.so), td(o.customer), td(o.dueDate), td(`${o.containerQty} x ${o.containerType}`), td(o.location), pTd, td(o.shippedAt ? new Date(o.shippedAt).toLocaleTimeString() : ''), undoTd);
+    shippedBody.append(tr);
+  });
+}
+
+function td(txt){ const d=document.createElement('td'); d.textContent=txt; return d; }
+
+$('#add').addEventListener('click', async () => {
+  const so = $('#so').value.trim();
+  const cust = $('#customer').value.trim();
+  const due = $('#due').value;
+  const stat = $('#status').value;
+  const typ = $('#ctype').value;
+  const qty = $('#qty').value;
+  const loc = $('#loc').value.trim();
+
+  if(!so || !cust || !due || !loc){ showErr("Cannot process: Complete SO, Customer, Destination/Due Date, and Location constraints."); return; }
+
+  appData.staging.push({ so, customer: cust, dueDate: due, status: stat, containerType: typ, containerQty: qty, location: loc });
+  await saveWorkspaceData();
+  renderAppState();
+  
+  $('#saved').textContent = `Stored Payload Confirmation: ${qty} ${typ}(s) logged for ${so} at ${loc}`;
+  
+  // Clear inputs immediately for rapid sequential entry
+  $('#so').value = '';
+  $('#customer').value = '';
+  $('#loc').value = '';
+  $('#so').focus();
+});
+
+$('#q').addEventListener('input', renderAppState);
+$('#expandStaging').onclick = () => window.open('stage.html', '_blank');
+$('#expandShipped').onclick = () => window.open('ship.html', '_blank');
+
+window.addEventListener('DOMContentLoaded', loadWorkspaceData);
+</script>
+</body>
+</html>

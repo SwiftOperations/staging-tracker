@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Live Floor Staging Manifest</title>
+<style>
+  body{margin:0;background:#fff;font:16px/1.4 system-ui,-apple-system,BlinkMacSystemFont,Arial,sans-serif;color:#1a1d24;padding:20px;}
+  .wrap{max-width:1300px;margin:0 auto;}
+  .top-banner{display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid #dd4d25;padding-bottom:12px;margin-bottom:16px;}
+  h2{margin:0;font-size:26px;font-weight:900;text-transform:uppercase;letter-spacing:-0.5px;}
+  .actions button{background:#2d313d;color:#fff;border:0;border-radius:6px;height:36px;padding:0 16px;font-weight:700;cursor:pointer;margin-left:6px;}
+  .actions button.print{background:#dd4d25;}
+  .table-wrap{overflow:auto;border:1px solid #dcdfe6;border-radius:8px;box-shadow:0 4px 6px rgba(0,0,0,0.01);}
+  table{width:100%;border-collapse:separate;border-spacing:0;font-size:15px;}
+  th,td{padding:12px 10px;border-bottom:1px solid #dcdfe6;text-align:left;}
+  th{position:sticky;top:0;background:#f8f9fa;font-weight:800;color:#495060;text-transform:uppercase;font-size:12px;letter-spacing:0.5px;}
+  tbody tr:nth-child(even) td{background:#fdfdfe;}
+  tbody td b{font-size:16px;color:#1a1d24;}
+  .badge{display:inline-block;padding:4px 8px;border-radius:4px;font-size:12px;font-weight:700;text-transform:uppercase;}
+  .sameday{background:#ffebee;color:#c62828;}
+  .waiting{background:#fff3e0;color:#e65100;}
+  .longlead{background:#e8f5e9;color:#2e7d32;}
+  @media print{.actions{display:none;} body{padding:0;} th{background:#fff;color:#000;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top-banner">
+    <h2>Active Warehouse Staging Board</h2>
+    <div class="actions">
+      <button class="print" onclick="window.print()">Print Clipboard List</button>
+      <button onclick="window.close()">Close Board</button>
+    </div>
+  </div>
+  <div class="table-wrap">
+    <table id="tbl">
+      <thead>
+      <tr>
+        <th>SO Number</th><th>Customer Account</th><th>Required Date</th>
+        <th>Load Allocation</th><th>Bay Location</th><th>Priority Classification</th>
+      </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+const siteUrl = typeof _spPageContextInfo !== 'undefined' ? _spPageContextInfo.webAbsoluteUrl : '';
+async function loadStagingView() {
+  const body = document.querySelector('#tbl tbody');
+  try {
+    const res = await fetch(`${siteUrl}/SiteAssets/staging-data.json`, { cache: "no-cache" });
+    const data = await res.json();
+    body.innerHTML = '';
+    
+    if(!data.staging || data.staging.length === 0){
+      body.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:30px; color:#8a92a6;">No active freight payloads flagged on floor.</td></tr>';
+      return;
+    }
+
+    data.staging.forEach(e => {
+      let pClass = 'badge ' + (e.status === 'Same-day' ? 'sameday' : e.status === 'Waiting on buyout' ? 'waiting' : 'longlead');
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td><b>${e.so}</b></td><td>${e.customer}</td><td>${e.dueDate}</td>
+                    <td><b>${e.containerQty}</b> x ${e.containerType}</td>
+                    <td><mark style="background:#fff59d; padding:2px 6px; font-weight:700; border-radius:3px;">${e.location}</mark></td>
+                    <td><span class="${pClass}">${e.status}</span></td>`;
+      body.appendChild(tr);
+    });
+  } catch(e) {
+    body.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:30px; color:#c62828;">Error connecting to storage database matrix.</td></tr>';
+  }
+}
+window.addEventListener('DOMContentLoaded', loadStagingView);
+</script>
+</body>
+</html>

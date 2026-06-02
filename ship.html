@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Shipped Manifest Log</title>
+<style>
+  body{margin:0;background:#fff;font:16px/1.4 system-ui,-apple-system,BlinkMacSystemFont,Arial,sans-serif;color:#1a1d24;padding:20px;}
+  .wrap{max-width:1300px;margin:0 auto;}
+  .top-banner{display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid #2d313d;padding-bottom:12px;margin-bottom:16px;}
+  h2{margin:0;font-size:26px;font-weight:900;text-transform:uppercase;letter-spacing:-0.5px;}
+  .actions button{background:#2d313d;color:#fff;border:0;border-radius:6px;height:36px;padding:0 16px;font-weight:700;cursor:pointer;margin-left:6px;}
+  .actions button.print{background:#dd4d25;}
+  .table-wrap{overflow:auto;border:1px solid #dcdfe6;border-radius:8px;}
+  table{width:100%;border-collapse:separate;border-spacing:0;font-size:15px;}
+  th,td{padding:12px 10px;border-bottom:1px solid #dcdfe6;text-align:left;}
+  th{position:sticky;top:0;background:#f8f9fa;font-weight:800;color:#495060;text-transform:uppercase;font-size:12px;}
+  tbody tr:nth-child(even) td{background:#fafafa;}
+  @media print{.actions{display:none;} body{padding:0;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top-banner">
+    <h2>Completed Dispatch Manifest</h2>
+    <div class="actions">
+      <button class="print" onclick="window.print()">Print Archive Page</button>
+      <button onclick="window.close()">Close Log</button>
+    </div>
+  </div>
+  <div class="table-wrap">
+    <table id="tbl">
+      <thead>
+      <tr>
+        <th>SO Number</th><th>Customer Account</th><th>Due Date Reference</th>
+        <th>Total Units</th><th>Origin Location</th><th>Priority Status</th><th>Loaded Departure Timestamp</th>
+      </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+const siteUrl = typeof _spPageContextInfo !== 'undefined' ? _spPageContextInfo.webAbsoluteUrl : '';
+async function loadShippedView() {
+  const body = document.querySelector('#tbl tbody');
+  try {
+    const res = await fetch(`${siteUrl}/SiteAssets/staging-data.json`, { cache: "no-cache" });
+    const data = await res.json();
+    body.innerHTML = '';
+    
+    if(!data.shipped || data.shipped.length === 0){
+      body.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:30px; color:#8a92a6;">No completed freight records discovered in current matrix logs.</td></tr>';
+      return;
+    }
+
+    data.shipped.forEach(e => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td><b>${e.so}</b></td><td>${e.customer}</td><td>${e.dueDate}</td>
+                    <td>${e.containerQty} x ${e.containerType}</td>
+                    <td>${e.location}</td><td>${e.status}</td>
+                    <td><b>${new Date(e.shippedAt).toLocaleString()}</b></td>`;
+      body.appendChild(tr);
+    });
+  } catch(e) {
+    body.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:30px; color:#c62828;">Error connecting to storage database matrix.</td></tr>';
+  }
+}
+window.addEventListener('DOMContentLoaded', loadShippedView);
+</script>
+</body>
+</html>
