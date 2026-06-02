@@ -1,8 +1,8 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Swift Staging Tracker — Dashboard</title>
 <style>
   :root { --brand: #dd4d25; --bg: #f4f5f7; --border: #dcdfe6; --text: #2d313d; }
@@ -34,6 +34,301 @@
   .btn { background: var(--brand); color: #fff; border: 0; border-radius: 6px; height: 40px; padding: 0 20px; font-weight: 700; cursor: pointer; }
   .btn:hover { background: #c43f1c; }
   .btn:disabled { opacity: 0.6; cursor: not-allowed; }
-  .btn-alt { background: #f0f1f4; color: #495060; border: 1px solid var(--border); height: 32px; padding: 0 12px; font-size: 12px; }
+  .btn-alt { background: #f0f1f4; color: #495060; border: 1px solid var(--border); height: 32px; padding: 0 12px; font-size: 12px; cursor: pointer; }
   
   .table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 6px; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; text-align: left; min-width: 800px; }
+  th { background: #fafbfc; border-bottom: 2px solid var(--border); padding: 10px; font-weight: 700; color: #495060; }
+  td { padding: 12px 10px; border-bottom: 1px solid var(--border); background: #fff; }
+  .notice { background: #ffebee; color: #c62828; padding: 10px; border-radius: 6px; margin-bottom: 15px; display: none; font-weight: bold; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="header">
+    <h1>Swift Staging Tracker</h1>
+    <span id="sysStatus" class="status">Connecting...</span>
+  </div>
+  
+  <div id="errorBox" class="notice"></div>
+
+  <div class="grid">
+    <div class="tile"><h4>Active Orders</h4><div id="kOrders" class="val">0</div></div>
+    <div class="tile"><h4>Total Freight</h4><div id="kContainers" class="val">0</div></div>
+    <div class="tile"><h4>Skids</h4><div id="kSkids" class="val">0</div></div>
+    <div class="tile"><h4>Boxes</h4><div id="kBoxes" class="val">0</div></div>
+    <div class="tile"><h4>Crates</h4><div id="kCrates" class="val">0</div></div>
+    <div class="tile"><h4>Shipped</h4><div id="kShipped" class="val">0</div></div>
+  </div>
+
+  <div class="card">
+    <div class="col">
+      <label>Quick Search / Filter</label>
+      <input id="q" class="upper" placeholder="Type SO, Customer, or Bay..." />
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><h3>Log Staging Information</h3></div>
+    <div class="row">
+      <div class="col"><label>SO Number</label><input id="f_so" class="upper" placeholder="SO12345" /></div>
+      <div class="col"><label>Customer</label><input id="f_cust" placeholder="Name" /></div>
+      <div class="col"><label>Due Date</label><input id="f_due" type="date" /></div>
+      <div class="col"><label>Priority</label>
+        <select id="f_stat">
+          <option>Waiting on buyout</option>
+          <option>Same-day</option>
+          <option>Long-lead</option>
+        </select>
+      </div>
+      <div class="col" style="flex: 0 1 100px;"><label>Type</label>
+        <select id="f_type"><option>Skid</option><option>Box</option><option>Crate</option></select>
+      </div>
+      <div class="col" style="flex: 0 1 80px;"><label>Qty</label><input id="f_qty" type="number" min="1" value="1" /></div>
+      <div class="col"><label>Location</label><input id="f_loc" class="upper" placeholder="BAY-4" /></div>
+      <div class="col" style="flex: 0 0 auto; justify-content: flex-end;"><button id="btnAdd" class="btn">Add</button></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h3>Active Staging Entries</h3>
+      <button class="btn-alt" onclick="window.open('stage.html', '_blank')">Open Full Board</button>
+    </div>
+    <div class="table-wrap">
+      <table id="tblStaging">
+        <thead>
+          <tr><th>SO</th><th>Customer</th><th>Due Date</th><th>Freight</th><th>Location</th><th>Priority</th><th style="width:80px; text-align:center;">Ship</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h3>Shipped History</h3>
+      <button class="btn-alt" onclick="window.open('ship.html', '_blank')">Open Manifest</button>
+    </div>
+    <div class="table-wrap">
+      <table id="tblShipped">
+        <thead>
+          <tr><th>SO</th><th>Customer</th><th>Due Date</th><th>Freight</th><th>Location at Ship</th><th>Priority</th><th>Time Shipped</th><th style="width:80px; text-align:center;">Undo</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+window.onerror = function(msg) {
+  const eb = document.getElementById('errorBox');
+  if(eb) { eb.style.display = 'block'; eb.innerText = 'System Error: ' + msg; }
+};
+
+const BIN_ID = '6a1e3ceeda38895dfe796129';
+const API_KEY = '$2a$10$n1Vcgiv1j.TUnVEhJhQCfu3Dq8s7cvg3tBRWgFs8tY9ReI5zjK3Bq';
+const URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
+
+let db = { staging: [], shipped: [] };
+const el = id => document.getElementById(id);
+const statusInd = el('sysStatus');
+
+function showError(msg) {
+  if(el('errorBox')) {
+    el('errorBox').style.display = 'block';
+    el('errorBox').textContent = msg;
+    setTimeout(() => { el('errorBox').style.display = 'none'; }, 6000);
+  }
+}
+
+['f_so', 'f_loc', 'q'].forEach(id => {
+  if(el(id)) el(id).addEventListener('input', function() { this.value = this.value.toUpperCase(); });
+});
+
+async function fetchCloud() {
+  try {
+    const res = await fetch(`${URL}/latest`, { 
+      headers: { 'X-Access-Key': API_KEY }, 
+      cache: 'no-store' 
+    });
+    if (!res.ok) throw new Error(`Fetch failed: ${res.status}`);
+    const json = await res.json();
+    
+    const raw = json.record || {};
+    db.staging = Array.isArray(raw.staging) ? raw.staging : [];
+    db.shipped = Array.isArray(raw.shipped) ? raw.shipped : [];
+    
+    statusInd.className = 'status online';
+    statusInd.textContent = 'Cloud Synced';
+    render();
+  } catch (err) {
+    statusInd.className = 'status error';
+    statusInd.textContent = 'Offline';
+    console.error(err);
+  }
+}
+
+async function pushCloud() {
+  statusInd.className = 'status';
+  statusInd.textContent = 'Saving...';
+  try {
+    const res = await fetch(URL, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'X-Access-Key': API_KEY },
+      body: JSON.stringify({ staging: db.staging, shipped: db.shipped })
+    });
+    if (!res.ok) throw new Error('Save failed');
+    statusInd.className = 'status online';
+    statusInd.textContent = 'Cloud Synced';
+  } catch (err) {
+    showError('Failed to save to cloud!');
+    statusInd.className = 'status error';
+    statusInd.textContent = 'Save Error';
+  }
+}
+
+function render() {
+  const query = (el('q').value || '').trim().toLowerCase();
+  
+  const match = item => {
+    if(!item) return false;
+    const so = (item.so || '').toLowerCase();
+    const cust = (item.customer || '').toLowerCase();
+    const loc = (item.loc || item.location || '').toLowerCase();
+    return so.includes(query) || cust.includes(query) || loc.includes(query);
+  };
+
+  const vStaging = db.staging.filter(match);
+  const vShipped = db.shipped.filter(match);
+
+  const parseQty = v => parseInt(v) || 1;
+  const totalQty = (arr) => arr.reduce((acc, val) => acc + parseQty(val.qty || val.containerQty), 0);
+  const typeQty = (arr, t) => arr.reduce((acc, val) => acc + (((val.type || val.containerType || '') === t) ? parseQty(val.qty || val.containerQty) : 0), 0);
+
+  if (el('kOrders')) {
+    el('kOrders').textContent = db.staging.length;
+    el('kContainers').textContent = totalQty(db.staging);
+    el('kSkids').textContent = typeQty(db.staging, 'Skid');
+    el('kBoxes').textContent = typeQty(db.staging, 'Box');
+    el('kCrates').textContent = typeQty(db.staging, 'Crate');
+    el('kShipped').textContent = db.shipped.length;
+  }
+
+  const tbodyStaging = document.querySelector('#tblStaging tbody');
+  if (tbodyStaging) {
+    tbodyStaging.innerHTML = '';
+    vStaging.forEach(item => {
+      const tr = document.createElement('tr');
+      const so = item.so || '';
+      const cust = item.customer || '';
+      const due = item.due || item.dueDate || '';
+      const qty = parseQty(item.qty || item.containerQty);
+      const type = item.type || item.containerType || '';
+      const loc = item.loc || item.location || '';
+      const stat = item.stat || item.status || '';
+
+      tr.innerHTML = `<td><b>${so}</b></td><td>${cust}</td><td>${due}</td><td>${qty} ${type}</td><td>${loc}</td><td>${stat}</td>`;
+      
+      const tdAction = document.createElement('td');
+      tdAction.style.textAlign = 'center';
+      const chk = document.createElement('input');
+      chk.type = 'checkbox';
+      chk.style.cursor = 'pointer';
+      chk.style.width = '18px'; chk.style.height = '18px';
+      
+      chk.onclick = async () => {
+        const index = db.staging.indexOf(item);
+        if(index > -1) {
+          const moved = db.staging.splice(index, 1)[0];
+          moved.shippedAt = new Date().toISOString();
+          db.shipped.unshift(moved);
+          render(); 
+          await pushCloud();
+        }
+      };
+      tdAction.appendChild(chk);
+      tr.appendChild(tdAction);
+      tbodyStaging.appendChild(tr);
+    });
+  }
+
+  const tbodyShipped = document.querySelector('#tblShipped tbody');
+  if (tbodyShipped) {
+    tbodyShipped.innerHTML = '';
+    vShipped.forEach(item => {
+      const tr = document.createElement('tr');
+      const so = item.so || '';
+      const cust = item.customer || '';
+      const due = item.due || item.dueDate || '';
+      const qty = parseQty(item.qty || item.containerQty);
+      const type = item.type || item.containerType || '';
+      const loc = item.loc || item.location || '';
+      const stat = item.stat || item.status || '';
+      const timeStr = item.shippedAt ? new Date(item.shippedAt).toLocaleString() : '';
+
+      tr.innerHTML = `<td><b>${so}</b></td><td>${cust}</td><td>${due}</td><td>${qty} ${type}</td><td>${loc}</td><td>${stat}</td><td>${timeStr}</td>`;
+      
+      const tdAction = document.createElement('td');
+      tdAction.style.textAlign = 'center';
+      const btn = document.createElement('button');
+      btn.className = 'btn-alt';
+      btn.textContent = 'Undo';
+      
+      btn.onclick = async () => {
+        const index = db.shipped.indexOf(item);
+        if(index > -1) {
+          const moved = db.shipped.splice(index, 1)[0];
+          delete moved.shippedAt;
+          db.staging.unshift(moved);
+          render();
+          await pushCloud();
+        }
+      };
+      tdAction.appendChild(btn);
+      tr.appendChild(tdAction);
+      tbodyShipped.appendChild(tr);
+    });
+  }
+}
+
+if (el('btnAdd')) {
+  el('btnAdd').onclick = async () => {
+    const so = el('f_so').value.trim();
+    const customer = el('f_cust').value.trim();
+    const due = el('f_due').value;
+    const stat = el('f_stat').value;
+    const type = el('f_type').value;
+    const qty = parseInt(el('f_qty').value) || 1;
+    const loc = el('f_loc').value.trim();
+
+    if(!so || !customer || !loc) {
+      showError("SO Number, Customer, and Location are required.");
+      return;
+    }
+
+    el('btnAdd').disabled = true;
+
+    const newItem = { 
+      id: Date.now().toString(), so: so, customer: customer, 
+      due: due, stat: stat, type: type, qty: qty, loc: loc 
+    };
+    
+    db.staging.unshift(newItem);
+    render();
+    await pushCloud();
+
+    el('f_so').value = ''; el('f_cust').value = ''; el('f_loc').value = '';
+    el('f_so').focus();
+    el('btnAdd').disabled = false;
+  };
+}
+
+window.onload = () => {
+  fetchCloud();
+  setInterval(fetchCloud, 10000); 
+};
+</script>
+</body>
+</html>
