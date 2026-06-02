@@ -1,8 +1,8 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Live Floor Staging Manifest</title>
 <style>
   :root { --border: #dcdfe6; }
@@ -49,15 +49,25 @@ async function fetchCloud() {
     const res = await fetch(URL, { headers: { 'X-Access-Key': API_KEY }, cache: 'no-store' });
     if (!res.ok) throw new Error('Fetch failed');
     const json = await res.json();
-    const data = json.record || { staging: [] };
+    
+    const raw = json.record || {};
+    const vStaging = Array.isArray(raw.staging) ? raw.staging : [];
     
     tbody.innerHTML = '';
-    if(!data.staging || data.staging.length === 0) {
+    if (vStaging.length === 0) {
       tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px;">No active skids staged.</td></tr>';
     } else {
-      data.staging.forEach(item => {
+      vStaging.forEach(item => {
         const tr = document.createElement('tr');
-        tr.innerHTML = `<td><b>${item.so}</b></td><td>${item.customer}</td><td>${item.due}</td><td><b>${item.qty}</b> ${item.type}</td><td><mark style="background:#fff59d; padding:2px 6px; border-radius:3px; font-weight:bold;">${item.loc}</mark></td><td>${item.stat}</td>`;
+        const so = item.so || '';
+        const cust = item.customer || '';
+        const due = item.due || item.dueDate || '';
+        const qty = item.qty || item.containerQty || 1;
+        const type = item.type || item.containerType || '';
+        const loc = item.loc || item.location || '';
+        const stat = item.stat || item.status || '';
+
+        tr.innerHTML = `<td><b>${so}</b></td><td>${cust}</td><td>${due}</td><td><b>${qty}</b> ${type}</td><td><mark style="background:#fff59d; padding:2px 6px; border-radius:3px; font-weight:bold;">${loc}</mark></td><td>${stat}</td>`;
         tbody.appendChild(tr);
       });
     }
@@ -70,7 +80,7 @@ async function fetchCloud() {
 
 window.onload = () => {
   fetchCloud();
-  setInterval(fetchCloud, 10000); // Auto-refresh every 10s for wall monitors
+  setInterval(fetchCloud, 10000); 
 };
 </script>
 </body>
