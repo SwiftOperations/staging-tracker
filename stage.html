@@ -1,77 +1,77 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Staging Log — v2.65</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Live Floor Staging Manifest</title>
 <style>
-  body{margin:0;background:#fff;font:16px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
-  .wrap{max-width:1100px;margin:0 auto;padding:18px}
-  h2{margin:0 0 10px}
-  .actions{display:flex;gap:8px;margin-bottom:10px}
-  button{background:#dd4d25;color:#fff;border:0;border-radius:10px;height:36px;padding:0 12px;cursor:pointer}
-  .table-wrap{overflow:auto;border:1px solid #e5e7eb;border-radius:10px}
-  table{width:100%;border-collapse:collapse}
-  th,td{border-top:1px solid #e5e7eb;padding:10px 8px;white-space:nowrap;background:#fff;text-align:left}
-  th{position:sticky;top:0;background:#fafafa}
+  :root { --border: #dcdfe6; }
+  * { box-sizing: border-box; font-family: system-ui, -apple-system, Arial, sans-serif; }
+  body { margin: 0; background: #fff; color: #2d313d; padding: 20px; }
+  .wrap { max-width: 1200px; margin: 0 auto; }
+  .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #dd4d25; padding-bottom: 12px; margin-bottom: 20px; }
+  h1 { margin: 0; font-size: 26px; text-transform: uppercase; }
+  .btn { background: #2d313d; color: #fff; border: 0; border-radius: 6px; height: 36px; padding: 0 16px; font-weight: 700; cursor: pointer; margin-left: 8px; }
+  .table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 8px; }
+  table { width: 100%; border-collapse: collapse; font-size: 15px; text-align: left; }
+  th { background: #f8f9fa; border-bottom: 2px solid var(--border); padding: 12px 10px; font-weight: 800; text-transform: uppercase; color: #495060; font-size: 12px; }
+  td { padding: 12px 10px; border-bottom: 1px solid var(--border); }
+  @media print { .header .actions { display: none; } body { padding: 0; } .table-wrap { border: none; } }
 </style>
 </head>
 <body>
 <div class="wrap">
-  <h2>Active Staging Log</h2>
-  <div class="actions">
-    <button onclick="window.print()">Print Log</button>
-    <button onclick="window.close()">Close</button>
+  <div class="header">
+    <h1>Active Warehouse Staging</h1>
+    <div class="actions">
+      <span id="syncText" style="font-size:12px; color:#667085; margin-right:10px;">Syncing...</span>
+      <button class="btn" style="background:#dd4d25;" onclick="window.print()">Print</button>
+      <button class="btn" onclick="window.close()">Close</button>
+    </div>
   </div>
   <div class="table-wrap">
     <table id="tbl">
-      <thead>
-      <tr>
-        <th>SO Number</th><th>Customer</th><th>Due Date</th>
-        <th>Total Containers</th><th>Staging Location(s)</th><th>Shipping Status</th>
-      </tr>
-      </thead>
-      <tbody><tr><td colspan="6">Loading...</td></tr></tbody>
+      <thead><tr><th>SO Number</th><th>Customer</th><th>Due Date</th><th>Freight</th><th>Bay Location</th><th>Priority</th></tr></thead>
+      <tbody></tbody>
     </table>
   </div>
 </div>
 
 <script>
-  const BIN_ID = '6a1e3ceeda38895dfe796129';
-  const API_KEY = '$2a$10$n1Vcgiv1j.TUnVEhJhQCfu3Dq8s7cvg3tBRWgFs8tY9ReI5zjK3Bq';
-  const CLOUD_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
+const BIN_ID = '6a1e3ceeda38895dfe796129';
+const API_KEY = '$2a$10$n1Vcgiv1j.TUnVEhJhQCfu3Dq8s7cvg3tBRWgFs8tY9ReI5zjK3Bq';
+const URL = `https://api.jsonbin.io/v3/b/${BIN_ID}/latest`;
 
-  window.addEventListener('DOMContentLoaded', async () => {
-    const body = document.querySelector('#tbl tbody');
-    try {
-      const res = await fetch(CLOUD_URL, { 
-        method: 'GET',
-        headers: { 'X-Access-Key': API_KEY },
-        cache: 'no-store'
-      });
-      const json = await res.json();
-      
-      if (!res.ok) throw new Error(json.message);
-      
-      const data = json.record || { staging: [] };
-      
-      body.innerHTML = '';
-      if(data.staging.length === 0) {
-        body.innerHTML = '<tr><td colspan="6">No active skids staged on the floor.</td></tr>';
-        return;
-      }
-
-      data.staging.forEach(e => {
+async function fetchCloud() {
+  const syncTxt = document.getElementById('syncText');
+  const tbody = document.querySelector('#tbl tbody');
+  try {
+    const res = await fetch(URL, { headers: { 'X-Access-Key': API_KEY }, cache: 'no-store' });
+    if (!res.ok) throw new Error('Fetch failed');
+    const json = await res.json();
+    const data = json.record || { staging: [] };
+    
+    tbody.innerHTML = '';
+    if(!data.staging || data.staging.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px;">No active skids staged.</td></tr>';
+    } else {
+      data.staging.forEach(item => {
         const tr = document.createElement('tr');
-        tr.innerHTML = `<td><b>${e.so}</b></td><td>${e.customer}</td><td>${e.dueDate || ''}</td>
-                      <td><b>${e.qty || 1}</b> ${e.type || ''}</td>
-                      <td>${e.location || ''}</td><td>${e.status || ''}</td>`;
-        body.appendChild(tr);
+        tr.innerHTML = `<td><b>${item.so}</b></td><td>${item.customer}</td><td>${item.due}</td><td><b>${item.qty}</b> ${item.type}</td><td><mark style="background:#fff59d; padding:2px 6px; border-radius:3px; font-weight:bold;">${item.loc}</mark></td><td>${item.stat}</td>`;
+        tbody.appendChild(tr);
       });
-    } catch (e) {
-      body.innerHTML = `<tr><td colspan="6" style="color:#d32f2f;">Error pulling cloud manifest: ${e.message}</td></tr>`;
     }
-  });
+    const d = new Date();
+    syncTxt.textContent = `Last Synced: ${d.getHours()}:${d.getMinutes().toString().padStart(2, '0')}:${d.getSeconds().toString().padStart(2, '0')}`;
+  } catch (err) {
+    syncTxt.textContent = "Offline - Retrying...";
+  }
+}
+
+window.onload = () => {
+  fetchCloud();
+  setInterval(fetchCloud, 10000); // Auto-refresh every 10s for wall monitors
+};
 </script>
 </body>
 </html>
