@@ -21,11 +21,47 @@
   .row > *{flex:1 1 170px}
   .btn{background:var(--brand);color:#fff;border:0;border-radius:12px;padding:12px 20px;font-weight:700;cursor:pointer}
   .btn:disabled{opacity:.5;cursor:not-allowed}
+  
+  /* --- REVISED SCROLLING PROPERTIES --- */
   table{width:100%;border-collapse:separate;border-spacing:0;min-width:760px}
-  thead th{position:sticky;top:0;background:#fff;border-bottom:1px solid #e6e7eb;font-size:14px;text-align:left;padding:10px}
+  
+  thead th{
+    position: sticky;
+    top: 0;
+    background: #fff;
+    border-bottom: 1px solid #e6e7eb;
+    font-size: 14px;
+    text-align: left;
+    padding: 10px;
+    z-index: 1; /* Keeps header fixed cleanly above scrolling rows */
+  }
+  
   tbody td{border-bottom:1px solid #f0f1f3;padding:10px;vertical-align:top}
-  .tblwrap{overflow:auto;border:1px solid #e6e7eb;border-radius:12px}
-  .pill{display:inline-block;background:#f1f5f9;border-radius999px;padding:2px 8px;font-size:12px}
+  
+  .tblwrap{
+    overflow-x: auto; /* Enables responsive desktop side-scrolling bar */
+    border: 1px solid #e6e7eb;
+    border-radius: 12px;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Visible scrollbar layout formatting for desktop viewports */
+  .tblwrap::-webkit-scrollbar {
+    height: 8px;
+  }
+  .tblwrap::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
+  }
+  
+  /* Retains sticky tracking rules for checkboxes and undo buttons while fixing background transparency */
+  th[style*="position:sticky"], td[style*="position:sticky"] {
+    background: #fff !important;
+    z-index: 2;
+  }
+  /* --- END OF REVISIONS --- */
+
+  .pill{display:inline-block;background:#f1f5f9;border-radius:999px;padding:2px 8px;font-size:12px}
   .split{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
   .notice{background:#fee2e2;color:#991b1b;border:1px solid #fecaca;border-radius:10px;padding:10px;margin:10px 0}
   @media (max-width:900px){.grid{grid-template-columns:repeat(3,1fr)}}
@@ -89,7 +125,7 @@
             <th>SO</th><th>Customer</th><th>Due Date</th>
             <th>Number of Containers</th><th>Staging Location(s)</th>
             <th>Shipping Status</th>
-            <th style="width:90px;position:sticky;right:90px">Shipped</th>
+            <th style="width:90px;position:sticky;right:0">Shipped</th>
           </tr>
         </thead>
         <tbody></tbody>
@@ -120,7 +156,6 @@
 </div>
 
 <script>
-// Cloud Database Matrix Parameters
 const BIN_ID = '6a1e4f2ef5f4af5e29ab1884';
 const API_KEY = '$2a$10$friXAeZCMSMRSgzX3QaNAOpc09/c3syit6s04pV1iaZO3KHqeyO9y';
 const CLOUD_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
@@ -203,6 +238,8 @@ function renderTables(){
     tr.append(td(o.so), td(o.customer), td(o.dueDate), td(`${o.qty} ${o.type}(s)`), td(o.location), td(o.status));
     
     const shippedTd=document.createElement('td');
+    shippedTd.style.position = 'sticky';
+    shippedTd.style.right = '0';
     const chk=document.createElement('input'); chk.type='checkbox';
     chk.style.width = '18px'; chk.style.height = '18px'; chk.style.cursor = 'pointer';
     chk.addEventListener('change', () => {
@@ -227,6 +264,8 @@ function renderTables(){
     tr.append(td(o.shippedAt ? new Date(o.shippedAt).toLocaleString() : ''));
     
     const undo=document.createElement('td');
+    undo.style.position = 'sticky';
+    undo.style.right = '0';
     const b=document.createElement('button'); b.className='btn'; b.style.padding='6px 10px'; b.textContent='Undo';
     b.addEventListener('click', ()=>{
       const exactIndex = appData.shipped.indexOf(o);
@@ -271,7 +310,7 @@ $('#expandShipped').onclick = () => window.open('ship.html', '_blank');
 
 window.addEventListener('DOMContentLoaded', () => {
   loadCloudData();
-  setInterval(loadCloudData, 10000); // Polls cloud database every 10 seconds to sync devices
+  setInterval(loadCloudData, 10000); 
 });
 </script>
 </body>
