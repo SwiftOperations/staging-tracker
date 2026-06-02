@@ -18,36 +18,53 @@
 </head>
 <body>
 <div class="wrap">
-  <h2>Staging Log</h2>
+  <h2>Active Staging Log</h2>
   <div class="actions">
-    <button onclick="window.print()">Print</button>
+    <button onclick="window.print()">Print Log</button>
     <button onclick="window.close()">Close</button>
   </div>
   <div class="table-wrap">
     <table id="tbl">
       <thead>
       <tr>
-        <th>SO</th><th>Customer</th><th>Due Date</th>
-        <th>Number of Containers</th><th>Staging Location(s)</th><th>Shipping Status</th>
+        <th>SO Number</th><th>Customer</th><th>Due Date</th>
+        <th>Total Containers</th><th>Staging Location(s)</th><th>Shipping Status</th>
       </tr>
       </thead>
-      <tbody></tbody>
+      <tbody><tr><td colspan="6">Syncing with cloud...</td></tr></tbody>
     </table>
   </div>
 </div>
 
 <script>
-  window.addEventListener('DOMContentLoaded', () => {
-    const data = JSON.parse(localStorage.getItem('swiftStagingData')) || { staging: [] };
+  // --- CLOUD CONFIGURATION ---
+  const BIN_ID = '$2a$10$n1Vcgiv1j.TUnVEhJhQCfu3Dq8s7cvg3tBRWgFs8tY9ReI5zjK3Bq';
+  const API_KEY = '$2a$10$n1Vcgiv1j.TUnVEhJhQCfu3Dq8s7cvg3tBRWgFs8tY9ReI5zjK3Bq';
+  const CLOUD_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
+
+  window.addEventListener('DOMContentLoaded', async () => {
     const body = document.querySelector('#tbl tbody');
-    
-    data.staging.forEach(e => {
-      const tr = document.createElement('tr');
-      tr.innerHTML = `<td><b>${e.so}</b></td><td>${e.customer}</td><td>${e.dueDate || ''}</td>
-                    <td>${e.qty || 1} ${e.type || ''}</td>
-                    <td>${e.location || ''}</td><td>${e.status || ''}</td>`;
-      body.appendChild(tr);
-    });
+    try {
+      const res = await fetch(CLOUD_URL, { headers: { 'X-Access-Key': API_KEY } });
+      const json = await res.json();
+      const data = json.record || { staging: [] };
+      
+      body.innerHTML = '';
+      if(data.staging.length === 0) {
+        body.innerHTML = '<tr><td colspan="6">No active skids staged on the floor.</td></tr>';
+        return;
+      }
+
+      data.staging.forEach(e => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td><b>${e.so}</b></td><td>${e.customer}</td><td>${e.dueDate || ''}</td>
+                      <td><b>${e.qty || 1}</b> ${e.type || ''}</td>
+                      <td>${e.location || ''}</td><td>${e.status || ''}</td>`;
+        body.appendChild(tr);
+      });
+    } catch (e) {
+      body.innerHTML = '<tr><td colspan="6" style="color:#d32f2f;">Error pulling cloud manifest. Check connection.</td></tr>';
+    }
   });
 </script>
 </body>
