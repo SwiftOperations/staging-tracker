@@ -25,7 +25,7 @@
   thead th{position:sticky;top:0;background:#fff;border-bottom:1px solid #e6e7eb;font-size:14px;text-align:left;padding:10px}
   tbody td{border-bottom:1px solid #f0f1f3;padding:10px;vertical-align:top}
   .tblwrap{overflow:auto;border:1px solid #e6e7eb;border-radius:12px}
-  .pill{display:inline-block;background:#f1f5f9;border-radius:999px;padding:2px 8px;font-size:12px}
+  .pill{display:inline-block;background:#f1f5f9;border-radius999px;padding:2px 8px;font-size:12px}
   .split{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
   .notice{background:#fee2e2;color:#991b1b;border:1px solid #fecaca;border-radius:10px;padding:10px;margin:10px 0}
   @media (max-width:900px){.grid{grid-template-columns:repeat(3,1fr)}}
@@ -120,7 +120,7 @@
 </div>
 
 <script>
-// Cloud Storage Matrix Parameters
+// Cloud Database Matrix Parameters
 const BIN_ID = '6a1e4f2ef5f4af5e29ab1884';
 const API_KEY = '$2a$10$friXAeZCMSMRSgzX3QaNAOpc09/c3syit6s04pV1iaZO3KHqeyO9y';
 const CLOUD_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
@@ -143,10 +143,9 @@ async function loadCloudData() {
       headers: { 'X-Access-Key': API_KEY },
       cache: 'no-store'
     });
-    if (!res.ok) throw new Error(`HTTP Matrix Error: ${res.status}`);
+    if (!res.ok) throw new Error(`HTTP Error: ${res.status}`);
     const json = await res.json();
     
-    // Safely assign data structure matching base variable names exactly
     if (json.record) {
       appData.staging = Array.isArray(json.record.staging) ? json.record.staging : [];
       appData.shipped = Array.isArray(json.record.shipped) ? json.record.shipped : [];
@@ -168,7 +167,7 @@ async function syncStorage() {
       },
       body: JSON.stringify(appData)
     });
-    if (!res.ok) throw new Error(`HTTP Sync Error: ${res.status}`);
+    if (!res.ok) throw new Error(`Sync Error: ${res.status}`);
     renderTables();
   } catch (e) {
     showErr("Network Error: Cloud upload rejected. Transaction failed to broadcast.");
@@ -199,7 +198,7 @@ function renderTables(){
   const shippedBody = $('#tblShipped tbody');
   
   stagingBody.innerHTML='';
-  filteredStaging.forEach((o, index)=>{
+  filteredStaging.forEach((o)=>{
     const tr=document.createElement('tr');
     tr.append(td(o.so), td(o.customer), td(o.dueDate), td(`${o.qty} ${o.type}(s)`), td(o.location), td(o.status));
     
@@ -208,7 +207,6 @@ function renderTables(){
     chk.style.width = '18px'; chk.style.height = '18px'; chk.style.cursor = 'pointer';
     chk.addEventListener('change', () => {
       if(chk.checked){
-        // Find exactly this entry's position to prevent index shifting during filtered searches
         const exactIndex = appData.staging.indexOf(o);
         if (exactIndex > -1) {
           const moved = appData.staging.splice(exactIndex, 1)[0];
@@ -223,7 +221,7 @@ function renderTables(){
   });
 
   shippedBody.innerHTML='';
-  filteredShipped.forEach((o, index)=>{
+  filteredShipped.forEach((o)=>{
     const tr=document.createElement('tr');
     tr.append(td(o.so), td(o.customer), td(o.dueDate), td(`${o.qty} ${o.type}(s)`), td(o.location), td(o.status));
     tr.append(td(o.shippedAt ? new Date(o.shippedAt).toLocaleString() : ''));
@@ -271,10 +269,9 @@ $('#q').addEventListener('input', renderTables);
 $('#expandStaging').onclick = () => window.open('stage.html', '_blank');
 $('#expandShipped').onclick = () => window.open('ship.html', '_blank');
 
-// Background sync heartbeat: pulls fresh cloud additions every 10 seconds automatically
 window.addEventListener('DOMContentLoaded', () => {
   loadCloudData();
-  setInterval(loadCloudData, 10000);
+  setInterval(loadCloudData, 10000); // Polls cloud database every 10 seconds to sync devices
 });
 </script>
 </body>
