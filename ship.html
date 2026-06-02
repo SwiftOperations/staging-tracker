@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Staging Log — v2.65</title>
+<title>Shipped Log — v2.65</title>
 <style>
   body{margin:0;background:#fff;font:16px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
   .wrap{max-width:1100px;margin:0 auto;padding:18px}
@@ -18,9 +18,9 @@
 </head>
 <body>
 <div class="wrap">
-  <h2>Active Staging Log</h2>
+  <h2>Completed Dispatch Log</h2>
   <div class="actions">
-    <button onclick="window.print()">Print Log</button>
+    <button onclick="window.print()">Print Manifest</button>
     <button onclick="window.close()">Close</button>
   </div>
   <div class="table-wrap">
@@ -28,10 +28,11 @@
       <thead>
       <tr>
         <th>SO Number</th><th>Customer</th><th>Due Date</th>
-        <th>Total Containers</th><th>Staging Location(s)</th><th>Shipping Status</th>
+        <th>Total Containers</th><th>Staging Location at Ship</th>
+        <th>Status at Ship</th><th>Timestamp Logged</th>
       </tr>
       </thead>
-      <tbody><tr><td colspan="6">Syncing with cloud...</td></tr></tbody>
+      <tbody><tr><td colspan="7">Syncing with cloud...</td></tr></tbody>
     </table>
   </div>
 </div>
@@ -47,23 +48,24 @@
     try {
       const res = await fetch(CLOUD_URL, { headers: { 'X-Access-Key': API_KEY } });
       const json = await res.json();
-      const data = json.record || { staging: [] };
+      const data = json.record || { shipped: [] };
       
       body.innerHTML = '';
-      if(data.staging.length === 0) {
-        body.innerHTML = '<tr><td colspan="6">No active skids staged on the floor.</td></tr>';
+      if(data.shipped.length === 0) {
+        body.innerHTML = '<tr><td colspan="7">No dispatched shipments logged yet.</td></tr>';
         return;
       }
 
-      data.staging.forEach(e => {
+      data.shipped.forEach(e => {
         const tr = document.createElement('tr');
         tr.innerHTML = `<td><b>${e.so}</b></td><td>${e.customer}</td><td>${e.dueDate || ''}</td>
                       <td><b>${e.qty || 1}</b> ${e.type || ''}</td>
-                      <td>${e.location || ''}</td><td>${e.status || ''}</td>`;
+                      <td>${e.location || ''}</td><td>${e.status || ''}</td>
+                      <td><b>${e.shippedAt ? new Date(e.shippedAt).toLocaleString() : ''}</b></td>`;
         body.appendChild(tr);
       });
     } catch (e) {
-      body.innerHTML = '<tr><td colspan="6" style="color:#d32f2f;">Error pulling cloud manifest. Check connection.</td></tr>';
+      body.innerHTML = '<tr><td colspan="7" style="color:#d32f2f;">Error pulling cloud manifest. Check connection.</td></tr>';
     }
   });
 </script>
