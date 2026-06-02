@@ -31,13 +31,12 @@
         <th>Total Containers</th><th>Staging Location(s)</th><th>Shipping Status</th>
       </tr>
       </thead>
-      <tbody><tr><td colspan="6">Syncing with cloud...</td></tr></tbody>
+      <tbody><tr><td colspan="6">Loading...</td></tr></tbody>
     </table>
   </div>
 </div>
 
 <script>
-  // --- CLOUD CONFIGURATION ---
   const BIN_ID = '6a1e3ceeda38895dfe796129';
   const API_KEY = '$2a$10$n1Vcgiv1j.TUnVEhJhQCfu3Dq8s7cvg3tBRWgFs8tY9ReI5zjK3Bq';
   const CLOUD_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
@@ -45,7 +44,11 @@
   window.addEventListener('DOMContentLoaded', async () => {
     const body = document.querySelector('#tbl tbody');
     try {
-      const res = await fetch(CLOUD_URL, { headers: { 'X-Master-Key': API_KEY } }); 
+      const res = await fetch(CLOUD_URL, { 
+        method: 'GET',
+        headers: { 'X-Access-Key': API_KEY },
+        cache: 'no-store'
+      });
       const json = await res.json();
       
       if (!res.ok) throw new Error(json.message);
