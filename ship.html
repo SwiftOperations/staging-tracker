@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Shipped Log — v5.1</title>
+<title>Shipped Log — v5.2</title>
 <style>
   body{margin:0;background:#fff;font:16px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
   .wrap{max-width:1100px;margin:0 auto;padding:18px}
@@ -25,6 +25,7 @@
   th,td{border-top:1px solid #e5e7eb;padding:10px 8px;white-space:nowrap;background:#fff;text-align:left}
   th{position:sticky;top:0;background:#fafafa;z-index: 1;}
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 <div class="wrap">
@@ -33,6 +34,7 @@
     <button onclick="window.print()">Print</button>
     <button onclick="window.close()">Close</button>
   </div>
+  .table-wrap
   <div class="table-wrap">
     <table id="tbl">
       <thead>
@@ -49,61 +51,39 @@
 </div>
 
 <script>
-  const BIN_ID = '6a1e4f2ef5f4af5e29ab1884';
-  const API_KEY = '$2a$10$friXAeZCMSMRSgzX3QaNAOpc09/c3syit6s04pV1iaZO3KHqeyO9y';
-  const CLOUD_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
+  const SUPABASE_PROJECT_ID = 'gdrpdiwykmnybmkadlrv';
+  const SUPABASE_URL = `https://${SUPABASE_PROJECT_ID}.supabase.co`;
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdkcnBkaXd5a21ueWJta2FkbHJ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1MjMyMTIsImV4cCI6MjA5NjA5OTIxMn0.Z7ih_vQic1GtzCyZmTEV-RWJnmuaNZQDfOV2_Fvan5g';
 
-  let currentRecordData = [];
-
-  async function pushCloudSyncUpdate() {
-    try {
-      await fetch(CLOUD_URL, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', 'X-Access-Key': API_KEY },
-        body: JSON.stringify(currentRecordData)
-      });
-      refreshShippedView();
-    } catch (e) {
-      console.error("Cloud mutation broadway rejection.");
-    }
-  }
+  const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   async function refreshShippedView() {
     const body = document.querySelector('#tbl tbody');
     try {
-      const res = await fetch(`${CLOUD_URL}/latest`, {
-        method: 'GET',
-        headers: { 'X-Access-Key': API_KEY },
-        cache: 'no-store'
-      });
-      const json = await res.json();
-      currentRecordData = json.record || { staging: [], shipped: [] };
+      const { data, error } = await supabaseClient.from('shipped').select('*').order('shipped_at', { ascending: false });
+      if (error) throw error;
       
       body.innerHTML = '';
-      if (!currentRecordData.shipped || currentRecordData.shipped.length === 0) {
+      if (!data || data.length === 0) {
         body.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#667085;padding:20px;">No historical manifest records logged yet.</td></tr>';
         return;
       }
 
-      currentRecordData.shipped.forEach(e => {
+      data.forEach(e => {
         const tr = document.createElement('tr');
         
-        // Front-positioned execution matching index mechanics
         const delTd = document.createElement('td');
         const delBtn = document.createElement('button'); delBtn.className = 'btn-del'; delBtn.textContent = 'Delete';
         delBtn.addEventListener('click', async () => {
           if(confirm(`Permanently delete historical record for SO ${e.so}?`)) {
-            const exactIndex = currentRecordData.shipped.indexOf(e);
-            if (exactIndex > -1) {
-              currentRecordData.shipped.splice(exactIndex, 1);
-              await pushCloudSyncUpdate();
-            }
+            await supabaseClient.from('shipped').delete().eq('id', e.id);
+            refreshShippedView();
           }
         });
         delTd.appendChild(delBtn); tr.appendChild(delTd);
 
-        const entryTime = e.entryDate ? new Date(e.entryDate).toLocaleString() : (e.dueDate || '');
-        const timeStr = e.shippedAt ? new Date(e.shippedAt).toLocaleString() : '';
+        const entryTime = e.entry_date ? new Date(e.entry_date).toLocaleString() : '';
+        const timeStr = e.shipped_at ? new Date(e.shipped_at).toLocaleString() : '';
         
         const tdFields = `<td><b>${e.so}</b></td><td>${e.customer}</td><td>${entryTime}</td>
                       <td>${e.qty || 1} ${e.type || ''}</td>
