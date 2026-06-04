@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Swift Staging Tracker — v6.1</title>
+<title>Swift Staging Tracker — v6.2</title>
 <style>
   :root{--brand:#dd4d25;}
   *{box-sizing:border-box}
@@ -22,6 +22,7 @@
   .btn{background:var(--brand);color:#fff;border:0;border-radius:12px;padding:12px 20px;font-weight:700;cursor:pointer}
   .btn-del{background:#dc2626;color:#fff;border:0;border-radius:6px;padding:4px 8px;font-size:12px;font-weight:700;cursor:pointer}
   
+  /* Interactive incremental freight counters */
   .freight-block { flex: 2 1 340px; display: flex; gap: 8px; background: #fff; border: 1px solid #d1d5db; padding: 6px 10px; border-radius: 10px; align-items: center; }
   .counter-box { display: flex; align-items: center; gap: 4px; flex: 1; justify-content: center; }
   .counter-box label { font-size: 13px; font-weight: 700; }
@@ -50,24 +51,37 @@
   .log-limit-notice { display: none; background: #fff; border-top: 1px solid #e6e7eb; padding: 8px; text-align: center; font-size: 12px; font-weight: 700; color: #dd4d25; }
   .green-check { color: #16a34a; font-weight: bold; }
 
-  /* PORTRAIT MOBILE OPTIMIZATION */
+  /* MOBILE OPTIMIZATION Scopes */
   @media (max-width: 600px) {
     .grid{grid-template-columns:repeat(2,1fr)}
     h1 { font-size: 22px; }
     .big { font-size: 18px; }
     .wrap { padding: 0 8px; margin: 12px auto; }
-    /* Keeps the horizontal table but makes it feel less "zoomed" */
     tbody td, thead th { padding: 8px 6px; font-size: 11px; }
     table { min-width: 800px; } 
     .btn { padding: 10px 14px; font-size: 14px; }
     .modal-window { padding: 14px; }
+    
+    /* REVISED: Force the freight selection fields block to stack neatly in portrait view */
+    .freight-block {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 12px;
+      flex: 1 1 100%;
+    }
+    .counter-box {
+      justify-content: space-between;
+      border-bottom: 1px solid #f3f4f6;
+      padding-bottom: 6px;
+    }
+    .counter-box:last-child { border: 0; padding: 0; }
   }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 <div class="wrap">
-  <h1>Swift Staging Tracker — v6.1</h1>
+  <h1>Swift Staging Tracker — v6.2</h1>
   <div id="err" style="display:none; background:#fee2e2; color:#991b1b; padding:10px; border-radius:10px; margin-bottom:10px"></div>
 
   <div class="grid">
@@ -129,7 +143,6 @@
   </div>
 </div>
 
-<!-- SHIPPING MODAL -->
 <div id="shipModal" class="modal-overlay" onclick="if(event.target===this) closeShipModal()">
   <div class="modal-window">
     <button class="modal-close-x" onclick="closeShipModal()">×</button>
@@ -150,7 +163,6 @@
   </div>
 </div>
 
-<!-- VIEW MODAL -->
 <div id="viewModal" class="modal-overlay" onclick="if(event.target===this) $('#viewModal').style.display='none'">
   <div class="modal-window" style="max-width: 600px;">
     <button class="modal-close-x" onclick="$('#viewModal').style.display='none'">×</button>
