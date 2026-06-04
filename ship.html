@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Shipped Log — v5.5</title>
+<title>Shipped Log — v6.0</title>
 <style>
   body{margin:0;background:#fff;font:16px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
   .wrap{max-width:1100px;margin:0 auto;padding:18px}
@@ -12,12 +12,9 @@
   button{background:#dd4d25;color:#fff;border:0;border-radius:10px;height:36px;padding:0 12px;cursor:pointer}
   .btn-del{background:#dc2626;color:#fff;border:0;border-radius:6px;padding:4px 8px;font-size:12px;font-weight:700;cursor:pointer}
   .btn-del:hover{background:#b91c1c}
+  .green-check { color: #16a34a; font-weight: bold; font-size: 15px; margin-left: 4px; }
   
-  .table-wrap{
-    overflow-x: auto;
-    border:1px solid #e5e7eb;
-    border-radius:10px
-  }
+  .table-wrap{ overflow-x: auto; border:1px solid #e5e7eb; border-radius:10px }
   .table-wrap::-webkit-scrollbar { height: 8px; }
   .table-wrap::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
   
@@ -25,39 +22,21 @@
   th,td{border-top:1px solid #e5e7eb;padding:10px 8px;white-space:nowrap;background:#fff;text-align:left}
   th{position:sticky;top:0;background:#fafafa;z-index: 1;}
 
-  /* REVISION 2: Mobile Card Layout Conversion on expanded screen */
   @media (max-width:600px){
     .table-wrap { border: none; border-radius: 0; }
     table, thead, tbody, th, td, tr { display: block; width: 100% !important; min-width: 100% !important; }
     thead { display: none; }
-    
-    tbody tr {
-      background: #fff;
-      border: 1px solid #e6e7eb;
-      border-radius: 12px;
-      margin-bottom: 14px;
-      padding: 12px;
-    }
-    
-    tbody td {
-      border: none;
-      padding: 6px 0;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      text-align: right;
-      font-size: 14px;
-    }
+    tbody tr { background: #fff; border: 1px solid #e6e7eb; border-radius: 12px; margin-bottom: 14px; padding: 12px; }
+    tbody td { border: none; padding: 6px 0; display: flex; justify-content: space-between; align-items: center; text-align: right; font-size: 14px; }
     
     tbody td:nth-of-type(1)::before { content: "Action:"; font-weight: 700; color: #6b7280; }
     tbody td:nth-of-type(2)::before { content: "SO Number:"; font-weight: 700; color: #6b7280; }
     tbody td:nth-of-type(3)::before { content: "Customer:"; font-weight: 700; color: #6b7280; }
-    tbody td:nth-of-type(4)::before { content: "Entry Date:"; font-weight: 700; color: #6b7280; }
-    tbody td:nth-of-type(5)::before { content: "Containers:"; font-weight: 700; color: #6b7280; }
-    tbody td:nth-of-type(6)::before { content: "Location:"; font-weight: 700; color: #6b7280; }
-    tbody td:nth-of-type(7)::before { content: "Status:"; font-weight: 700; color: #6b7280; }
-    tbody td:nth-of-type(8)::before { content: "Shipped At:"; font-weight: 700; color: #6b7280; }
-    tbody td:nth-of-type(9)::before { content: "Staged By:"; font-weight: 700; color: #6b7280; }
+    tbody td:nth-of-type(4)::before { content: "Containers:"; font-weight: 700; color: #6b7280; }
+    tbody td:nth-of-type(5)::before { content: "Location:"; font-weight: 700; color: #6b7280; }
+    tbody td:nth-of-type(6)::before { content: "Shipped At:"; font-weight: 700; color: #6b7280; }
+    tbody td:nth-of-type(7)::before { content: "Shipped By:"; font-weight: 700; color: #6b7280; }
+    tbody td:nth-of-type(8)::before { content: "PM'd Email:"; font-weight: 700; color: #6b7280; }
   }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -74,10 +53,8 @@
       <thead>
       <tr>
         <th style="width:50px">Delete</th>
-        <th>SO</th><th>Customer</th><th>Entry Date</th>
-        <th>Number of Containers</th><th>Staging Location(s) at Ship</th>
-        <th>Status at Ship</th><th>Shipped At</th>
-        <th>Staged By</th>
+        <th>SO</th><th>Customer</th><th>Number of Containers</th>
+        <th>Staging Location(s) at Ship</th><th>Shipped At</th><th>Shipped By</th><th>PM'd Email</th>
       </tr>
       </thead>
       <tbody></tbody>
@@ -100,7 +77,7 @@
       
       body.innerHTML = '';
       if (!data || data.length === 0) {
-        body.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#667085;padding:20px;">No historical manifest records logged yet.</td></tr>';
+        body.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#667085;padding:20px;">No historical manifest records logged yet.</td></tr>';
         return;
       }
 
@@ -117,19 +94,27 @@
         });
         delTd.appendChild(delBtn); tr.appendChild(delTd);
 
-        const entryTime = e.entry_date ? new Date(e.entry_date).toLocaleString() : '';
         const timeStr = e.shipped_at ? new Date(e.shipped_at).toLocaleString() : '';
         
-        const tdFields = `<td><b>${e.so}</b></td><td>${e.customer}</td><td>${entryTime}</td>
+        const tdFields = `<td><b>${e.so}</b></td><td>${e.customer}</td>
                       <td>${e.type || `${e.qty} item(s)`}</td>
-                      <td>${e.location || ''}</td><td>${e.status || ''}</td>
-                      <td>${timeStr}</td>
-                      <td>${e.staged_by || '—'}</td>`;
+                      <td>${e.location || ''}</td><td>${timeStr}</td>
+                      <td>${e.shipped_by || '—'}</td>`;
         tr.insertAdjacentHTML('beforeend', tdFields);
+        
+        const pmTd = document.createElement('td');
+        if (e.pmd_email) {
+          pmTd.textContent = e.pmd_email;
+          const chkSpan = document.createElement('span'); chkSpan.className = 'green-check'; chkSpan.textContent = ' ✓';
+          pmTd.appendChild(chkSpan);
+        } else {
+          pmTd.textContent = '—';
+        }
+        tr.appendChild(pmTd);
         body.appendChild(tr);
       });
     } catch (e) {
-      body.innerHTML = '<tr><td colspan="9" style="color:#dd4d25;text-align:center;">Sync error reading cloud manifest.</td></tr>';
+      body.innerHTML = '<tr><td colspan="8" style="color:#dd4d25;text-align:center;">Sync error reading cloud manifest.</td></tr>';
     }
   }
 
