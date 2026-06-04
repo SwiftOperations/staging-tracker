@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Swift Staging Tracker — v5.4</title>
+<title>Swift Staging Tracker — v5.5</title>
 <style>
   :root{--brand:#dd4d25;}
   *{box-sizing:border-box}
@@ -24,7 +24,7 @@
   .btn-del{background:#dc2626;color:#fff;border:0;border-radius:6px;padding:4px 8px;font-size:12px;font-weight:700;cursor:pointer}
   .btn-del:hover{background:#b91c1c}
   
-  /* REVISION 2: Styling for the interactive incremental freight selection matrix counters */
+  /* Interactive incremental freight selection matrix counters */
   .freight-block { flex: 2 1 340px; display: flex; gap: 8px; background: #fff; border: 1px solid #d1d5db; padding: 6px 10px; border-radius: 10px; align-items: center; }
   .counter-box { display: flex; align-items: center; gap: 4px; flex: 1; justify-content: center; }
   .counter-box label { font-size: 13px; font-weight: 700; color: #4b5563; }
@@ -78,14 +78,81 @@
   .pill{display:inline-block;background:#f1f5f9;border-radius:999px;padding:2px 8px;font-size:12px}
   .split{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
   .notice{background:#fee2e2;color:#991b1b;border:1px solid #fecaca;border-radius:10px;padding:10px;margin:10px 0}
+  
   @media (max-width:900px){.grid{grid-template-columns:repeat(3,1fr)}}
-  @media (max-width:600px){.grid{grid-template-columns:repeat(2,1fr)}}
+  
+  /* REVISION 1 & 2: Targeted Scoped Media Query for Portrait Mobile Viewports */
+  @media (max-width:600px){
+    .grid{grid-template-columns:repeat(2,1fr)}
+    
+    /* Safely stack the +/- fields vertically within device container edges */
+    .freight-block {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 12px;
+    }
+    .counter-box {
+      justify-content: space-between;
+      border-bottom: 1px solid #f3f4f6;
+      padding-bottom: 6px;
+    }
+    .counter-box:last-child { border: 0; padding: 0; }
+    
+    /* Transform tables dynamically into highly readable separate data cards */
+    .tblwrap { border: none; border-radius: 0; }
+    table, thead, tbody, th, td, tr { display: block; width: 100% !important; min-width: 100% !important; }
+    thead { display: none; } /* Hide raw compressed table headers */
+    
+    tbody tr {
+      background: #fff;
+      border: 1px solid #e6e7eb;
+      border-radius: 12px;
+      margin-bottom: 14px;
+      padding: 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+    }
+    
+    tbody td {
+      border: none;
+      padding: 6px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      text-align: right;
+      font-size: 14px;
+    }
+    
+    /* Generate dynamic floating structural text titles on mobile card left side */
+    #tblStaging tbody td:nth-of-type(1)::before { content: "Action:"; font-weight: 700; color: #6b7280; }
+    #tblStaging tbody td:nth-of-type(2)::before { content: "SO Number:"; font-weight: 700; color: #6b7280; }
+    #tblStaging tbody td:nth-of-type(3)::before { content: "Customer:"; font-weight: 700; color: #6b7280; }
+    #tblStaging tbody td:nth-of-type(4)::before { content: "Entry Date:"; font-weight: 700; color: #6b7280; }
+    #tblStaging tbody td:nth-of-type(5)::before { content: "Containers:"; font-weight: 700; color: #6b7280; }
+    #tblStaging tbody td:nth-of-type(6)::before { content: "Location:"; font-weight: 700; color: #6b7280; }
+    #tblStaging tbody td:nth-of-type(7)::before { content: "Status:"; font-weight: 700; color: #6b7280; }
+    #tblStaging tbody td:nth-of-type(8)::before { content: "Staged By:"; font-weight: 700; color: #6b7280; }
+    #tblStaging tbody td:nth-of-type(9)::before { content: "Ship Order:"; font-weight: 700; color: #6b7280; }
+    
+    #tblShipped tbody td:nth-of-type(1)::before { content: "Action:"; font-weight: 700; color: #6b7280; }
+    #tblShipped tbody td:nth-of-type(2)::before { content: "SO Number:"; font-weight: 700; color: #6b7280; }
+    #tblShipped tbody td:nth-of-type(3)::before { content: "Customer:"; font-weight: 700; color: #6b7280; }
+    #tblShipped tbody td:nth-of-type(4)::before { content: "Entry Date:"; font-weight: 700; color: #6b7280; }
+    #tblShipped tbody td:nth-of-type(5)::before { content: "Containers:"; font-weight: 700; color: #6b7280; }
+    #tblShipped tbody td:nth-of-type(6)::before { content: "Location:"; font-weight: 700; color: #6b7280; }
+    #tblShipped tbody td:nth-of-type(7)::before { content: "Status:"; font-weight: 700; color: #6b7280; }
+    #tblShipped tbody td:nth-of-type(8)::before { content: "Shipped At:"; font-weight: 700; color: #6b7280; }
+    #tblShipped tbody td:nth-of-type(9)::before { content: "Staged By:"; font-weight: 700; color: #6b7280; }
+    #tblShipped tbody td:nth-of-type(10)::before { content: "Revert:"; font-weight: 700; color: #6b7280; }
+
+    /* Undo position rules on mobile view layout to keep look uniform */
+    td[style*="position:sticky"] { position: static !important; box-shadow: none !important; }
+  }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 <div class="wrap">
-  <h1>Swift Staging Tracker — v5.4</h1>
+  <h1>Swift Staging Tracker — v5.5</h1>
   <div id="err" class="notice" style="display:none"></div>
 
   <div class="grid">
@@ -203,7 +270,6 @@ let appData = { staging: [], shipped: [] };
 const $ = sel => document.querySelector(sel);
 const errBox = $('#err');
 
-// REVISION 2: JavaScript operational control mechanics for the +/- counters
 function adjustCount(id, amt) {
   const el = $(`#${id}`);
   let val = parseInt(el.value) + amt;
@@ -247,7 +313,6 @@ async function loadCloudData() {
 function renderCounts() {
   const activeContainers = appData.staging;
   
-  // Custom mapping engine parsing multi item types directly from the consolidated database strings
   const sumByType = t => activeContainers.reduce((acc, c) => {
     if(c.type && c.type.includes(t)) {
       const match = c.type.match(new RegExp(`(\\d+)\\s*${t}`));
@@ -291,7 +356,6 @@ function renderTables(){
     delTd.append(delBtn); tr.append(delTd);
 
     const entryTime = o.entry_date ? new Date(o.entry_date).toLocaleString() : '';
-    // Displays type text directly alongside optional staged by markers
     tr.append(td(o.so), td(o.customer), td(entryTime), td(o.type || `${o.qty} item(s)`), td(o.location), td(o.status), td(o.staged_by || '—'));
     
     const shippedTd=document.createElement('td');
@@ -369,7 +433,6 @@ $('#add').addEventListener('click', async () => {
 
   if(!so || !cust || !loc){ showErr("SO, Customer, and Location are required."); return; }
 
-  // Calculates sums across multiple entry pieces dynamically
   const skids = parseInt($('#c_skid').value) || 0;
   const boxes = parseInt($('#c_box').value) || 0;
   const crates = parseInt($('#c_crate').value) || 0;
@@ -377,7 +440,6 @@ $('#add').addEventListener('click', async () => {
 
   if(totalQty === 0) { showErr("Please allocate at least 1 freight piece component item."); return; }
 
-  // Constructs text payload string directly tracking separate types cleanly (e.g. "2 Skid, 1 Box")
   let typeParts = [];
   if(skids > 0) typeParts.push(`${skids} Skid`);
   if(boxes > 0) typeParts.push(`${boxes} Box`);
