@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Swift Staging Tracker — v5.3</title>
+<title>Swift Staging Tracker — v5.4</title>
 <style>
   :root{--brand:#dd4d25;}
   *{box-sizing:border-box}
@@ -24,6 +24,14 @@
   .btn-del{background:#dc2626;color:#fff;border:0;border-radius:6px;padding:4px 8px;font-size:12px;font-weight:700;cursor:pointer}
   .btn-del:hover{background:#b91c1c}
   
+  /* REVISION 2: Styling for the interactive incremental freight selection matrix counters */
+  .freight-block { flex: 2 1 340px; display: flex; gap: 8px; background: #fff; border: 1px solid #d1d5db; padding: 6px 10px; border-radius: 10px; align-items: center; }
+  .counter-box { display: flex; align-items: center; gap: 4px; flex: 1; justify-content: center; }
+  .counter-box label { font-size: 13px; font-weight: 700; color: #4b5563; }
+  .counter-box input { width: 48px; height: 32px; text-align: center; padding: 0; border-radius: 6px; font-weight: 700; }
+  .counter-btn { width: 28px; height: 32px; background: #e5e7eb; border: 0; font-weight: 700; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  .counter-btn:hover { background: #d1d5db; }
+  
   /* --- RESPONSIVE DESKTOP & MOBILE SCROLLING --- */
   table{width:100%;border-collapse:separate;border-spacing:0;min-width:760px}
   
@@ -38,7 +46,6 @@
     z-index: 1;
   }
   
-  /* FIXED BLEED: Explicitly forcing a solid background color onto all rows so sliding text hides beneath */
   tbody td{background:#fff;border-bottom:1px solid #f0f1f3;padding:10px;vertical-align:top}
   
   .tblwrap{
@@ -78,7 +85,7 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>Swift Staging Tracker — v5.3</h1>
+  <h1>Swift Staging Tracker — v5.4</h1>
   <div id="err" class="notice" style="display:none"></div>
 
   <div class="grid">
@@ -109,13 +116,30 @@
         <option>Ship On Future Date</option>
         <option>Awaiting Shipping Instructions</option>
       </select>
-      <select id="ctype">
-        <option>Skid</option>
-        <option>Box</option>
-        <option>Crate</option>
-      </select>
-      <input id="qty" type="number" min="1" value="1" />
+      
+      <div class="freight-block">
+        <div class="counter-box">
+          <label>Skids</label>
+          <button class="counter-btn" onclick="adjustCount('c_skid',-1)">-</button>
+          <input id="c_skid" type="number" min="0" max="500" value="0" onchange="clampCount(this)" />
+          <button class="counter-btn" onclick="adjustCount('c_skid',1)">+</button>
+        </div>
+        <div class="counter-box">
+          <label>Boxes</label>
+          <button class="counter-btn" onclick="adjustCount('c_box',-1)">-</button>
+          <input id="c_box" type="number" min="0" max="500" value="0" onchange="clampCount(this)" />
+          <button class="counter-btn" onclick="adjustCount('c_box',1)">+</button>
+        </div>
+        <div class="counter-box">
+          <label>Crates</label>
+          <button class="counter-btn" onclick="adjustCount('c_crate',-1)">-</button>
+          <input id="c_crate" type="number" min="0" max="500" value="0" onchange="clampCount(this)" />
+          <button class="counter-btn" onclick="adjustCount('c_crate',1)">+</button>
+        </div>
+      </div>
+      
       <input id="loc" placeholder="Location (A-02-A-1 / SHIPFLOOR)" />
+      <input id="staged_by" placeholder="Staged By (Optional)" />
       <button id="add" class="btn">Add</button>
     </div>
     <p id="saved" class="muted" style="margin:8px 2px 0"></p>
@@ -134,6 +158,7 @@
             <th>SO</th><th>Customer</th><th>Entry Date</th>
             <th>Number of Containers</th><th>Staging Location(s)</th>
             <th>Shipping Status</th>
+            <th>Staged By</th>
             <th style="width:90px;position:sticky;right:0">Shipped</th>
           </tr>
         </thead>
@@ -156,6 +181,7 @@
             <th>SO</th><th>Customer</th><th>Entry Date</th>
             <th>Number of Containers</th><th>Staging Location(s) at Ship</th>
             <th>Status at Ship</th><th>Shipped At</th>
+            <th>Staged By</th>
             <th style="width:70px;position:sticky;right:0">Undo</th>
           </tr>
         </thead>
@@ -176,6 +202,21 @@ let appData = { staging: [], shipped: [] };
 
 const $ = sel => document.querySelector(sel);
 const errBox = $('#err');
+
+// REVISION 2: JavaScript operational control mechanics for the +/- counters
+function adjustCount(id, amt) {
+  const el = $(`#${id}`);
+  let val = parseInt(el.value) + amt;
+  if(val < 0) val = 0;
+  if(val > 500) val = 500;
+  el.value = val;
+}
+function clampCount(el) {
+  let val = parseInt(el.value) || 0;
+  if(val < 0) val = 0;
+  if(val > 500) val = 500;
+  el.value = val;
+}
 
 function showErr(msg){
   errBox.style.display = 'block';
@@ -205,13 +246,21 @@ async function loadCloudData() {
 
 function renderCounts() {
   const activeContainers = appData.staging;
-  const sumBy = t => activeContainers.reduce((a,c)=>a + (c.type===t?parseInt(c.qty):0),0);
+  
+  // Custom mapping engine parsing multi item types directly from the consolidated database strings
+  const sumByType = t => activeContainers.reduce((acc, c) => {
+    if(c.type && c.type.includes(t)) {
+      const match = c.type.match(new RegExp(`(\\d+)\\s*${t}`));
+      return acc + (match ? parseInt(match[1]) : 0);
+    }
+    return acc;
+  }, 0);
 
   $('#kOrders').textContent     = appData.staging.length;
-  $('#kContainers').textContent = activeContainers.reduce((a,c)=>a+parseInt(c.qty),0);
-  $('#kSkids').textContent      = sumBy('Skid');
-  $('#kBoxes').textContent      = sumBy('Box');
-  $('#kCrates').textContent     = sumBy('Crate');
+  $('#kContainers').textContent = activeContainers.reduce((acc, c) => acc + (parseInt(c.qty) || 0), 0);
+  $('#kSkids').textContent      = sumByType('Skid');
+  $('#kBoxes').textContent      = sumByType('Box');
+  $('#kCrates').textContent     = sumByType('Crate');
   $('#kShipped').textContent    = appData.shipped.length;
 }
 
@@ -242,7 +291,8 @@ function renderTables(){
     delTd.append(delBtn); tr.append(delTd);
 
     const entryTime = o.entry_date ? new Date(o.entry_date).toLocaleString() : '';
-    tr.append(td(o.so), td(o.customer), td(entryTime), td(`${o.qty} ${o.type}(s)`), td(o.location), td(o.status));
+    // Displays type text directly alongside optional staged by markers
+    tr.append(td(o.so), td(o.customer), td(entryTime), td(o.type || `${o.qty} item(s)`), td(o.location), td(o.status), td(o.staged_by || '—'));
     
     const shippedTd=document.createElement('td');
     shippedTd.style.position = 'sticky';
@@ -253,7 +303,7 @@ function renderTables(){
       if(chk.checked){
         const { error: insertErr } = await supabaseClient.from('shipped').insert([{
           so: o.so, customer: o.customer, entry_date: o.entry_date,
-          status: o.status, type: o.type, qty: o.qty, location: o.location
+          status: o.status, type: o.type, qty: o.qty, location: o.location, staged_by: o.staged_by
         }]);
         
         if (!insertErr) {
@@ -284,8 +334,7 @@ function renderTables(){
     delTd.append(delBtn); tr.append(delTd);
 
     const entryTime = o.entry_date ? new Date(o.entry_date).toLocaleString() : '';
-    tr.append(td(o.so), td(o.customer), td(entryTime), td(`${o.qty} ${o.type}(s)`), td(o.location), td(o.status));
-    tr.append(td(o.shipped_at ? new Date(o.shipped_at).toLocaleString() : ''));
+    tr.append(td(o.so), td(o.customer), td(entryTime), td(o.type || `${o.qty} item(s)`), td(o.location), td(o.status), td(o.shipped_at ? new Date(o.shipped_at).toLocaleString() : ''), td(o.staged_by || '—'));
     
     const undo=document.createElement('td');
     undo.style.position = 'sticky';
@@ -294,7 +343,7 @@ function renderTables(){
     b.addEventListener('click', async ()=>{
       const { error: insertErr } = await supabaseClient.from('staging').insert([{
         so: o.so, customer: o.customer, entry_date: o.entry_date,
-        status: o.status, type: o.type, qty: o.qty, location: o.location
+        status: o.status, type: o.type, qty: o.qty, location: o.location, staged_by: o.staged_by
       }]);
       
       if (!insertErr) {
@@ -315,22 +364,37 @@ $('#add').addEventListener('click', async () => {
   const so  = $('#so').value.trim();
   const cust= $('#customer').value.trim();
   const stat= $('#status').value;
-  const typ = $('#ctype').value;
-  const qty = Math.max(1, Number($('#qty').value||1));
   const loc = $('#loc').value.trim();
+  const stby = $('#staged_by').value.trim();
 
   if(!so || !cust || !loc){ showErr("SO, Customer, and Location are required."); return; }
 
+  // Calculates sums across multiple entry pieces dynamically
+  const skids = parseInt($('#c_skid').value) || 0;
+  const boxes = parseInt($('#c_box').value) || 0;
+  const crates = parseInt($('#c_crate').value) || 0;
+  const totalQty = skids + boxes + crates;
+
+  if(totalQty === 0) { showErr("Please allocate at least 1 freight piece component item."); return; }
+
+  // Constructs text payload string directly tracking separate types cleanly (e.g. "2 Skid, 1 Box")
+  let typeParts = [];
+  if(skids > 0) typeParts.push(`${skids} Skid`);
+  if(boxes > 0) typeParts.push(`${boxes} Box`);
+  if(crates > 0) typeParts.push(`${crates} Crate`);
+  const typePayload = typeParts.join(', ');
+
   const { error } = await supabaseClient.from('staging').insert([{
-    so, customer: cust, status: stat, type: typ, qty, location: loc
+    so, customer: cust, status: stat, type: typePayload, qty: totalQty, location: loc, staged_by: stby
   }]);
 
   if (error) {
     showErr(`Save error: ${error.message}`);
   } else {
-    $('#saved').textContent = `Saved: ${qty} ${typ}(s) for ${so} @ ${loc}`;
+    $('#saved').textContent = `Saved record successfully for ${so} @ ${loc}`;
     setTimeout(() => { $('#saved').textContent = ''; }, 4000);
-    $('#so').value = ''; $('#customer').value = ''; $('#loc').value = '';
+    $('#so').value = ''; $('#customer').value = ''; $('#loc').value = ''; $('#staged_by').value = '';
+    $('#c_skid').value = 0; $('#c_box').value = 0; $('#c_crate').value = 0;
     $('#so').focus();
     loadCloudData();
   }
