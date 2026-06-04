@@ -3,13 +3,15 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Shipped Log — v5.0</title>
+<title>Shipped Log — v5.1</title>
 <style>
   body{margin:0;background:#fff;font:16px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
   .wrap{max-width:1100px;margin:0 auto;padding:18px}
   h2{margin:0 0 10px}
   .actions{display:flex;gap:8px;margin-bottom:10px}
   button{background:#dd4d25;color:#fff;border:0;border-radius:10px;height:36px;padding:0 12px;cursor:pointer}
+  .btn-del{background:#dc2626;color:#fff;border:0;border-radius:6px;padding:4px 8px;font-size:12px;font-weight:700;cursor:pointer}
+  .btn-del:hover{background:#b91c1c}
   
   .table-wrap{
     overflow-x: auto;
@@ -35,6 +37,7 @@
     <table id="tbl">
       <thead>
       <tr>
+        <th style="width:50px">Delete</th>
         <th>SO</th><th>Customer</th><th>Entry Date</th>
         <th>Number of Containers</th><th>Staging Location(s) at Ship</th>
         <th>Status at Ship</th><th>Shipped At</th>
@@ -50,6 +53,21 @@
   const API_KEY = '$2a$10$friXAeZCMSMRSgzX3QaNAOpc09/c3syit6s04pV1iaZO3KHqeyO9y';
   const CLOUD_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
 
+  let currentRecordData = [];
+
+  async function pushCloudSyncUpdate() {
+    try {
+      await fetch(CLOUD_URL, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'X-Access-Key': API_KEY },
+        body: JSON.stringify(currentRecordData)
+      });
+      refreshShippedView();
+    } catch (e) {
+      console.error("Cloud mutation broadway rejection.");
+    }
+  }
+
   async function refreshShippedView() {
     const body = document.querySelector('#tbl tbody');
     try {
@@ -59,26 +77,43 @@
         cache: 'no-store'
       });
       const json = await res.json();
-      const data = json.record || { shipped: [] };
+      currentRecordData = json.record || { staging: [], shipped: [] };
       
       body.innerHTML = '';
-      if (!data.shipped || data.shipped.length === 0) {
-        body.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#667085;padding:20px;">No historical manifest records logged yet.</td></tr>';
+      if (!currentRecordData.shipped || currentRecordData.shipped.length === 0) {
+        body.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#667085;padding:20px;">No historical manifest records logged yet.</td></tr>';
         return;
       }
 
-      data.shipped.forEach(e => {
+      currentRecordData.shipped.forEach(e => {
         const tr = document.createElement('tr');
-        // REVISION 2: Replaced Due Date logic with automated locale time structure formatting matching master log
+        
+        // Front-positioned execution matching index mechanics
+        const delTd = document.createElement('td');
+        const delBtn = document.createElement('button'); delBtn.className = 'btn-del'; delBtn.textContent = 'Delete';
+        delBtn.addEventListener('click', async () => {
+          if(confirm(`Permanently delete historical record for SO ${e.so}?`)) {
+            const exactIndex = currentRecordData.shipped.indexOf(e);
+            if (exactIndex > -1) {
+              currentRecordData.shipped.splice(exactIndex, 1);
+              await pushCloudSyncUpdate();
+            }
+          }
+        });
+        delTd.appendChild(delBtn); tr.appendChild(delTd);
+
         const entryTime = e.entryDate ? new Date(e.entryDate).toLocaleString() : (e.dueDate || '');
-        tr.innerHTML = `<td><b>${e.so}</b></td><td>${e.customer}</td><td>${entryTime}</td>
+        const timeStr = e.shippedAt ? new Date(e.shippedAt).toLocaleString() : '';
+        
+        const tdFields = `<td><b>${e.so}</b></td><td>${e.customer}</td><td>${entryTime}</td>
                       <td>${e.qty || 1} ${e.type || ''}</td>
                       <td>${e.location || ''}</td><td>${e.status || ''}</td>
-                      <td>${e.shippedAt ? new Date(e.shippedAt).toLocaleString() : ''}</td>`;
+                      <td>${timeStr}</td>`;
+        tr.insertAdjacentHTML('beforeend', tdFields);
         body.appendChild(tr);
       });
     } catch (e) {
-      body.innerHTML = '<tr><td colspan="7" style="color:#dd4d25;text-align:center;">Sync error reading cloud manifest.</td></tr>';
+      body.innerHTML = '<tr><td colspan="8" style="color:#dd4d25;text-align:center;">Sync error reading cloud manifest.</td></tr>';
     }
   }
 
