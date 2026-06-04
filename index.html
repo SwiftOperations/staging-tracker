@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Swift Staging Tracker — v6.0</title>
+<title>Swift Staging Tracker — v6.1</title>
 <style>
   :root{--brand:#dd4d25;}
   *{box-sizing:border-box}
@@ -31,46 +31,46 @@
   .counter-btn { width: 28px; height: 32px; background: #e5e7eb; border: 0; font-weight: 700; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
   .counter-btn:hover { background: #d1d5db; }
   
-  /* --- POPUP PROMPT MODAL WINDOW STYLES --- */
-  .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 100; align-items: center; justify-content: center; padding: 16px; overflow-y: auto; }
-  .modal-window { background: #fff; border-radius: 16px; max-width: 500px; width: 100%; padding: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); display: flex; flex-direction: column; gap: 14px; }
-  .modal-title { margin: 0; font-size: 18px; font-weight: 700; }
-  .modal-field { display: flex; flex-direction: column; gap: 4px; }
-  .modal-field label { font-size: 13px; font-weight: 700; color: #4b5563; }
-  .modal-field input:disabled { background: #f3f4f6; color: #9ca3af; cursor: not-allowed; }
-  .photo-uploader { border: 2px dashed #cbd5e1; border-radius: 10px; padding: 16px; text-align: center; cursor: pointer; background: #f8fafc; }
-  .photo-uploader:hover { background: #f1f5f9; border-color: var(--brand); }
-  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 8px; }
+  /* --- REVISION 5: RESPONSIVE SCREEN PORTRAIT OVERLAY SLOTS --- */
+  .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 100; align-items: center; justify-content: center; padding: 16px; }
+  .modal-window { background: #fff; border-radius: 16px; max-width: 500px; width: 100%; max-height: 90vh; padding: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); display: flex; flex-direction: column; gap: 12px; overflow-y: auto; position: relative; }
+  .modal-close-x { position: absolute; top: 12px; right: 16px; font-size: 22px; font-weight: 700; color: #6b7280; cursor: pointer; border: 0; background: none; }
+  .modal-field { display: flex; flex-direction: column; gap: 2px; }
+  .modal-field label { font-size: 12px; font-weight: 700; color: #4b5563; }
+  .modal-field input { height: 36px; }
+  .photo-uploader { border: 2px dashed #cbd5e1; border-radius: 10px; padding: 12px; text-align: center; cursor: pointer; background: #f8fafc; }
+  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 4px; }
   .chk-row { display: flex; align-items: center; gap: 8px; }
-  .chk-row input[type="checkbox"] { width: 20px; height: 20px; cursor: pointer; }
-  .green-check { color: #16a34a; font-weight: bold; font-size: 15px; margin-left: 4px; }
   .photo-strip { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
   .photo-badge { background: #e2e8f0; font-size: 11px; padding: 2px 6px; border-radius: 4px; }
+  .green-check { color: #16a34a; font-weight: bold; font-size: 15px; margin-left: 4px; }
+  
+  /* --- REVISION 2: MAX VISIBILITY CONSTRAINTS FOR MAIN SCREEN TABLES --- */
+  .tbl-scroller { max-height: 290px; overflow-y: auto; position: relative; }
+  .log-limit-notice { display: none; background: #f8fafc; border-top: 1px solid #e6e7eb; padding: 10px; text-align: center; font-size: 13px; font-weight: 700; color: #dd4d25; }
 
   /* --- RESPONSIVE DESKTOP & MOBILE SCROLLING --- */
   table{width:100%;border-collapse:separate;border-spacing:0;min-width:760px}
-  thead th{ position: sticky; top: 0; background: #fff; border-bottom: 1px solid #e6e7eb; font-size: 14px; text-align: left; padding: 10px; z-index: 1; }
+  thead th{ position: sticky; top: 0; background: #fff; border-bottom: 1px solid #e6e7eb; font-size: 14px; text-align: left; padding: 10px; z-index: 10; }
   tbody td{background:#fff;border-bottom:1px solid #f0f1f3;padding:10px;vertical-align:top}
-  .tblwrap{ overflow-x: auto; border: 1px solid #e6e7eb; border-radius: 12px; -webkit-overflow-scrolling: touch; }
-  .tblwrap::-webkit-scrollbar { height: 8px; }
-  .tblwrap::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+  .tblwrap{ border: 1px solid #e6e7eb; border-radius: 12px; overflow: hidden; background: #fff; }
   
   th[style*="position:sticky"], td[style*="position:sticky"] { background: #fff !important; position: sticky !important; right: 0 !important; z-index: 3; box-shadow: -2px 0 5px rgba(0,0,0,0.04); }
-  thead th[style*="position:sticky"] { z-index: 4; }
-  .split{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
-  .notice{background:#fee2e2;color:#991b1b;border:1px solid #fecaca;border-radius:10px;padding:10px;margin:10px 0}
   
-  @media (max-width:900px){.grid{grid-template-columns:repeat(3,1fr)}}
   @media (max-width:600px){
     .grid{grid-template-columns:repeat(2,1fr)}
     .freight-block { flex-direction: column; align-items: stretch; gap: 12px; }
-    .counter-box { justify-content: space-between; border-bottom: 1px solid #f3f4f6; padding-bottom: 6px; }
-    .counter-box:last-child { border: 0; padding: 0; }
-    .tblwrap { border: none; border-radius: 0; }
-    table, thead, tbody, th, td, tr { display: block; width: 100% !important; min-width: 100% !important; }
+    .tbl-scroller { max-height: none; overflow-y: visible; }
+    .tblwrap { border: none; }
+    table, thead, tbody, th, td, tr { display: block; width: 100% !important; }
     thead { display: none; }
-    tbody tr { background: #fff; border: 1px solid #e6e7eb; border-radius: 12px; margin-bottom: 14px; padding: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
+    tbody tr { border: 1px solid #e6e7eb; border-radius: 12px; margin-bottom: 14px; padding: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
     tbody td { border: none; padding: 6px 0; display: flex; justify-content: space-between; align-items: center; text-align: right; font-size: 14px; }
+    
+    #tblStaging tbody tr { display: none; }
+    #tblStaging tbody tr:nth-child(-n+5) { display: block; }
+    #tblShipped tbody tr { display: none; }
+    #tblShipped tbody tr:nth-child(-n+5) { display: block; }
     
     #tblStaging tbody td:nth-of-type(1)::before { content: "Action:"; font-weight: 700; color: #6b7280; }
     #tblStaging tbody td:nth-of-type(2)::before { content: "SO Number:"; font-weight: 700; color: #6b7280; }
@@ -83,13 +83,14 @@
     #tblStaging tbody td:nth-of-type(9)::before { content: "Ship Order:"; font-weight: 700; color: #6b7280; }
     
     #tblShipped tbody td:nth-of-type(1)::before { content: "Action:"; font-weight: 700; color: #6b7280; }
-    #tblShipped tbody td:nth-of-type(2)::before { content: "SO Number:"; font-weight: 700; color: #6b7280; }
-    #tblShipped tbody td:nth-of-type(3)::before { content: "Customer:"; font-weight: 700; color: #6b7280; }
-    #tblShipped tbody td:nth-of-type(4)::before { content: "Containers:"; font-weight: 700; color: #6b7280; }
-    #tblShipped tbody td:nth-of-type(5)::before { content: "Location:"; font-weight: 700; color: #6b7280; }
-    #tblShipped tbody td:nth-of-type(6)::before { content: "Shipped At:"; font-weight: 700; color: #6b7280; }
-    #tblShipped tbody td:nth-of-type(7)::before { content: "Shipped By:"; font-weight: 700; color: #6b7280; }
-    #tblShipped tbody td:nth-of-type(8)::before { content: "PM'd Email:"; font-weight: 700; color: #6b7280; }
+    #tblShipped tbody td:nth-of-type(2)::before { content: "Photos:"; font-weight: 700; color: #6b7280; }
+    #tblShipped tbody td:nth-of-type(3)::before { content: "SO Number:"; font-weight: 700; color: #6b7280; }
+    #tblShipped tbody td:nth-of-type(4)::before { content: "Customer:"; font-weight: 700; color: #6b7280; }
+    #tblShipped tbody td:nth-of-type(5)::before { content: "Containers:"; font-weight: 700; color: #6b7280; }
+    #tblShipped tbody td:nth-of-type(6)::before { content: "Location:"; font-weight: 700; color: #6b7280; }
+    #tblShipped tbody td:nth-of-type(7)::before { content: "Shipped At:"; font-weight: 700; color: #6b7280; }
+    #tblShipped tbody td:nth-of-type(8)::before { content: "Shipped By:"; font-weight: 700; color: #6b7280; }
+    #tblShipped tbody td:nth-of-type(9)::before { content: "PM'd Email:"; font-weight: 700; color: #6b7280; }
     td[style*="position:sticky"] { position: static !important; box-shadow: none !important; }
   }
 </style>
@@ -97,7 +98,7 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>Swift Staging Tracker — v6.0</h1>
+  <h1>Swift Staging Tracker — v6.1</h1>
   <div id="err" class="notice" style="display:none"></div>
 
   <div class="grid">
@@ -110,216 +111,275 @@
   </div>
 
   <div class="card">
-    <div class="split">
-      <h3 style="margin:0">Quick search</h3>
-      <span class="muted">Examples: SO12345, BIN-104, SHIPPING-FLOOR</span>
-    </div>
-    <input id="q" placeholder="SO / Location / Container ID" />
+    <div class="split"><h3>Quick search</h3></div>
+    <input id="q" placeholder="SO / Location / Customer" />
   </div>
 
   <div class="card">
-    <div class="split"><h3 style="margin:0">Enter Staging Information</h3></div>
+    <div class="split"><h3>Enter Staging Information</h3></div>
     <div class="row">
       <input id="so" placeholder="SO number" />
       <input id="customer" placeholder="Customer" />
       <select id="status">
-        <option>Partial</option>
-        <option>Ship Today</option>
-        <option>Ship On Future Date</option>
-        <option>Awaiting Shipping Instructions</option>
+        <option>Partial</option><option>Ship Today</option><option>Ship On Future Date</option><option>Awaiting Shipping Instructions</option>
       </select>
-      
       <div class="freight-block">
-        <div class="counter-box">
-          <label>Skids</label>
-          <button class="counter-btn" onclick="adjustCount('c_skid',-1)">-</button>
-          <input id="c_skid" type="number" min="0" max="500" value="0" onchange="clampCount(this)" />
-          <button class="counter-btn" onclick="adjustCount('c_skid',1)">+</button>
-        </div>
-        <div class="counter-box">
-          <label>Boxes</label>
-          <button class="counter-btn" onclick="adjustCount('c_box',-1)">-</button>
-          <input id="c_box" type="number" min="0" max="500" value="0" onchange="clampCount(this)" />
-          <button class="counter-btn" onclick="adjustCount('c_box',1)">+</button>
-        </div>
-        <div class="counter-box">
-          <label>Crates</label>
-          <button class="counter-btn" onclick="adjustCount('c_crate',-1)">-</button>
-          <input id="c_crate" type="number" min="0" max="500" value="0" onchange="clampCount(this)" />
-          <button class="counter-btn" onclick="adjustCount('c_crate',1)">+</button>
-        </div>
+        <div class="counter-box"><label>Skids</label><button onclick="adjustCount('c_skid',-1)">-</button><input id="c_skid" value="0" readonly/><button onclick="adjustCount('c_skid',1)">+</button></div>
+        <div class="counter-box"><label>Boxes</label><button onclick="adjustCount('c_box',-1)">-</button><input id="c_box" value="0" readonly/><button onclick="adjustCount('c_box',1)">+</button></div>
+        <div class="counter-box"><label>Crates</label><button onclick="adjustCount('c_crate',-1)">-</button><input id="c_crate" value="0" readonly/><button onclick="adjustCount('c_crate',1)">+</button></div>
       </div>
-      
-      <input id="loc" placeholder="Location (A-02-A-1 / SHIPFLOOR)" />
-      <input id="staged_by" placeholder="Staged By (Optional)" />
+      <input id="loc" placeholder="Location" />
+      <input id="staged_by" placeholder="Staged By" />
       <button id="add" class="btn">Add</button>
     </div>
-    <p id="saved" class="muted" style="margin:8px 2px 0"></p>
   </div>
 
   <div class="card">
-    <div class="split">
-      <h3 style="margin:0">Staging Entries</h3>
-      <button id="expandStaging" class="btn" style="padding:8px 14px">Expand</button>
-    </div>
+    <div class="split"><h3>Staging Entries</h3><button id="expandStaging" class="btn">Expand</button></div>
     <div class="tblwrap">
-      <table id="tblStaging">
-        <thead>
-          <tr>
-            <th style="width:50px">Delete</th>
-            <th>SO</th><th>Customer</th><th>Entry Date</th>
-            <th>Number of Containers</th><th>Staging Location(s)</th>
-            <th>Shipping Status</th>
-            <th>Staged By</th>
-            <th style="width:90px;position:sticky;right:0">Shipped</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
+      <div class="tbl-scroller">
+        <table id="tblStaging">
+          <thead><tr><th>Delete</th><th>SO</th><th>Customer</th><th>Entry Date</th><th>Containers</th><th>Location</th><th>Status</th><th>Staged By</th><th style="position:sticky;right:0">Shipped</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div id="stageLimitNotice" class="log-limit-notice">Showing first 20 entries. Press Expand to see the full active log.</div>
     </div>
-    <p class="muted">Swipe horizontally on phones.</p>
   </div>
 
   <div class="card">
-    <div class="split">
-      <h3 style="margin:0">Shipped Log</h3>
-      <button id="expandShipped" class="btn" style="padding:8px 14px">Expand</button>
-    </div>
+    <div class="split"><h3>Shipped Log</h3><button id="expandShipped" class="btn">Expand</button></div>
     <div class="tblwrap">
-      <table id="tblShipped">
-        <thead>
-          <tr>
-            <th style="width:50px">Delete</th>
-            <th>SO</th><th>Customer</th><th>Number of Containers</th>
-            <th>Staging Location(s)</th><th>Shipped At</th>
-            <th>Shipped By</th><th>PM'd Email</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
+      <div class="tbl-scroller">
+        <table id="tblShipped">
+          <thead><tr><th>Delete</th><th>Photo(s)</th><th>SO</th><th>Customer</th><th>Containers</th><th>Location</th><th>Shipped At</th><th>Shipped By</th><th>PM'd Email</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div id="shippedLimitNotice" class="log-limit-notice">Showing first 20 entries. Press Expand to see the full historical log.</div>
     </div>
   </div>
 </div>
 
-<div id="shipModal" class="modal-overlay">
+<div id="shipModal" class="modal-overlay" onclick="if(event.target===this) closeShipModal()">
   <div class="modal-window">
-    <h3 class="modal-title">Confirm Freight Dispatch Log</h3>
-    
+    <button class="modal-close-x" onclick="closeShipModal()">×</button>
+    <h3>Confirm Freight Dispatch</h3>
     <div class="photo-uploader" onclick="$('#photoFiles').click()">
-      <span style="font-size:14px; color:#4b5563; font-weight:700;">📷 Click / Touch to Upload Freight Photos (Up to 10)</span>
+      <span>📷 Click to Upload Photos (Max 10)</span>
       <input type="file" id="photoFiles" multiple accept="image/*" style="display:none" onchange="previewPhotos()" />
       <div id="photoPreviewStrip" class="photo-strip"></div>
     </div>
-
-    <div class="modal-field"><label>SO#</label><input id="m_so" type="text" readonly /></div>
-    <div class="modal-field"><label>Customer</label><input id="m_cust" type="text" readonly /></div>
-    <div class="modal-field"><label>Number of Containers</label><input id="m_qty" type="text" readonly /></div>
-    <div class="modal-field"><label>Staging Location(s)</label><input id="m_loc" type="text" readonly /></div>
-    <div class="modal-field"><label>Shipped At</label><input id="m_time" type="text" readonly /></div>
-    
-    <div class="modal-field"><label>Shipped By</label><input id="m_by" type="text" placeholder="Enter dispatcher name" list="pastShippers" /></div>
-    
-    <div class="chk-row">
-      <input type="checkbox" id="m_pm_chk" onchange="togglePmField(this)" />
-      <label for="m_pm_chk" style="font-size:13px; font-weight:700; cursor:pointer;">E-mail PM Verification of Shipment</label>
-    </div>
-    <div class="modal-field">
-      <input id="m_pm_email" type="text" placeholder="Enter Project Manager email address" list="pastEmails" disabled />
-    </div>
-
-    <div class="modal-actions">
-      <button class="btn" style="background:#6b7280" onclick="closeShipModal()">Cancel</button>
-      <button id="modalConfirmBtn" class="btn" onclick="submitFreightDispatch()">Confirm Dispatch</button>
-    </div>
+    <div class="modal-field"><label>SO#</label><input id="m_so" readonly /></div>
+    <div class="modal-field"><label>Customer</label><input id="m_cust" readonly /></div>
+    <div class="modal-field"><label>Number of Containers</label><input id="m_qty" readonly /></div>
+    <div class="modal-field"><label>Staging Location(s)</label><input id="m_loc" readonly /></div>
+    <div class="modal-field"><label>Shipped At</label><input id="m_time" readonly /></div>
+    <div class="modal-field"><label>Shipped By</label><input id="m_by" list="pastShippers" placeholder="Type name..." /></div>
+    <div class="chk-row"><input type="checkbox" id="m_pm_chk" onchange="$('#m_pm_email').disabled=!this.checked; if(this.checked)$('#m_pm_email').focus()"/><label>E-mail PM Verification of Shipment</label></div>
+    <div class="modal-field"><input id="m_pm_email" list="pastEmails" placeholder="pm.name@company.com" disabled /></div>
+    <div class="modal-actions"><button id="modalConfirmBtn" class="btn" onclick="submitFreightDispatch()">Confirm Dispatch</button></div>
   </div>
 </div>
 
-<datalist id="pastShippers"></datalist>
-<datalist id="pastEmails"></datalist>
+<div id="viewModal" class="modal-overlay" onclick="if(event.target===this) $('#viewModal').style.display='none'">
+  <div class="modal-window" style="max-width: 600px;">
+    <button class="modal-close-x" onclick="$('#viewModal').style.display='none'">×</button>
+    <h3 style="margin-bottom:6px;">Staged Freight Photos</h3>
+    <div id="modalPhotoGallery" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:10px; max-height:60vh; overflow-y:auto; padding:4px;"></div>
+  </div>
+</div>
+
+<datalist id="pastShippers"></datalist><datalist id="pastEmails"></datalist>
 
 <script>
-const SUPABASE_PROJECT_ID = 'gdrpdiwykmnybmkadlrv';
-const SUPABASE_URL = `https://${SUPABASE_PROJECT_ID}.supabase.co`;
+const SUPABASE_URL = 'https://gdrpdiwykmnybmkadlrv.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdkcnBkaXd5a21ueWJta2FkbHJ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1MjMyMTIsImV4cCI6MjA5NjA5OTIxMn0.Z7ih_vQic1GtzCyZmTEV-RWJnmuaNZQDfOV2_Fvan5g';
-
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
 let appData = { staging: [], shipped: [] };
 let activeShipTargetItem = null;
 let selectedPhotoBlobs = [];
 
 const $ = sel => document.querySelector(sel);
-const errBox = $('#err');
 
 function adjustCount(id, amt) {
   const el = $(`#${id}`);
-  let val = parseInt(el.value) + amt;
-  if(val < 0) val = 0;
-  if(val > 500) val = 500;
-  el.value = val;
-}
-function clampCount(el) {
-  let val = parseInt(el.value) || 0;
-  if(val < 0) val = 0;
-  if(val > 500) val = 500;
-  el.value = val;
+  el.value = Math.max(0, (parseInt(el.value)||0) + amt);
 }
 
-function showErr(msg){
-  errBox.style.display = 'block';
-  errBox.textContent = msg;
-  setTimeout(()=>{errBox.style.display='none'}, 6000);
+function saveLocalMemory(key, value) {
+  if(!value) return;
+  let arr = JSON.parse(localStorage.getItem(key) || '[]');
+  if(!arr.includes(value)) { arr.push(value); localStorage.setItem(key, JSON.stringify(arr)); }
 }
 
-// Memory tracking engines for smart input saving
-function saveFieldMemory(key, value) {
-  if (!value) return;
-  let items = JSON.parse(localStorage.getItem(key) || '[]');
-  if (!items.includes(value)) {
-    items.push(value);
-    localStorage.setItem(key, JSON.stringify(items));
-  }
-}
-
-function loadFieldMemory() {
-  const shippers = JSON.parse(localStorage.getItem('mem_shippers') || '[]');
-  const emails = JSON.parse(localStorage.getItem('mem_emails') || '[]');
-  
-  $('#pastShippers').innerHTML = shippers.map(s => `<option value="${s}">`).join('');
-  $('#pastEmails').innerHTML = emails.map(e => `<option value="${e}">`).join('');
+function loadLocalMemory() {
+  $('#pastShippers').innerHTML = JSON.parse(localStorage.getItem('m_shippers') || '[]').map(s => `<option value="${s}">`).join('');
+  $('#pastEmails').innerHTML = JSON.parse(localStorage.getItem('m_emails') || '[]').map(e => `<option value="${e}">`).join('');
 }
 
 async function loadCloudData() {
+  const [st, sh] = await Promise.all([
+    supabaseClient.from('staging').select('*').order('entry_date', { ascending: false }),
+    supabaseClient.from('shipped').select('*').order('shipped_at', { ascending: false })
+  ]);
+  appData.staging = st.data || [];
+  appData.shipped = sh.data || [];
+  renderTables();
+  loadLocalMemory();
+}
+
+function triggerShipModal(item) {
+  activeShipTargetItem = item;
+  $('#photoPreviewStrip').innerHTML = '';
+  selectedPhotoBlobs = [];
+  $('#m_so').value = item.so;
+  $('#m_cust').value = item.customer;
+  $('#m_qty').value = item.type;
+  $('#m_loc').value = item.location;
+  $('#m_time').value = new Date().toLocaleString();
+  $('#m_by').value = '';
+  $('#m_pm_chk').checked = false;
+  $('#m_pm_email').value = '';
+  $('#m_pm_email').disabled = true;
+  $('#shipModal').style.display = 'flex';
+}
+
+function closeShipModal() { $('#shipModal').style.display = 'none'; loadCloudData(); }
+
+function previewPhotos() {
+  const strip = $('#photoPreviewStrip'); strip.innerHTML = '';
+  selectedPhotoBlobs = Array.from($('#photoFiles').files).slice(0, 10);
+  selectedPhotoBlobs.forEach((f, i) => {
+    strip.insertAdjacentHTML('beforeend', `<span class="photo-badge">📎 File-${i+1}</span>`);
+  });
+}
+
+// REVISION 1: DYNAMIC NATIVE GENERATION LINK FOR PM VERIFICATION HANDOFF DISPATCH
+function triggerPmEmailClient(cust, so, type, time, pmEmail, stagedBy, shippedBy, loc, photoPaths) {
+  const subject = `CONFIRMATION OF SHIPOUT: ${cust} SO# ${so} @ ${type} ${time}`;
+  
+  let body = `Hello,\n\nThis email is sent as formal confirmation that the project order listed below has been fully prepared, verified, and shipped out from the staging inventory floor space.\n\n`;
+  body += `--- MANIFEST DISPATCH LOG ---\n`;
+  body += `Sales Order #: ${so}\n`;
+  body += `Customer: ${cust}\n`;
+  body += `Containers: ${type}\n`;
+  body += `Staging Floor Location: ${loc}\n`;
+  body += `Staged By: ${stagedBy || '—'}\n`;
+  body += `Shipped By: ${shippedBy}\n`;
+  body += `Shipped At Timestamp: ${time}\n\n`;
+  
+  if(photoPaths && photoPaths.length > 0) {
+    body += `--- ATTACHED MEDIA MANIFEST PATHS ---\n`;
+    photoPaths.forEach((path, i) => {
+      body += `[Photo ${i+1} File Reference]: ${SUPABASE_URL}/storage/v1/object/public/freight-photos/${path}\n*/`;
+    });
+    body += `\n`;
+  }
+  body += `Best Regards,\nSwift Logistics Dispatch Board`;
+
+  window.location.href = `mailto:${pmEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+}
+
+async function submitFreightDispatch() {
+  const dispatcher = $('#m_by').value.trim();
+  const pmChecked = $('#m_pm_chk').checked;
+  const pmEmail = $('#m_pm_email').value.trim();
+  if(!dispatcher) return alert("Enter Shipped By name.");
+  if(pmChecked && !pmEmail) return alert("Enter Project Manager email address.");
+  
+  $('#modalConfirmBtn').disabled = true;
+  $('#modalConfirmBtn').textContent = 'Syncing...';
+  
   try {
-    const [stagingRes, shippedRes] = await Promise.all([
-      supabaseClient.from('staging').select('*').order('entry_date', { ascending: false }),
-      supabaseClient.from('shipped').select('*').order('shipped_at', { ascending: false })
-    ]);
+    let photoUrlsArray = [];
+    for (let i = 0; i < selectedPhotoBlobs.length; i++) {
+      const file = selectedPhotoBlobs[i];
+      const path = `${activeShipTargetItem.so}-${Date.now()}-${i}.${file.name.split('.').pop()}`;
+      const { error } = await supabaseClient.storage.from('freight-photos').upload(path, file);
+      if(!error) photoUrlsArray.push(path);
+    }
+    
+    let pmName = pmEmail ? pmEmail.split('@')[0].split('.')[0] : null;
+    if(pmName) pmName = pmName.charAt(0).toUpperCase() + pmName.slice(1);
 
-    if (stagingRes.error) throw stagingRes.error;
-    if (shippedRes.error) throw shippedRes.error;
+    await supabaseClient.from('shipped').insert([{
+      so: activeShipTargetItem.so, customer: activeShipTargetItem.customer, type: activeShipTargetItem.type,
+      qty: activeShipTargetItem.qty, location: activeShipTargetItem.location, shipped_by: dispatcher, 
+      pmd_email: pmName, photo_urls: photoUrlsArray
+    }]);
+    
+    await supabaseClient.from('staging').delete().eq('id', activeShipTargetItem.id);
+    
+    saveLocalMemory('m_shippers', dispatcher);
+    if(pmChecked) saveLocalMemory('m_emails', pmEmail);
 
-    appData.staging = stagingRes.data || [];
-    appData.shipped = shippedRes.data || [];
+    if(pmChecked && pmEmail) {
+      triggerPmEmailClient(activeShipTargetItem.customer, activeShipTargetItem.so, activeShipTargetItem.type, $('#m_time').value, pmEmail, activeShipTargetItem.staged_by, dispatcher, activeShipTargetItem.location, photoUrlsArray);
+    }
 
-    renderTables();
-    loadFieldMemory();
-  } catch (e) {
-    showErr("Network Error: Could not refresh manifest logs from Supabase repository.");
-    renderTables();
+    closeShipModal();
+  } catch(e) { alert("Dispatch Error."); }
+  finally {
+    $('#modalConfirmBtn').disabled = false;
+    $('#modalConfirmBtn').textContent = 'Confirm Dispatch';
   }
 }
 
-function renderCounts() {
-  const activeContainers = appData.staging;
-  const sumByType = t => activeContainers.reduce((acc, c) => {
-    if(c.type && c.type.includes(t)) {
-      const match = c.type.match(new RegExp(`(\\d+)\\s*${t}`));
-      return acc + (match ? parseInt(match[1]) : 0);
-    }
-    return acc;
-  }, 0);
+// REVISION 4: PHOTO VIEWER TRIGGER
+async function openPhotoViewer(paths) {
+  const gallery = $('#modalPhotoGallery');
+  gallery.innerHTML = '';
+  if(!paths || paths.length === 0) {
+    gallery.innerHTML = `<p style="font-size:14px;color:#667085;text-align:center;grid-column:1/-1;">No photos were uploaded for this order shipment.</p>`;
+  } else {
+    paths.forEach(p => {
+      const imgUrl = `${SUPABASE_URL}/storage/v1/object/public/freight-photos/${p}`;
+      gallery.insertAdjacentHTML('beforeend', `<a href="${imgUrl}" target="_blank"><img src="${imgUrl}" style="width:100%; height:110px; object-fit:cover; border-radius:8px; border:1px solid #cbd5e1;" title="Click to open full screen image" /></a>`);
+    });
+  }
+  $('#viewModal').style.display = 'flex';
+}
 
+function renderTables() {
+  const queryText = $('#q').value.toLowerCase();
+  
+  // Quick Search filters out rows universally across master caches before row limits wrap
+  const filteredStaging = appData.staging.filter(o => o.so.toLowerCase().includes(queryText) || o.customer.toLowerCase().includes(queryText) || o.location.toLowerCase().includes(queryText));
+  const filteredShipped = appData.shipped.filter(o => o.so.toLowerCase().includes(queryText) || o.customer.toLowerCase().includes(queryText));
+
+  // REVISION 2: Render Row visibility limitations
+  const limitStaging = window.innerWidth > 600 ? filteredStaging.slice(0, 20) : filteredStaging;
+  const limitShipped = window.innerWidth > 600 ? filteredShipped.slice(0, 20) : filteredShipped;
+
+  $('#stageLimitNotice').style.display = (filteredStaging.length > 20 && window.innerWidth > 600) ? 'block' : 'none';
+  $('#shippedLimitNotice').style.display = (filteredShipped.length > 20 && window.innerWidth > 600) ? 'block' : 'none';
+
+  const sBody = $('#tblStaging tbody'); sBody.innerHTML = '';
+  limitStaging.forEach(o => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td><button class="btn-del" onclick="deleteItem('staging','${o.id}')">Delete</button></td>
+      <td><b>${o.so}</b></td><td>${o.customer}</td><td>${new Date(o.entry_date).toLocaleString()}</td>
+      <td>${o.type}</td><td>${o.location}</td><td>${o.status}</td><td>${o.staged_by||'—'}</td>
+      <td style="position:sticky;right:0"><input type="checkbox" onchange="if(this.checked)triggerShipModal(${JSON.stringify(o).replace(/"/g, '&quot;')})"></td>`;
+    sBody.appendChild(tr);
+  });
+
+  const shBody = $('#tblShipped tbody'); shBody.innerHTML = '';
+  limitShipped.forEach(o => {
+    const tr = document.createElement('tr');
+    const urlStr = JSON.stringify(o.photo_urls || []);
+    tr.innerHTML = `<td><button class="btn-del" onclick="deleteItem('shipped','${o.id}')">Delete</button></td>
+      <td><button class="btn" style="padding:4px 8px; font-size:12px; border-radius:6px;" onclick='openPhotoViewer(${urlStr})'>View</button></td>
+      <td><b>${o.so}</b></td><td>${o.customer}</td><td>${o.type}</td><td>${o.location}</td>
+      <td>${new Date(o.shipped_at).toLocaleString()}</td><td>${o.shipped_by || '—'}</td>
+      <td>${o.pmd_email ? o.pmd_email+'<span class="green-check"> ✓</span>' : '—'}</td>`;
+    shBody.appendChild(tr);
+  });
+
+  // Calculate dynamic dashboard counter grids globally from raw data arrays
+  const activeContainers = appData.staging;
+  const sumByType = t => activeContainers.reduce((acc, c) => c.type?.includes(t) ? acc + (parseInt(c.type.match(new RegExp(`(\\d+)\\s*${t}`))) || 0) : acc, 0);
   $('#kOrders').textContent     = appData.staging.length;
   $('#kContainers').textContent = activeContainers.reduce((acc, c) => acc + (parseInt(c.qty) || 0), 0);
   $('#kSkids').textContent      = sumByType('Skid');
@@ -328,227 +388,31 @@ function renderCounts() {
   $('#kShipped').textContent    = appData.shipped.length;
 }
 
-function td(txt){ const d=document.createElement('td'); d.textContent=txt; return d; }
+async function deleteItem(table, id) {
+  if(confirm("Permanently delete this record?")) { await supabaseClient.from(table).delete().eq('id', id); loadCloudData(); }
+}
 
-// Popup control functions
-function triggerShipModal(item) {
-  activeShipTargetItem = item;
-  selectedPhotoBlobs = [];
-  $('#photoPreviewStrip').innerHTML = '';
+$('#add').onclick = async () => {
+  const sk = parseInt($('#c_skid').value)||0, bx = parseInt($('#c_box').value)||0, cr = parseInt($('#c_crate').value)||0;
+  if(!$('#so').value.trim() || !$('#customer').value.trim() || !$('#loc').value.trim()) return alert("Fields Missing.");
+  let type = []; if(sk) type.push(sk+' Skid'); if(bx) type.push(bx+' Box'); if(cr) type.push(cr+' Crate');
+  if(sk+bx+cr === 0) return alert("Allocate components.");
   
-  $('#m_so').value = item.so;
-  $('#m_cust').value = item.customer;
-  $('#m_qty').value = item.type || `${item.qty} item(s)`;
-  $('#m_loc').value = item.location;
-  $('#m_time').value = new Date().toLocaleString();
-  
-  // Set default form inputs
-  $('#m_by').value = '';
-  $('#m_pm_chk').checked = false;
-  $('#m_pm_email').value = '';
-  $('#m_pm_email').disabled = true;
-
-  $('#shipModal').style.display = 'flex';
-}
-
-function closeShipModal() {
-  $('#shipModal').style.display = 'none';
-  loadCloudData(); // Resets checkbox changes if cancelled
-}
-
-function togglePmField(chk) {
-  $('#m_pm_email').disabled = !chk.checked;
-  if(chk.checked) $('#m_pm_email').focus();
-}
-
-function previewPhotos() {
-  const files = $('#photoFiles').files;
-  const strip = $('#photoPreviewStrip');
-  strip.innerHTML = '';
-  selectedPhotoBlobs = Array.from(files).slice(0, 10);
-  
-  selectedPhotoBlobs.forEach((f, i) => {
-    const b = document.createElement('span');
-    b.className = 'photo-badge';
-    b.textContent = `📎 File-${i+1}`;
-    strip.appendChild(b);
-  });
-}
-
-async function submitFreightDispatch() {
-  const dispatcher = $('#m_by').value.trim();
-  const pmChecked = $('#m_pm_chk').checked;
-  const pmEmail = $('#m_pm_email').value.trim();
-
-  if(!dispatcher) { alert("Please input shipping authorization name."); return; }
-  if(pmChecked && !pmEmail) { alert("Please input target project manager verification address."); return; }
-
-  $('#modalConfirmBtn').disabled = true;
-  $('#modalConfirmBtn').textContent = 'Processing...';
-
-  try {
-    // 1) Process batch images through storage bucket arrays if uploaded
-    let uploadedUrls = [];
-    for (let i = 0; i < selectedPhotoBlobs.length; i++) {
-      const file = selectedPhotoBlobs[i];
-      const filePath = `${activeShipTargetItem.so}-${Date.now()}-${i}.${file.name.split('.').pop()}`;
-      const { data, error } = await supabaseClient.storage.from('freight-photos').upload(filePath, file);
-      if(!error) uploadedUrls.push(filePath);
-    }
-
-    // Extract first name from email string
-    let pmNameString = '';
-    if (pmChecked && pmEmail) {
-      const firstPart = pmEmail.split('@')[0];
-      pmNameString = firstPart.split('.')[0];
-      pmNameString = pmNameString.charAt(0).toUpperCase() + pmNameString.slice(1);
-    }
-
-    // 2) Write transaction straight into Shipped table architecture
-    const { error: insertErr } = await supabaseClient.from('shipped').insert([{
-      so: activeShipTargetItem.so,
-      customer: activeShipTargetItem.customer,
-      type: activeShipTargetItem.type,
-      qty: activeShipTargetItem.qty,
-      location: activeShipTargetItem.location,
-      shipped_by: dispatcher,
-      pmd_email: pmNameString ? pmNameString : null
-    }]);
-
-    if (insertErr) throw insertErr;
-
-    // 3) Clean active item from the floor space
-    await supabaseClient.from('staging').delete().eq('id', activeShipTargetItem.id);
-
-    // Save field history memory locally
-    saveFieldMemory('mem_shippers', dispatcher);
-    if(pmChecked) saveFieldMemory('mem_emails', pmEmail);
-
-    $('#shipModal').style.display = 'none';
-    loadCloudData();
-  } catch(e) {
-    alert("Cloud tracking broadway network reject operation timeout.");
-  } finally {
-    $('#modalConfirmBtn').disabled = false;
-    $('#modalConfirmBtn').textContent = 'Confirm Dispatch';
-  }
-}
-
-function renderTables(){
-  const queryText = $('#q').value.toLowerCase();
-  
-  const filteredStaging = appData.staging.filter(o => o.so.toLowerCase().includes(queryText) || o.customer.toLowerCase().includes(queryText) || (o.location && o.location.toLowerCase().includes(queryText)));
-  const filteredShipped = appData.shipped.filter(o => o.so.toLowerCase().includes(queryText) || o.customer.toLowerCase().includes(queryText));
-
-  const stagingBody = $('#tblStaging tbody');
-  const shippedBody = $('#tblShipped tbody');
-  
-  stagingBody.innerHTML='';
-  filteredStaging.forEach((o)=>{
-    const tr=document.createElement('tr');
-    
-    const delTd = document.createElement('td');
-    const delBtn = document.createElement('button'); delBtn.className = 'btn-del'; delBtn.textContent = 'Delete';
-    delBtn.addEventListener('click', async () => {
-      if(confirm(`Permanently delete active SO ${o.so}?`)) {
-        await supabaseClient.from('staging').delete().eq('id', o.id);
-        loadCloudData();
-      }
-    });
-    delTd.append(delBtn); tr.append(delTd);
-
-    const entryTime = o.entry_date ? new Date(o.entry_date).toLocaleString() : '';
-    tr.append(td(o.so), td(o.customer), td(entryTime), td(o.type || `${o.qty} item(s)`), td(o.location), td(o.status), td(o.staged_by || '—'));
-    
-    const shippedTd=document.createElement('td');
-    shippedTd.style.position = 'sticky'; shippedTd.style.right = '0';
-    const chk=document.createElement('input'); chk.type='checkbox';
-    chk.style.width = '18px'; chk.style.height = '18px';
-    chk.addEventListener('change', () => { if(chk.checked) triggerShipModal(o); });
-    shippedTd.append(chk); tr.append(shippedTd);
-    stagingBody.append(tr);
-  });
-
-  shippedBody.innerHTML='';
-  filteredShipped.forEach((o)=>{
-    const tr=document.createElement('tr');
-    
-    const delTd = document.createElement('td');
-    const delBtn = document.createElement('button'); delBtn.className = 'btn-del'; delBtn.textContent = 'Delete';
-    delBtn.addEventListener('click', async () => {
-      if(confirm(`Permanently delete record for SO ${o.so}?`)) {
-        await supabaseClient.from('shipped').delete().eq('id', o.id);
-        loadCloudData();
-      }
-    });
-    delTd.append(delBtn); tr.append(delTd);
-
-    const shipTime = o.shipped_at ? new Date(o.shipped_at).toLocaleString() : '';
-    
-    // Core structural column row generation matching strict request rules
-    tr.append(td(o.so), td(o.customer), td(o.type || `${o.qty} item(s)`), td(o.location), td(shipTime), td(o.shipped_by || '—'));
-    
-    const pmTd = document.createElement('td');
-    if (o.pmd_email) {
-      pmTd.textContent = o.pmd_email;
-      const chkSpan = document.createElement('span'); chkSpan.className = 'green-check'; chkSpan.textContent = ' ✓';
-      pmTd.appendChild(chkSpan);
-    } else {
-      pmTd.textContent = '—';
-    }
-    tr.appendChild(pmTd);
-    shippedBody.append(tr);
-  });
-
-  renderCounts();
-}
-
-$('#add').addEventListener('click', async () => {
-  const so  = $('#so').value.trim();
-  const cust= $('#customer').value.trim();
-  const stat= $('#status').value;
-  const loc = $('#loc').value.trim();
-  const stby = $('#staged_by').value.trim();
-
-  if(!so || !cust || !loc){ showErr("SO, Customer, and Location are required."); return; }
-
-  const skids = parseInt($('#c_skid').value) || 0;
-  const boxes = parseInt($('#c_box').value) || 0;
-  const crates = parseInt($('#c_crate').value) || 0;
-  const totalQty = skids + boxes + crates;
-
-  if(totalQty === 0) { showErr("Please allocate at least 1 freight piece component item."); return; }
-
-  let typeParts = [];
-  if(skids > 0) typeParts.push(`${skids} Skid`);
-  if(boxes > 0) typeParts.push(`${boxes} Box`);
-  if(crates > 0) typeParts.push(`${crates} Crate`);
-  const typePayload = typeParts.join(', ');
-
-  const { error } = await supabaseClient.from('staging').insert([{
-    so, customer: cust, status: stat, type: typePayload, qty: totalQty, location: loc, staged_by: stby
+  await supabaseClient.from('staging').insert([{
+    so: $('#so').value.trim(), customer: $('#customer').value.trim(), status: $('#status').value, 
+    location: $('#loc').value.trim(), staged_by: $('#staged_by').value.trim(), type: type.join(', '), qty: sk+bx+cr
   }]);
+  
+  $('#so').value=''; $('#customer').value=''; $('#loc').value=''; $('#staged_by').value='';
+  $('#c_skid').value=0; $('#c_box').value=0; $('#c_crate').value=0;
+  loadCloudData();
+};
 
-  if (error) {
-    showErr(`Save error: ${error.message}`);
-  } else {
-    $('#saved').textContent = `Saved record successfully for ${so} @ ${loc}`;
-    setTimeout(() => { $('#saved').textContent = ''; }, 4000);
-    $('#so').value = ''; $('#customer').value = ''; $('#loc').value = ''; $('#staged_by').value = '';
-    $('#c_skid').value = 0; $('#c_box').value = 0; $('#c_crate').value = 0;
-    $('#so').focus();
-    loadCloudData();
-  }
-});
-
-$('#q').addEventListener('input', renderTables);
+$('#q').oninput = renderTables;
 $('#expandStaging').onclick = () => window.open('stage.html', '_blank');
 $('#expandShipped').onclick = () => window.open('ship.html', '_blank');
-
-window.addEventListener('DOMContentLoaded', () => {
-  loadCloudData();
-  setInterval(loadCloudData, 10000); 
-});
+window.onresize = renderTables;
+window.onload = loadCloudData;
 </script>
 </body>
 </html>
