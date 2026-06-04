@@ -1,27 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>Staging Log — v6.1</title>
 <style>
-  body{margin:0;background:#fff;font:16px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;color:#222;}
-  .wrap{max-width:1100px;margin:0 auto;padding:18px}
-  .actions{display:flex;gap:8px;margin-bottom:10px;align-items:center;}
-  button{background:#dd4d25;color:#fff;border:0;border-radius:10px;height:36px;padding:0 12px;cursor:pointer;font-weight:700;}
-  /* Search element spacing adjustments */
-  .search-row { margin: 8px 0 14px; width: 100%; max-width: 400px; }
-  input { height: 38px; padding: 0 12px; border: 1px solid #cbd5e1; border-radius: 8px; width: 100%; font-size: 14px; }
+  body{margin:0;background:#fff;font:13px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Arial;color:#222;}
+  .wrap{padding:12px}
+  .actions{display:flex;gap:8px;margin-bottom:12px;align-items:center}
+  button{background:#dd4d25;color:#fff;border:0;border-radius:8px;height:32px;padding:0 12px;cursor:pointer;font-weight:700}
+  input { height: 34px; padding: 0 10px; border: 1px solid #cbd5e1; border-radius: 8px; width: 100%; max-width:300px; font-size:13px; }
   .table-wrap{ overflow-x: auto; border:1px solid #e5e7eb; border-radius:10px }
-  table{width:100%; border-collapse:collapse}
-  th,td{border-top:1px solid #e5e7eb; padding:10px 8px; white-space:nowrap; background:#fff; text-align:left}
+  table{width:100%; border-collapse:collapse; min-width:850px}
+  th,td{border-top:1px solid #e5e7eb; padding:8px; white-space:nowrap; text-align:left}
   th{position:sticky; top:0; background:#fafafa; z-index: 1;}
-  @media (max-width:600px){
-    table, thead, tbody, th, td, tr { display: block; }
-    thead { display: none; }
-    tbody tr { border: 1px solid #e6e7eb; margin-bottom: 12px; padding: 10px; border-radius: 8px; }
-    tbody td { display: flex; justify-content: space-between; border: 0; padding: 4px 0; }
-  }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -31,9 +22,7 @@
   <div class="actions">
     <button onclick="window.print()">Print</button>
     <button onclick="window.close()">Close</button>
-  </div>
-  <div class="search-row">
-    <input id="stagingSearchInput" placeholder="Quick search SO / Customer / Location..." oninput="filterView()" />
+    <input id="f" placeholder="Quick search..." oninput="filter()"/>
   </div>
   <div class="table-wrap"><table id="tbl">
     <thead><tr><th>SO</th><th>Customer</th><th>Entry Date</th><th>Containers</th><th>Location</th><th>Status</th><th>Staged By</th></tr></thead>
@@ -42,20 +31,15 @@
 </div>
 <script>
   const supabaseClient = supabase.createClient('https://gdrpdiwykmnybmkadlrv.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdkcnBkaXd5a21ueWJta2FkbHJ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1MjMyMTIsImV4cCI6MjA5NjA5OTIxMn0.Z7ih_vQic1GtzCyZmTEV-RWJnmuaNZQDfOV2_Fvan5g');
-  let cacheData = [];
-  
+  let data = [];
   async function refresh() {
-    const { data } = await supabaseClient.from('staging').select('*').order('entry_date', { ascending: false });
-    cacheData = data || [];
-    filterView();
+    const res = await supabaseClient.from('staging').select('*').order('entry_date', { ascending: false });
+    data = res.data || []; filter();
   }
-  
-  function filterView() {
-    const q = document.querySelector('#stagingSearchInput').value.toLowerCase();
+  function filter() {
+    const q = document.querySelector('#f').value.toLowerCase();
     const body = document.querySelector('#tbl tbody'); body.innerHTML = '';
-    const filtered = cacheData.filter(e => e.so.toLowerCase().includes(q) || e.customer.toLowerCase().includes(q) || e.location.toLowerCase().includes(q));
-    
-    filtered.forEach(e => {
+    data.filter(e => e.so.toLowerCase().includes(q) || e.customer.toLowerCase().includes(q)).forEach(e => {
       body.insertAdjacentHTML('beforeend', `<tr><td><b>${e.so}</b></td><td>${e.customer}</td><td>${new Date(e.entry_date).toLocaleString()}</td><td>${e.type}</td><td>${e.location}</td><td>${e.status}</td><td>${e.staged_by||'—'}</td></tr>`);
     });
   }
