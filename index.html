@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Swift Staging Tracker — v5.1</title>
+<title>Swift Staging Tracker — v5.2</title>
 <style>
   :root{--brand:#dd4d25;}
   *{box-sizing:border-box}
@@ -73,10 +73,11 @@
   @media (max-width:900px){.grid{grid-template-columns:repeat(3,1fr)}}
   @media (max-width:600px){.grid{grid-template-columns:repeat(2,1fr)}}
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 <div class="wrap">
-  <h1>Swift Staging Tracker — v5.1</h1>
+  <h1>Swift Staging Tracker — v5.2</h1>
   <div id="err" class="notice" style="display:none"></div>
 
   <div class="grid">
@@ -164,9 +165,11 @@
 </div>
 
 <script>
-const BIN_ID = '6a1e4f2ef5f4af5e29ab1884';
-const API_KEY = '$2a$10$friXAeZCMSMRSgzX3QaNAOpc09/c3syit6s04pV1iaZO3KHqeyO9y';
-const CLOUD_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
+const SUPABASE_PROJECT_ID = 'gdrpdiwykmnybmkadlrv';
+const SUPABASE_URL = `https://${SUPABASE_PROJECT_ID}.supabase.co`;
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdkcnBkaXd5a21ueWJta2FkbHJ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1MjMyMTIsImV4cCI6MjA5NjA5OTIxMn0.Z7ih_vQic1GtzCyZmTEV-RWJnmuaNZQDfOV2_Fvan5g';
+
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 let appData = { staging: [], shipped: [] };
 
@@ -181,39 +184,21 @@ function showErr(msg){
 
 async function loadCloudData() {
   try {
-    const res = await fetch(`${CLOUD_URL}/latest`, {
-      method: 'GET',
-      headers: { 'X-Access-Key': API_KEY },
-      cache: 'no-store'
-    });
-    if (!res.ok) throw new Error(`HTTP Error: ${res.status}`);
-    const json = await res.json();
-    
-    if (json.record) {
-      appData.staging = Array.isArray(json.record.staging) ? json.record.staging : [];
-      appData.shipped = Array.isArray(json.record.shipped) ? json.record.shipped : [];
-    }
-    renderTables();
-  } catch (e) {
-    showErr("Network Error: Could not refresh manifest logs from cloud repository.");
-    renderTables();
-  }
-}
+    const [stagingRes, shippedRes] = await Promise.all([
+      supabaseClient.from('staging').select('*').order('entry_date', { ascending: false }),
+      supabaseClient.from('shipped').select('*').order('shipped_at', { ascending: false })
+    ]);
 
-async function syncStorage() {
-  try {
-    const res = await fetch(CLOUD_URL, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Access-Key': API_KEY
-      },
-      body: JSON.stringify(appData)
-    });
-    if (!res.ok) throw new Error(`Sync Error: ${res.status}`);
+    if (stagingRes.error) throw stagingRes.error;
+    if (shippedRes.error) throw shippedRes.error;
+
+    appData.staging = stagingRes.data || [];
+    appData.shipped = shippedRes.data || [];
+
     renderTables();
   } catch (e) {
-    showErr("Network Error: Cloud upload rejected. Transaction failed to broadcast.");
+    showErr("Network Error: Could not refresh manifest logs from Supabase repository.");
+    renderTables();
   }
 }
 
@@ -246,18 +231,16 @@ function renderTables(){
     
     const delTd = document.createElement('td');
     const delBtn = document.createElement('button'); delBtn.className = 'btn-del'; delBtn.textContent = 'Delete';
-    delBtn.addEventListener('click', () => {
+    delBtn.addEventListener('click', async () => {
       if(confirm(`Permanently delete active SO ${o.so}?`)) {
-        const exactIndex = appData.staging.indexOf(o);
-        if (exactIndex > -1) {
-          appData.staging.splice(exactIndex, 1);
-          syncStorage();
-        }
+        const { error } = await supabaseClient.from('staging').delete().eq('id', o.id);
+        if (error) showErr(error.message);
+        else loadCloudData();
       }
     });
     delTd.append(delBtn); tr.append(delTd);
 
-    const entryTime = o.entryDate ? new Date(o.entryDate).toLocaleString() : (o.dueDate || '');
+    const entryTime = o.entry_date ? new Date(o.entry_date).toLocaleString() : '';
     tr.append(td(o.so), td(o.customer), td(entryTime), td(`${o.qty} ${o.type}(s)`), td(o.location), td(o.status));
     
     const shippedTd=document.createElement('td');
@@ -265,14 +248,18 @@ function renderTables(){
     shippedTd.style.right = '0';
     const chk=document.createElement('input'); chk.type='checkbox';
     chk.style.width = '18px'; chk.style.height = '18px'; chk.style.cursor = 'pointer';
-    chk.addEventListener('change', () => {
+    chk.addEventListener('change', async () => {
       if(chk.checked){
-        const exactIndex = appData.staging.indexOf(o);
-        if (exactIndex > -1) {
-          const moved = appData.staging.splice(exactIndex, 1)[0];
-          moved.shippedAt = new Date().toISOString();
-          appData.shipped.unshift(moved);
-          syncStorage();
+        const { error: insertErr } = await supabaseClient.from('shipped').insert([{
+          so: o.so, customer: o.customer, entry_date: o.entry_date,
+          status: o.status, type: o.type, qty: o.qty, location: o.location
+        }]);
+        
+        if (!insertErr) {
+          await supabaseClient.from('staging').delete().eq('id', o.id);
+          loadCloudData();
+        } else {
+          showErr("Dispatch log routing error.");
         }
       }
     });
@@ -286,32 +273,34 @@ function renderTables(){
     
     const delTd = document.createElement('td');
     const delBtn = document.createElement('button'); delBtn.className = 'btn-del'; delBtn.textContent = 'Delete';
-    delBtn.addEventListener('click', () => {
+    delBtn.addEventListener('click', async () => {
       if(confirm(`Permanently delete historical record for SO ${o.so}?`)) {
-        const exactIndex = appData.shipped.indexOf(o);
-        if (exactIndex > -1) {
-          appData.shipped.splice(exactIndex, 1);
-          syncStorage();
-        }
+        const { error } = await supabaseClient.from('shipped').delete().eq('id', o.id);
+        if (error) showErr(error.message);
+        else loadCloudData();
       }
     });
     delTd.append(delBtn); tr.append(delTd);
 
-    const entryTime = o.entryDate ? new Date(o.entryDate).toLocaleString() : (o.dueDate || '');
+    const entryTime = o.entry_date ? new Date(o.entry_date).toLocaleString() : '';
     tr.append(td(o.so), td(o.customer), td(entryTime), td(`${o.qty} ${o.type}(s)`), td(o.location), td(o.status));
-    tr.append(td(o.shippedAt ? new Date(o.shippedAt).toLocaleString() : ''));
+    tr.append(td(o.shipped_at ? new Date(o.shipped_at).toLocaleString() : ''));
     
     const undo=document.createElement('td');
     undo.style.position = 'sticky';
     undo.style.right = '0';
     const b=document.createElement('button'); b.className='btn'; b.style.padding='6px 10px'; b.textContent='Undo';
-    b.addEventListener('click', ()=>{
-      const exactIndex = appData.shipped.indexOf(o);
-      if (exactIndex > -1) {
-        const rolledBack = appData.shipped.splice(exactIndex, 1)[0];
-        delete rolledBack.shippedAt;
-        appData.staging.push(rolledBack);
-        syncStorage();
+    b.addEventListener('click', async ()=>{
+      const { error: insertErr } = await supabaseClient.from('staging').insert([{
+        so: o.so, customer: o.customer, entry_date: o.entry_date,
+        status: o.status, type: o.type, qty: o.qty, location: o.location
+      }]);
+      
+      if (!insertErr) {
+        await supabaseClient.from('shipped').delete().eq('id', o.id);
+        loadCloudData();
+      } else {
+        showErr("Reversion log routing error.");
       }
     });
     undo.append(b); tr.append(undo);
@@ -321,7 +310,7 @@ function renderTables(){
   renderCounts();
 }
 
-$('#add').addEventListener('click', () => {
+$('#add').addEventListener('click', async () => {
   const so  = $('#so').value.trim();
   const cust= $('#customer').value.trim();
   const stat= $('#status').value;
@@ -331,14 +320,19 @@ $('#add').addEventListener('click', () => {
 
   if(!so || !cust || !loc){ showErr("SO, Customer, and Location are required."); return; }
 
-  appData.staging.push({ so, customer: cust, entryDate: new Date().toISOString(), status: stat, type: typ, qty, location: loc });
-  syncStorage();
-  
-  $('#saved').textContent = `Saved: ${qty} ${typ}(s) for ${so} @ ${loc}`;
-  setTimeout(() => { $('#saved').textContent = ''; }, 4000);
-  
-  $('#so').value = ''; $('#customer').value = ''; $('#loc').value = '';
-  $('#so').focus();
+  const { error } = await supabaseClient.from('staging').insert([{
+    so, customer: cust, status: stat, type: typ, qty, location: loc
+  }]);
+
+  if (error) {
+    showErr(`Save error: ${error.message}`);
+  } else {
+    $('#saved').textContent = `Saved: ${qty} ${typ}(s) for ${so} @ ${loc}`;
+    setTimeout(() => { $('#saved').textContent = ''; }, 4000);
+    $('#so').value = ''; $('#customer').value = ''; $('#loc').value = '';
+    $('#so').focus();
+    loadCloudData();
+  }
 });
 
 $('#q').addEventListener('input', renderTables);
