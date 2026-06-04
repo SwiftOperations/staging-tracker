@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Shipped Log — v5.3</title>
+<title>Shipped Log — v5.4</title>
 <style>
   body{margin:0;background:#fff;font:16px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
   .wrap{max-width:1100px;margin:0 auto;padding:18px}
@@ -22,7 +22,6 @@
   .table-wrap::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
   
   table{width:100%;border-collapse:collapse}
-  /* FIXED BLEED: Forcing solid cell backgrounds */
   th,td{border-top:1px solid #e5e7eb;padding:10px 8px;white-space:nowrap;background:#fff;text-align:left}
   th{position:sticky;top:0;background:#fafafa;z-index: 1;}
 </style>
@@ -43,6 +42,7 @@
         <th>SO</th><th>Customer</th><th>Entry Date</th>
         <th>Number of Containers</th><th>Staging Location(s) at Ship</th>
         <th>Status at Ship</th><th>Shipped At</th>
+        <th>Staged By</th>
       </tr>
       </thead>
       <tbody></tbody>
@@ -65,7 +65,7 @@
       
       body.innerHTML = '';
       if (!data || data.length === 0) {
-        body.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#667085;padding:20px;">No historical manifest records logged yet.</td></tr>';
+        body.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#667085;padding:20px;">No historical manifest records logged yet.</td></tr>';
         return;
       }
 
@@ -86,14 +86,15 @@
         const timeStr = e.shipped_at ? new Date(e.shipped_at).toLocaleString() : '';
         
         const tdFields = `<td><b>${e.so}</b></td><td>${e.customer}</td><td>${entryTime}</td>
-                      <td>${e.qty || 1} ${e.type || ''}</td>
+                      <td>${e.type || `${e.qty} item(s)`}</td>
                       <td>${e.location || ''}</td><td>${e.status || ''}</td>
-                      <td>${timeStr}</td>`;
+                      <td>${timeStr}</td>
+                      <td>${e.staged_by || '—'}</td>`;
         tr.insertAdjacentHTML('beforeend', tdFields);
         body.appendChild(tr);
       });
     } catch (e) {
-      body.innerHTML = '<tr><td colspan="8" style="color:#dd4d25;text-align:center;">Sync error reading cloud manifest.</td></tr>';
+      body.innerHTML = '<tr><td colspan="9" style="color:#dd4d25;text-align:center;">Sync error reading cloud manifest.</td></tr>';
     }
   }
 
