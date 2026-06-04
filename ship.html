@@ -3,40 +3,27 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Shipped Log — v6.0</title>
+<title>Shipped Log — v6.1</title>
 <style>
-  body{margin:0;background:#fff;font:16px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
+  body{margin:0;background:#fff;font:16px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;color:#222;}
   .wrap{max-width:1100px;margin:0 auto;padding:18px}
-  h2{margin:0 0 10px}
-  .actions{display:flex;gap:8px;margin-bottom:10px}
-  button{background:#dd4d25;color:#fff;border:0;border-radius:10px;height:36px;padding:0 12px;cursor:pointer}
-  .btn-del{background:#dc2626;color:#fff;border:0;border-radius:6px;padding:4px 8px;font-size:12px;font-weight:700;cursor:pointer}
-  .btn-del:hover{background:#b91c1c}
-  .green-check { color: #16a34a; font-weight: bold; font-size: 15px; margin-left: 4px; }
-  
+  .actions{display:flex;gap:8px;margin-bottom:10px;align-items:center;}
+  button{background:#dd4d25;color:#fff;border:0;border-radius:10px;height:36px;padding:0 12px;cursor:pointer;font-weight:700;}
+  .search-row { margin: 8px 0 14px; width: 100%; max-width: 400px; }
+  input { height: 38px; padding: 0 12px; border: 1px solid #cbd5e1; border-radius: 8px; width: 100%; font-size: 14px; }
   .table-wrap{ overflow-x: auto; border:1px solid #e5e7eb; border-radius:10px }
-  .table-wrap::-webkit-scrollbar { height: 8px; }
-  .table-wrap::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-  
-  table{width:100%;border-collapse:collapse}
-  th,td{border-top:1px solid #e5e7eb;padding:10px 8px;white-space:nowrap;background:#fff;text-align:left}
-  th{position:sticky;top:0;background:#fafafa;z-index: 1;}
-
+  table{width:100%; border-collapse:collapse}
+  th,td{border-top:1px solid #e5e7eb; padding:10px 8px; white-space:nowrap; background:#fff; text-align:left}
+  th{position:sticky; top:0; background:#fafafa; z-index: 1;}
+  .green-check { color: #16a34a; font-weight: bold; font-size: 15px; }
+  .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 100; align-items: center; justify-content: center; padding: 16px; }
+  .modal-window { background: #fff; border-radius: 16px; max-width: 600px; width: 100%; padding: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); display: flex; flex-direction: column; gap: 14px; position: relative; }
+  .modal-close-x { position: absolute; top: 12px; right: 16px; font-size: 22px; font-weight: 700; color: #6b7280; cursor: pointer; border: 0; background: none; }
   @media (max-width:600px){
-    .table-wrap { border: none; border-radius: 0; }
-    table, thead, tbody, th, td, tr { display: block; width: 100% !important; min-width: 100% !important; }
+    table, thead, tbody, th, td, tr { display: block; }
     thead { display: none; }
-    tbody tr { background: #fff; border: 1px solid #e6e7eb; border-radius: 12px; margin-bottom: 14px; padding: 12px; }
-    tbody td { border: none; padding: 6px 0; display: flex; justify-content: space-between; align-items: center; text-align: right; font-size: 14px; }
-    
-    tbody td:nth-of-type(1)::before { content: "Action:"; font-weight: 700; color: #6b7280; }
-    tbody td:nth-of-type(2)::before { content: "SO Number:"; font-weight: 700; color: #6b7280; }
-    tbody td:nth-of-type(3)::before { content: "Customer:"; font-weight: 700; color: #6b7280; }
-    tbody td:nth-of-type(4)::before { content: "Containers:"; font-weight: 700; color: #6b7280; }
-    tbody td:nth-of-type(5)::before { content: "Location:"; font-weight: 700; color: #6b7280; }
-    tbody td:nth-of-type(6)::before { content: "Shipped At:"; font-weight: 700; color: #6b7280; }
-    tbody td:nth-of-type(7)::before { content: "Shipped By:"; font-weight: 700; color: #6b7280; }
-    tbody td:nth-of-type(8)::before { content: "PM'd Email:"; font-weight: 700; color: #6b7280; }
+    tbody tr { border: 1px solid #e6e7eb; margin-bottom: 12px; padding: 10px; border-radius: 8px; }
+    tbody td { display: flex; justify-content: space-between; border: 0; padding: 4px 0; }
   }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -48,80 +35,63 @@
     <button onclick="window.print()">Print</button>
     <button onclick="window.close()">Close</button>
   </div>
-  <div class="table-wrap">
-    <table id="tbl">
-      <thead>
-      <tr>
-        <th style="width:50px">Delete</th>
-        <th>SO</th><th>Customer</th><th>Number of Containers</th>
-        <th>Staging Location(s) at Ship</th><th>Shipped At</th><th>Shipped By</th><th>PM'd Email</th>
-      </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
+  <div class="search-row">
+    <input id="shippedSearchInput" placeholder="Quick search SO / Customer..." oninput="filterView()" />
+  </div>
+  <div class="table-wrap"><table id="tbl">
+    <thead><tr><th>Photo(s)</th><th>SO</th><th>Customer</th><th>Containers</th><th>Location</th><th>Shipped At</th><th>Shipped By</th><th>PM'd Email</th></tr></thead>
+    <tbody></tbody>
+  </table></div>
+</div>
+
+<div id="viewModal" class="modal-overlay" onclick="if(event.target===this) $('#viewModal').style.display='none'">
+  <div class="modal-window">
+    <button class="modal-close-x" onclick="document.querySelector('#viewModal').style.display='none'">×</button>
+    <h3 style="margin-bottom:6px;">Staged Freight Photos</h3>
+    <div id="modalPhotoGallery" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:10px; max-height:60vh; overflow-y:auto; padding:4px;"></div>
   </div>
 </div>
 
 <script>
-  const SUPABASE_PROJECT_ID = 'gdrpdiwykmnybmkadlrv';
-  const SUPABASE_URL = `https://${SUPABASE_PROJECT_ID}.supabase.co`;
-  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdkcnBkaXd5a21ueWJta2FkbHJ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1MjMyMTIsImV4cCI6MjA5NjA5OTIxMn0.Z7ih_vQic1GtzCyZmTEV-RWJnmuaNZQDfOV2_Fvan5g';
+  const SUPABASE_URL = 'https://gdrpdiwykmnybmkadlrv.supabase.co';
+  const supabaseClient = supabase.createClient(SUPABASE_URL, 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdkcnBkaXd5a21ueWJta2FkbHJ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1MjMyMTIsImV4cCI6MjA5NjA5OTIxMn0.Z7ih_vQic1GtzCyZmTEV-RWJnmuaNZQDfOV2_Fvan5g');
+  let cacheData = [];
+  const $ = sel => document.querySelector(sel);
 
-  const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-  async function refreshShippedView() {
-    const body = document.querySelector('#tbl tbody');
-    try {
-      const { data, error } = await supabaseClient.from('shipped').select('*').order('shipped_at', { ascending: false });
-      if (error) throw error;
-      
-      body.innerHTML = '';
-      if (!data || data.length === 0) {
-        body.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#667085;padding:20px;">No historical manifest records logged yet.</td></tr>';
-        return;
-      }
-
-      data.forEach(e => {
-        const tr = document.createElement('tr');
-        
-        const delTd = document.createElement('td');
-        const delBtn = document.createElement('button'); delBtn.className = 'btn-del'; delBtn.textContent = 'Delete';
-        delBtn.addEventListener('click', async () => {
-          if(confirm(`Permanently delete historical record for SO ${e.so}?`)) {
-            await supabaseClient.from('shipped').delete().eq('id', e.id);
-            refreshShippedView();
-          }
-        });
-        delTd.appendChild(delBtn); tr.appendChild(delTd);
-
-        const timeStr = e.shipped_at ? new Date(e.shipped_at).toLocaleString() : '';
-        
-        const tdFields = `<td><b>${e.so}</b></td><td>${e.customer}</td>
-                      <td>${e.type || `${e.qty} item(s)`}</td>
-                      <td>${e.location || ''}</td><td>${timeStr}</td>
-                      <td>${e.shipped_by || '—'}</td>`;
-        tr.insertAdjacentHTML('beforeend', tdFields);
-        
-        const pmTd = document.createElement('td');
-        if (e.pmd_email) {
-          pmTd.textContent = e.pmd_email;
-          const chkSpan = document.createElement('span'); chkSpan.className = 'green-check'; chkSpan.textContent = ' ✓';
-          pmTd.appendChild(chkSpan);
-        } else {
-          pmTd.textContent = '—';
-        }
-        tr.appendChild(pmTd);
-        body.appendChild(tr);
+  async function openPhotoViewer(paths) {
+    const gallery = $('#modalPhotoGallery'); gallery.innerHTML = '';
+    if(!paths || paths.length === 0) {
+      gallery.innerHTML = `<p style="font-size:14px;color:#667085;text-align:center;grid-column:1/-1;">No photos uploaded.</p>`;
+    } else {
+      paths.forEach(p => {
+        const imgUrl = `${SUPABASE_URL}/storage/v1/object/public/freight-photos/${p}`;
+        gallery.insertAdjacentHTML('beforeend', `<a href="${imgUrl}" target="_blank"><img src="${imgUrl}" style="width:100%; height:110px; object-fit:cover; border-radius:8px; border:1px solid #cbd5e1;" /></a>`);
       });
-    } catch (e) {
-      body.innerHTML = '<tr><td colspan="8" style="color:#dd4d25;text-align:center;">Sync error reading cloud manifest.</td></tr>';
     }
+    $('#viewModal').style.display = 'flex';
   }
 
-  window.addEventListener('DOMContentLoaded', () => {
-    refreshShippedView();
-    setInterval(refreshShippedView, 10000);
-  });
+  async function refresh() {
+    const { data } = await supabaseClient.from('shipped').select('*').order('shipped_at', { ascending: false });
+    cacheData = data || [];
+    filterView();
+  }
+  
+  function filterView() {
+    const q = $('#shippedSearchInput').value.toLowerCase();
+    const body = document.querySelector('#tbl tbody'); body.innerHTML = '';
+    const filtered = cacheData.filter(e => e.so.toLowerCase().includes(q) || e.customer.toLowerCase().includes(q));
+    
+    filtered.forEach(e => {
+      const urlStr = JSON.stringify(e.photo_urls || []);
+      body.insertAdjacentHTML('beforeend', `<tr>
+        <td><button style="background:#dd4d25; color:#fff; border:0; padding:4px 8px; font-size:12px; border-radius:6px; font-weight:700; cursor:pointer;" onclick='openPhotoViewer(${urlStr})'>View</button></td>
+        <td><b>${e.so}</b></td><td>${e.customer}</td><td>${e.type}</td><td>${e.location}</td>
+        <td>${new Date(e.shipped_at).toLocaleString()}</td><td>${e.shipped_by||'—'}</td>
+        <td>${e.pmd_email ? e.pmd_email+' <span class="green-check">✓</span>' : '—'}</td></tr>`);
+    });
+  }
+  window.onload = refresh; setInterval(refresh, 10000);
 </script>
 </body>
 </html>
