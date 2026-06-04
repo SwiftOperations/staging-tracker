@@ -20,78 +20,47 @@
   input,select{height:42px;padding:0 12px;border:1px solid #d1d5db;border-radius:10px;background:#fff;width:100%}
   .row > *{flex:1 1 170px}
   .btn{background:var(--brand);color:#fff;border:0;border-radius:12px;padding:12px 20px;font-weight:700;cursor:pointer}
-  .btn:disabled{opacity:.5;cursor:not-allowed}
   .btn-del{background:#dc2626;color:#fff;border:0;border-radius:6px;padding:4px 8px;font-size:12px;font-weight:700;cursor:pointer}
-  .btn-del:hover{background:#b91c1c}
   
   .freight-block { flex: 2 1 340px; display: flex; gap: 8px; background: #fff; border: 1px solid #d1d5db; padding: 6px 10px; border-radius: 10px; align-items: center; }
   .counter-box { display: flex; align-items: center; gap: 4px; flex: 1; justify-content: center; }
-  .counter-box label { font-size: 13px; font-weight: 700; color: #4b5563; }
-  .counter-box input { width: 48px; height: 32px; text-align: center; padding: 0; border-radius: 6px; font-weight: 700; }
-  .counter-btn { width: 28px; height: 32px; background: #e5e7eb; border: 0; font-weight: 700; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-  .counter-btn:hover { background: #d1d5db; }
+  .counter-box label { font-size: 13px; font-weight: 700; }
+  .counter-box input { width: 44px; height: 32px; text-align: center; border-radius: 6px; font-weight: 700; border:1px solid #d1d5db; }
+  .counter-btn { width: 28px; height: 32px; background: #e5e7eb; border: 0; font-weight: 700; border-radius: 6px; cursor: pointer; }
   
-  /* --- REVISION 5: RESPONSIVE SCREEN PORTRAIT OVERLAY SLOTS --- */
-  .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 100; align-items: center; justify-content: center; padding: 16px; }
+  /* MODALS */
+  .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; padding: 12px; }
   .modal-window { background: #fff; border-radius: 16px; max-width: 500px; width: 100%; max-height: 90vh; padding: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); display: flex; flex-direction: column; gap: 12px; overflow-y: auto; position: relative; }
   .modal-close-x { position: absolute; top: 12px; right: 16px; font-size: 22px; font-weight: 700; color: #6b7280; cursor: pointer; border: 0; background: none; }
   .modal-field { display: flex; flex-direction: column; gap: 2px; }
   .modal-field label { font-size: 12px; font-weight: 700; color: #4b5563; }
-  .modal-field input { height: 36px; }
-  .photo-uploader { border: 2px dashed #cbd5e1; border-radius: 10px; padding: 12px; text-align: center; cursor: pointer; background: #f8fafc; }
-  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 4px; }
-  .chk-row { display: flex; align-items: center; gap: 8px; }
+  .photo-uploader { border: 2px dashed #cbd5e1; border-radius: 10px; padding: 12px; text-align: center; cursor: pointer; background: #f8fafc; font-size: 13px; font-weight: 700; }
   .photo-strip { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
   .photo-badge { background: #e2e8f0; font-size: 11px; padding: 2px 6px; border-radius: 4px; }
-  .green-check { color: #16a34a; font-weight: bold; font-size: 15px; margin-left: 4px; }
-  
-  /* --- REVISION 2: MAX VISIBILITY CONSTRAINTS FOR MAIN SCREEN TABLES --- */
-  .tbl-scroller { max-height: 290px; overflow-y: auto; position: relative; }
-  .log-limit-notice { display: none; background: #f8fafc; border-top: 1px solid #e6e7eb; padding: 10px; text-align: center; font-size: 13px; font-weight: 700; color: #dd4d25; }
+  .chk-row { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; }
 
-  /* --- RESPONSIVE DESKTOP & MOBILE SCROLLING --- */
-  table{width:100%;border-collapse:separate;border-spacing:0;min-width:760px}
-  thead th{ position: sticky; top: 0; background: #fff; border-bottom: 1px solid #e6e7eb; font-size: 14px; text-align: left; padding: 10px; z-index: 10; }
-  tbody td{background:#fff;border-bottom:1px solid #f0f1f3;padding:10px;vertical-align:top}
+  /* TABLE & SCROLLING */
   .tblwrap{ border: 1px solid #e6e7eb; border-radius: 12px; overflow: hidden; background: #fff; }
+  .tbl-scroller { max-height: 320px; overflow-x: auto; overflow-y: auto; position: relative; }
+  table{width:100%;border-collapse:separate;border-spacing:0;min-width:900px}
+  thead th{ position: sticky; top: 0; background: #fafafa; border-bottom: 1px solid #e6e7eb; font-size: 13px; text-align: left; padding: 10px; z-index: 10; }
+  tbody td{background:#fff;border-bottom:1px solid #f0f1f3;padding:10px;vertical-align:top; font-size: 13px; }
   
   th[style*="position:sticky"], td[style*="position:sticky"] { background: #fff !important; position: sticky !important; right: 0 !important; z-index: 3; box-shadow: -2px 0 5px rgba(0,0,0,0.04); }
-  
-  @media (max-width:600px){
+  .log-limit-notice { display: none; background: #fff; border-top: 1px solid #e6e7eb; padding: 8px; text-align: center; font-size: 12px; font-weight: 700; color: #dd4d25; }
+  .green-check { color: #16a34a; font-weight: bold; }
+
+  /* PORTRAIT MOBILE OPTIMIZATION */
+  @media (max-width: 600px) {
     .grid{grid-template-columns:repeat(2,1fr)}
-    .freight-block { flex-direction: column; align-items: stretch; gap: 12px; }
-    .tbl-scroller { max-height: none; overflow-y: visible; }
-    .tblwrap { border: none; }
-    table, thead, tbody, th, td, tr { display: block; width: 100% !important; }
-    thead { display: none; }
-    tbody tr { border: 1px solid #e6e7eb; border-radius: 12px; margin-bottom: 14px; padding: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
-    tbody td { border: none; padding: 6px 0; display: flex; justify-content: space-between; align-items: center; text-align: right; font-size: 14px; }
-    
-    #tblStaging tbody tr { display: none; }
-    #tblStaging tbody tr:nth-child(-n+5) { display: block; }
-    #tblShipped tbody tr { display: none; }
-    #tblShipped tbody tr:nth-child(-n+5) { display: block; }
-    
-    #tblStaging tbody td:nth-of-type(1)::before { content: "Action:"; font-weight: 700; color: #6b7280; }
-    #tblStaging tbody td:nth-of-type(2)::before { content: "SO Number:"; font-weight: 700; color: #6b7280; }
-    #tblStaging tbody td:nth-of-type(3)::before { content: "Customer:"; font-weight: 700; color: #6b7280; }
-    #tblStaging tbody td:nth-of-type(4)::before { content: "Entry Date:"; font-weight: 700; color: #6b7280; }
-    #tblStaging tbody td:nth-of-type(5)::before { content: "Containers:"; font-weight: 700; color: #6b7280; }
-    #tblStaging tbody td:nth-of-type(6)::before { content: "Location:"; font-weight: 700; color: #6b7280; }
-    #tblStaging tbody td:nth-of-type(7)::before { content: "Status:"; font-weight: 700; color: #6b7280; }
-    #tblStaging tbody td:nth-of-type(8)::before { content: "Staged By:"; font-weight: 700; color: #6b7280; }
-    #tblStaging tbody td:nth-of-type(9)::before { content: "Ship Order:"; font-weight: 700; color: #6b7280; }
-    
-    #tblShipped tbody td:nth-of-type(1)::before { content: "Action:"; font-weight: 700; color: #6b7280; }
-    #tblShipped tbody td:nth-of-type(2)::before { content: "Photos:"; font-weight: 700; color: #6b7280; }
-    #tblShipped tbody td:nth-of-type(3)::before { content: "SO Number:"; font-weight: 700; color: #6b7280; }
-    #tblShipped tbody td:nth-of-type(4)::before { content: "Customer:"; font-weight: 700; color: #6b7280; }
-    #tblShipped tbody td:nth-of-type(5)::before { content: "Containers:"; font-weight: 700; color: #6b7280; }
-    #tblShipped tbody td:nth-of-type(6)::before { content: "Location:"; font-weight: 700; color: #6b7280; }
-    #tblShipped tbody td:nth-of-type(7)::before { content: "Shipped At:"; font-weight: 700; color: #6b7280; }
-    #tblShipped tbody td:nth-of-type(8)::before { content: "Shipped By:"; font-weight: 700; color: #6b7280; }
-    #tblShipped tbody td:nth-of-type(9)::before { content: "PM'd Email:"; font-weight: 700; color: #6b7280; }
-    td[style*="position:sticky"] { position: static !important; box-shadow: none !important; }
+    h1 { font-size: 22px; }
+    .big { font-size: 18px; }
+    .wrap { padding: 0 8px; margin: 12px auto; }
+    /* Keeps the horizontal table but makes it feel less "zoomed" */
+    tbody td, thead th { padding: 8px 6px; font-size: 11px; }
+    table { min-width: 800px; } 
+    .btn { padding: 10px 14px; font-size: 14px; }
+    .modal-window { padding: 14px; }
   }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -99,7 +68,7 @@
 <body>
 <div class="wrap">
   <h1>Swift Staging Tracker — v6.1</h1>
-  <div id="err" class="notice" style="display:none"></div>
+  <div id="err" style="display:none; background:#fee2e2; color:#991b1b; padding:10px; border-radius:10px; margin-bottom:10px"></div>
 
   <div class="grid">
     <div class="tile"><h4>Orders</h4><div id="kOrders" class="big">0</div></div>
@@ -111,8 +80,7 @@
   </div>
 
   <div class="card">
-    <div class="split"><h3>Quick search</h3></div>
-    <input id="q" placeholder="SO / Location / Customer" />
+    <input id="q" placeholder="Quick search SO / Location / Customer..." />
   </div>
 
   <div class="card">
@@ -135,7 +103,7 @@
   </div>
 
   <div class="card">
-    <div class="split"><h3>Staging Entries</h3><button id="expandStaging" class="btn">Expand</button></div>
+    <div class="split"><h3>Staging Entries</h3><button id="expandStaging" class="btn" style="padding:6px 12px">Expand</button></div>
     <div class="tblwrap">
       <div class="tbl-scroller">
         <table id="tblStaging">
@@ -143,12 +111,12 @@
           <tbody></tbody>
         </table>
       </div>
-      <div id="stageLimitNotice" class="log-limit-notice">Showing first 20 entries. Press Expand to see the full active log.</div>
+      <div id="stageLimitNotice" class="log-limit-notice">Showing first 20. Expand for full log.</div>
     </div>
   </div>
 
   <div class="card">
-    <div class="split"><h3>Shipped Log</h3><button id="expandShipped" class="btn">Expand</button></div>
+    <div class="split"><h3>Shipped Log</h3><button id="expandShipped" class="btn" style="padding:6px 12px">Expand</button></div>
     <div class="tblwrap">
       <div class="tbl-scroller">
         <table id="tblShipped">
@@ -156,37 +124,38 @@
           <tbody></tbody>
         </table>
       </div>
-      <div id="shippedLimitNotice" class="log-limit-notice">Showing first 20 entries. Press Expand to see the full historical log.</div>
+      <div id="shippedLimitNotice" class="log-limit-notice">Showing first 20. Expand for full log.</div>
     </div>
   </div>
 </div>
 
+<!-- SHIPPING MODAL -->
 <div id="shipModal" class="modal-overlay" onclick="if(event.target===this) closeShipModal()">
   <div class="modal-window">
     <button class="modal-close-x" onclick="closeShipModal()">×</button>
-    <h3>Confirm Freight Dispatch</h3>
+    <h3 style="margin:0">Confirm Freight Dispatch</h3>
     <div class="photo-uploader" onclick="$('#photoFiles').click()">
-      <span>📷 Click to Upload Photos (Max 10)</span>
+      <span>📷 Upload Photos (Max 10)</span>
       <input type="file" id="photoFiles" multiple accept="image/*" style="display:none" onchange="previewPhotos()" />
       <div id="photoPreviewStrip" class="photo-strip"></div>
     </div>
     <div class="modal-field"><label>SO#</label><input id="m_so" readonly /></div>
     <div class="modal-field"><label>Customer</label><input id="m_cust" readonly /></div>
-    <div class="modal-field"><label>Number of Containers</label><input id="m_qty" readonly /></div>
-    <div class="modal-field"><label>Staging Location(s)</label><input id="m_loc" readonly /></div>
-    <div class="modal-field"><label>Shipped At</label><input id="m_time" readonly /></div>
-    <div class="modal-field"><label>Shipped By</label><input id="m_by" list="pastShippers" placeholder="Type name..." /></div>
-    <div class="chk-row"><input type="checkbox" id="m_pm_chk" onchange="$('#m_pm_email').disabled=!this.checked; if(this.checked)$('#m_pm_email').focus()"/><label>E-mail PM Verification of Shipment</label></div>
-    <div class="modal-field"><input id="m_pm_email" list="pastEmails" placeholder="pm.name@company.com" disabled /></div>
+    <div class="modal-field"><label>Containers</label><input id="m_qty" readonly /></div>
+    <div class="modal-field"><label>Location</label><input id="m_loc" readonly /></div>
+    <div class="modal-field"><label>Shipped By</label><input id="m_by" list="pastShippers" /></div>
+    <div class="chk-row"><input type="checkbox" id="m_pm_chk" onchange="$('#m_pm_email').disabled=!this.checked"/><label>E-mail PM Verification</label></div>
+    <div class="modal-field"><input id="m_pm_email" list="pastEmails" disabled /></div>
     <div class="modal-actions"><button id="modalConfirmBtn" class="btn" onclick="submitFreightDispatch()">Confirm Dispatch</button></div>
   </div>
 </div>
 
+<!-- VIEW MODAL -->
 <div id="viewModal" class="modal-overlay" onclick="if(event.target===this) $('#viewModal').style.display='none'">
   <div class="modal-window" style="max-width: 600px;">
     <button class="modal-close-x" onclick="$('#viewModal').style.display='none'">×</button>
-    <h3 style="margin-bottom:6px;">Staged Freight Photos</h3>
-    <div id="modalPhotoGallery" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:10px; max-height:60vh; overflow-y:auto; padding:4px;"></div>
+    <h3 style="margin:0 0 10px 0;">Staged Freight Photos</h3>
+    <div id="modalPhotoGallery" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:8px;"></div>
   </div>
 </div>
 
@@ -199,23 +168,11 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 let appData = { staging: [], shipped: [] };
 let activeShipTargetItem = null;
 let selectedPhotoBlobs = [];
-
 const $ = sel => document.querySelector(sel);
 
 function adjustCount(id, amt) {
   const el = $(`#${id}`);
   el.value = Math.max(0, (parseInt(el.value)||0) + amt);
-}
-
-function saveLocalMemory(key, value) {
-  if(!value) return;
-  let arr = JSON.parse(localStorage.getItem(key) || '[]');
-  if(!arr.includes(value)) { arr.push(value); localStorage.setItem(key, JSON.stringify(arr)); }
-}
-
-function loadLocalMemory() {
-  $('#pastShippers').innerHTML = JSON.parse(localStorage.getItem('m_shippers') || '[]').map(s => `<option value="${s}">`).join('');
-  $('#pastEmails').innerHTML = JSON.parse(localStorage.getItem('m_emails') || '[]').map(e => `<option value="${e}">`).join('');
 }
 
 async function loadCloudData() {
@@ -226,7 +183,8 @@ async function loadCloudData() {
   appData.staging = st.data || [];
   appData.shipped = sh.data || [];
   renderTables();
-  loadLocalMemory();
+  $('#pastShippers').innerHTML = JSON.parse(localStorage.getItem('m_shippers') || '[]').map(s => `<option value="${s}">`).join('');
+  $('#pastEmails').innerHTML = JSON.parse(localStorage.getItem('m_emails') || '[]').map(e => `<option value="${e}">`).join('');
 }
 
 function triggerShipModal(item) {
@@ -237,10 +195,8 @@ function triggerShipModal(item) {
   $('#m_cust').value = item.customer;
   $('#m_qty').value = item.type;
   $('#m_loc').value = item.location;
-  $('#m_time').value = new Date().toLocaleString();
   $('#m_by').value = '';
   $('#m_pm_chk').checked = false;
-  $('#m_pm_email').value = '';
   $('#m_pm_email').disabled = true;
   $('#shipModal').style.display = 'flex';
 }
@@ -250,54 +206,23 @@ function closeShipModal() { $('#shipModal').style.display = 'none'; loadCloudDat
 function previewPhotos() {
   const strip = $('#photoPreviewStrip'); strip.innerHTML = '';
   selectedPhotoBlobs = Array.from($('#photoFiles').files).slice(0, 10);
-  selectedPhotoBlobs.forEach((f, i) => {
-    strip.insertAdjacentHTML('beforeend', `<span class="photo-badge">📎 File-${i+1}</span>`);
-  });
-}
-
-// REVISION 1: DYNAMIC NATIVE GENERATION LINK FOR PM VERIFICATION HANDOFF DISPATCH
-function triggerPmEmailClient(cust, so, type, time, pmEmail, stagedBy, shippedBy, loc, photoPaths) {
-  const subject = `CONFIRMATION OF SHIPOUT: ${cust} SO# ${so} @ ${type} ${time}`;
-  
-  let body = `Hello,\n\nThis email is sent as formal confirmation that the project order listed below has been fully prepared, verified, and shipped out from the staging inventory floor space.\n\n`;
-  body += `--- MANIFEST DISPATCH LOG ---\n`;
-  body += `Sales Order #: ${so}\n`;
-  body += `Customer: ${cust}\n`;
-  body += `Containers: ${type}\n`;
-  body += `Staging Floor Location: ${loc}\n`;
-  body += `Staged By: ${stagedBy || '—'}\n`;
-  body += `Shipped By: ${shippedBy}\n`;
-  body += `Shipped At Timestamp: ${time}\n\n`;
-  
-  if(photoPaths && photoPaths.length > 0) {
-    body += `--- ATTACHED MEDIA MANIFEST PATHS ---\n`;
-    photoPaths.forEach((path, i) => {
-      body += `[Photo ${i+1} File Reference]: ${SUPABASE_URL}/storage/v1/object/public/freight-photos/${path}\n*/`;
-    });
-    body += `\n`;
-  }
-  body += `Best Regards,\nSwift Logistics Dispatch Board`;
-
-  window.location.href = `mailto:${pmEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  selectedPhotoBlobs.forEach((f, i) => strip.insertAdjacentHTML('beforeend', `<span class="photo-badge">📎 File-${i+1}</span>`));
 }
 
 async function submitFreightDispatch() {
   const dispatcher = $('#m_by').value.trim();
-  const pmChecked = $('#m_pm_chk').checked;
   const pmEmail = $('#m_pm_email').value.trim();
-  if(!dispatcher) return alert("Enter Shipped By name.");
-  if(pmChecked && !pmEmail) return alert("Enter Project Manager email address.");
+  const pmChecked = $('#m_pm_chk').checked;
+  if(!dispatcher || (pmChecked && !pmEmail)) return alert("Missing fields.");
   
   $('#modalConfirmBtn').disabled = true;
-  $('#modalConfirmBtn').textContent = 'Syncing...';
-  
   try {
-    let photoUrlsArray = [];
+    let photoUrls = [];
     for (let i = 0; i < selectedPhotoBlobs.length; i++) {
       const file = selectedPhotoBlobs[i];
       const path = `${activeShipTargetItem.so}-${Date.now()}-${i}.${file.name.split('.').pop()}`;
-      const { error } = await supabaseClient.storage.from('freight-photos').upload(path, file);
-      if(!error) photoUrlsArray.push(path);
+      await supabaseClient.storage.from('freight-photos').upload(path, file);
+      photoUrls.push(path);
     }
     
     let pmName = pmEmail ? pmEmail.split('@')[0].split('.')[0] : null;
@@ -306,57 +231,33 @@ async function submitFreightDispatch() {
     await supabaseClient.from('shipped').insert([{
       so: activeShipTargetItem.so, customer: activeShipTargetItem.customer, type: activeShipTargetItem.type,
       qty: activeShipTargetItem.qty, location: activeShipTargetItem.location, shipped_by: dispatcher, 
-      pmd_email: pmName, photo_urls: photoUrlsArray
+      pmd_email: pmName, photo_urls: photoUrls
     }]);
-    
     await supabaseClient.from('staging').delete().eq('id', activeShipTargetItem.id);
     
-    saveLocalMemory('m_shippers', dispatcher);
-    if(pmChecked) saveLocalMemory('m_emails', pmEmail);
-
-    if(pmChecked && pmEmail) {
-      triggerPmEmailClient(activeShipTargetItem.customer, activeShipTargetItem.so, activeShipTargetItem.type, $('#m_time').value, pmEmail, activeShipTargetItem.staged_by, dispatcher, activeShipTargetItem.location, photoUrlsArray);
+    if(pmChecked) {
+      const subject = `CONFIRMATION OF SHIPOUT: ${activeShipTargetItem.customer} SO# ${activeShipTargetItem.so} @ ${activeShipTargetItem.type}`;
+      const body = `Order Shipped.\nSO: ${activeShipTargetItem.so}\nCust: ${activeShipTargetItem.customer}\nLoc: ${activeShipTargetItem.location}\nBy: ${dispatcher}`;
+      window.location.href = `mailto:${pmEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     }
-
     closeShipModal();
-  } catch(e) { alert("Dispatch Error."); }
-  finally {
-    $('#modalConfirmBtn').disabled = false;
-    $('#modalConfirmBtn').textContent = 'Confirm Dispatch';
-  }
+  } catch(e) { alert("Error."); }
 }
 
-// REVISION 4: PHOTO VIEWER TRIGGER
 async function openPhotoViewer(paths) {
-  const gallery = $('#modalPhotoGallery');
-  gallery.innerHTML = '';
-  if(!paths || paths.length === 0) {
-    gallery.innerHTML = `<p style="font-size:14px;color:#667085;text-align:center;grid-column:1/-1;">No photos were uploaded for this order shipment.</p>`;
-  } else {
-    paths.forEach(p => {
-      const imgUrl = `${SUPABASE_URL}/storage/v1/object/public/freight-photos/${p}`;
-      gallery.insertAdjacentHTML('beforeend', `<a href="${imgUrl}" target="_blank"><img src="${imgUrl}" style="width:100%; height:110px; object-fit:cover; border-radius:8px; border:1px solid #cbd5e1;" title="Click to open full screen image" /></a>`);
-    });
-  }
+  const gallery = $('#modalPhotoGallery'); gallery.innerHTML = '';
+  if(!paths || paths.length === 0) gallery.innerHTML = '<p>No photos.</p>';
+  else paths.forEach(p => gallery.insertAdjacentHTML('beforeend', `<a href="${SUPABASE_URL}/storage/v1/object/public/freight-photos/${p}" target="_blank"><img src="${SUPABASE_URL}/storage/v1/object/public/freight-photos/${p}" style="width:100%; border-radius:8px; border:1px solid #ddd;" /></a>`));
   $('#viewModal').style.display = 'flex';
 }
 
 function renderTables() {
-  const queryText = $('#q').value.toLowerCase();
-  
-  // Quick Search filters out rows universally across master caches before row limits wrap
-  const filteredStaging = appData.staging.filter(o => o.so.toLowerCase().includes(queryText) || o.customer.toLowerCase().includes(queryText) || o.location.toLowerCase().includes(queryText));
-  const filteredShipped = appData.shipped.filter(o => o.so.toLowerCase().includes(queryText) || o.customer.toLowerCase().includes(queryText));
-
-  // REVISION 2: Render Row visibility limitations
-  const limitStaging = window.innerWidth > 600 ? filteredStaging.slice(0, 20) : filteredStaging;
-  const limitShipped = window.innerWidth > 600 ? filteredShipped.slice(0, 20) : filteredShipped;
-
-  $('#stageLimitNotice').style.display = (filteredStaging.length > 20 && window.innerWidth > 600) ? 'block' : 'none';
-  $('#shippedLimitNotice').style.display = (filteredShipped.length > 20 && window.innerWidth > 600) ? 'block' : 'none';
+  const q = $('#q').value.toLowerCase();
+  const fStaging = appData.staging.filter(o => o.so.toLowerCase().includes(q) || o.customer.toLowerCase().includes(q) || o.location.toLowerCase().includes(q));
+  const fShipped = appData.shipped.filter(o => o.so.toLowerCase().includes(q) || o.customer.toLowerCase().includes(q));
 
   const sBody = $('#tblStaging tbody'); sBody.innerHTML = '';
-  limitStaging.forEach(o => {
+  fStaging.slice(0, 20).forEach(o => {
     const tr = document.createElement('tr');
     tr.innerHTML = `<td><button class="btn-del" onclick="deleteItem('staging','${o.id}')">Delete</button></td>
       <td><b>${o.so}</b></td><td>${o.customer}</td><td>${new Date(o.entry_date).toLocaleString()}</td>
@@ -366,43 +267,36 @@ function renderTables() {
   });
 
   const shBody = $('#tblShipped tbody'); shBody.innerHTML = '';
-  limitShipped.forEach(o => {
+  fShipped.slice(0, 20).forEach(o => {
     const tr = document.createElement('tr');
-    const urlStr = JSON.stringify(o.photo_urls || []);
     tr.innerHTML = `<td><button class="btn-del" onclick="deleteItem('shipped','${o.id}')">Delete</button></td>
-      <td><button class="btn" style="padding:4px 8px; font-size:12px; border-radius:6px;" onclick='openPhotoViewer(${urlStr})'>View</button></td>
+      <td><button class="btn" style="padding:4px 8px; font-size:11px;" onclick='openPhotoViewer(${JSON.stringify(o.photo_urls)})'>View</button></td>
       <td><b>${o.so}</b></td><td>${o.customer}</td><td>${o.type}</td><td>${o.location}</td>
       <td>${new Date(o.shipped_at).toLocaleString()}</td><td>${o.shipped_by || '—'}</td>
       <td>${o.pmd_email ? o.pmd_email+'<span class="green-check"> ✓</span>' : '—'}</td>`;
     shBody.appendChild(tr);
   });
 
-  // Calculate dynamic dashboard counter grids globally from raw data arrays
-  const activeContainers = appData.staging;
-  const sumByType = t => activeContainers.reduce((acc, c) => c.type?.includes(t) ? acc + (parseInt(c.type.match(new RegExp(`(\\d+)\\s*${t}`))) || 0) : acc, 0);
+  $('#stageLimitNotice').style.display = fStaging.length > 20 ? 'block' : 'none';
+  $('#shippedLimitNotice').style.display = fShipped.length > 20 ? 'block' : 'none';
+
+  // Counters
+  const sumByType = t => appData.staging.reduce((acc, c) => c.type?.includes(t) ? acc + (parseInt(c.type.match(new RegExp(`(\\d+)\\s*${t}`))) || 0) : acc, 0);
   $('#kOrders').textContent     = appData.staging.length;
-  $('#kContainers').textContent = activeContainers.reduce((acc, c) => acc + (parseInt(c.qty) || 0), 0);
+  $('#kContainers').textContent = appData.staging.reduce((acc, c) => acc + (parseInt(c.qty) || 0), 0);
   $('#kSkids').textContent      = sumByType('Skid');
   $('#kBoxes').textContent      = sumByType('Box');
   $('#kCrates').textContent     = sumByType('Crate');
   $('#kShipped').textContent    = appData.shipped.length;
 }
 
-async function deleteItem(table, id) {
-  if(confirm("Permanently delete this record?")) { await supabaseClient.from(table).delete().eq('id', id); loadCloudData(); }
-}
+async function deleteItem(table, id) { if(confirm("Delete record?")) { await supabaseClient.from(table).delete().eq('id', id); loadCloudData(); } }
 
 $('#add').onclick = async () => {
   const sk = parseInt($('#c_skid').value)||0, bx = parseInt($('#c_box').value)||0, cr = parseInt($('#c_crate').value)||0;
-  if(!$('#so').value.trim() || !$('#customer').value.trim() || !$('#loc').value.trim()) return alert("Fields Missing.");
+  if(!$('#so').value || !$('#customer').value || !$('#loc').value) return alert("Fields Missing.");
   let type = []; if(sk) type.push(sk+' Skid'); if(bx) type.push(bx+' Box'); if(cr) type.push(cr+' Crate');
-  if(sk+bx+cr === 0) return alert("Allocate components.");
-  
-  await supabaseClient.from('staging').insert([{
-    so: $('#so').value.trim(), customer: $('#customer').value.trim(), status: $('#status').value, 
-    location: $('#loc').value.trim(), staged_by: $('#staged_by').value.trim(), type: type.join(', '), qty: sk+bx+cr
-  }]);
-  
+  await supabaseClient.from('staging').insert([{ so: $('#so').value, customer: $('#customer').value, status: $('#status').value, location: $('#loc').value, staged_by: $('#staged_by').value, type: type.join(', '), qty: sk+bx+cr }]);
   $('#so').value=''; $('#customer').value=''; $('#loc').value=''; $('#staged_by').value='';
   $('#c_skid').value=0; $('#c_box').value=0; $('#c_crate').value=0;
   loadCloudData();
@@ -411,7 +305,6 @@ $('#add').onclick = async () => {
 $('#q').oninput = renderTables;
 $('#expandStaging').onclick = () => window.open('stage.html', '_blank');
 $('#expandShipped').onclick = () => window.open('ship.html', '_blank');
-window.onresize = renderTables;
 window.onload = loadCloudData;
 </script>
 </body>
