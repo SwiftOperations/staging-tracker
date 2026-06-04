@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Swift Staging Tracker — v5.0</title>
+<title>Swift Staging Tracker — v5.1</title>
 <style>
   :root{--brand:#dd4d25;}
   *{box-sizing:border-box}
@@ -55,17 +55,16 @@
     border-radius: 10px;
   }
   
-  /* REVISION 1: Fix transparency & scrolling bleed for sticky action columns */
   th[style*="position:sticky"], td[style*="position:sticky"] {
     background: #fff !important;
     position: sticky !important;
     right: 0 !important;
-    z-index: 3; /* Raises layer above rolling data text */
-    box-shadow: -2px 0 5px rgba(0,0,0,0.04); /* Creates visual break */
+    z-index: 3;
+    box-shadow: -2px 0 5px rgba(0,0,0,0.04);
   }
   
   thead th[style*="position:sticky"] {
-    z-index: 4; /* Keeps sticky column headers locked above columns and rows */
+    z-index: 4;
   }
 
   .pill{display:inline-block;background:#f1f5f9;border-radius:999px;padding:2px 8px;font-size:12px}
@@ -77,7 +76,7 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>Swift Staging Tracker — v5.0</h1>
+  <h1>Swift Staging Tracker — v5.1</h1>
   <div id="err" class="notice" style="display:none"></div>
 
   <div class="grid">
@@ -245,7 +244,6 @@ function renderTables(){
   filteredStaging.forEach((o)=>{
     const tr=document.createElement('tr');
     
-    // REVISION 3: Front-Position Delete Trigger
     const delTd = document.createElement('td');
     const delBtn = document.createElement('button'); delBtn.className = 'btn-del'; delBtn.textContent = 'Delete';
     delBtn.addEventListener('click', () => {
@@ -259,7 +257,6 @@ function renderTables(){
     });
     delTd.append(delBtn); tr.append(delTd);
 
-    // REVISION 2: Display Entry Timestamp using native Shipped At formatting pattern
     const entryTime = o.entryDate ? new Date(o.entryDate).toLocaleString() : (o.dueDate || '');
     tr.append(td(o.so), td(o.customer), td(entryTime), td(`${o.qty} ${o.type}(s)`), td(o.location), td(o.status));
     
@@ -287,7 +284,6 @@ function renderTables(){
   filteredShipped.forEach((o)=>{
     const tr=document.createElement('tr');
     
-    // REVISION 3: Front-Position Delete Trigger
     const delTd = document.createElement('td');
     const delBtn = document.createElement('button'); delBtn.className = 'btn-del'; delBtn.textContent = 'Delete';
     delBtn.addEventListener('click', () => {
@@ -301,7 +297,6 @@ function renderTables(){
     });
     delTd.append(delBtn); tr.append(delTd);
 
-    // REVISION 2: Display Entry Timestamp alignment
     const entryTime = o.entryDate ? new Date(o.entryDate).toLocaleString() : (o.dueDate || '');
     tr.append(td(o.so), td(o.customer), td(entryTime), td(`${o.qty} ${o.type}(s)`), td(o.location), td(o.status));
     tr.append(td(o.shippedAt ? new Date(o.shippedAt).toLocaleString() : ''));
@@ -336,7 +331,6 @@ $('#add').addEventListener('click', () => {
 
   if(!so || !cust || !loc){ showErr("SO, Customer, and Location are required."); return; }
 
-  // REVISION 2: Automatically inject precise Entry Timestamp configuration matching Shipped At format
   appData.staging.push({ so, customer: cust, entryDate: new Date().toISOString(), status: stat, type: typ, qty, location: loc });
   syncStorage();
   
