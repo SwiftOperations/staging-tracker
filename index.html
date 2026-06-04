@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Swift Staging Tracker — v5.2</title>
+<title>Swift Staging Tracker — v5.3</title>
 <style>
   :root{--brand:#dd4d25;}
   *{box-sizing:border-box}
@@ -38,7 +38,8 @@
     z-index: 1;
   }
   
-  tbody td{border-bottom:1px solid #f0f1f3;padding:10px;vertical-align:top}
+  /* FIXED BLEED: Explicitly forcing a solid background color onto all rows so sliding text hides beneath */
+  tbody td{background:#fff;border-bottom:1px solid #f0f1f3;padding:10px;vertical-align:top}
   
   .tblwrap{
     overflow-x: auto;
@@ -77,7 +78,7 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>Swift Staging Tracker — v5.2</h1>
+  <h1>Swift Staging Tracker — v5.3</h1>
   <div id="err" class="notice" style="display:none"></div>
 
   <div class="grid">
