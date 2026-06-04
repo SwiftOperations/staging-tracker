@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Swift Staging Tracker — v2.65</title>
+<title>Swift Staging Tracker — v5.0</title>
 <style>
   :root{--brand:#dd4d25;}
   *{box-sizing:border-box}
@@ -21,8 +21,10 @@
   .row > *{flex:1 1 170px}
   .btn{background:var(--brand);color:#fff;border:0;border-radius:12px;padding:12px 20px;font-weight:700;cursor:pointer}
   .btn:disabled{opacity:.5;cursor:not-allowed}
+  .btn-del{background:#dc2626;color:#fff;border:0;border-radius:6px;padding:4px 8px;font-size:12px;font-weight:700;cursor:pointer}
+  .btn-del:hover{background:#b91c1c}
   
-  /* --- REVISED SCROLLING PROPERTIES --- */
+  /* --- RESPONSIVE DESKTOP & MOBILE SCROLLING --- */
   table{width:100%;border-collapse:separate;border-spacing:0;min-width:760px}
   
   thead th{
@@ -33,19 +35,18 @@
     font-size: 14px;
     text-align: left;
     padding: 10px;
-    z-index: 1; /* Keeps header fixed cleanly above scrolling rows */
+    z-index: 1;
   }
   
   tbody td{border-bottom:1px solid #f0f1f3;padding:10px;vertical-align:top}
   
   .tblwrap{
-    overflow-x: auto; /* Enables responsive desktop side-scrolling bar */
+    overflow-x: auto;
     border: 1px solid #e6e7eb;
     border-radius: 12px;
     -webkit-overflow-scrolling: touch;
   }
   
-  /* Visible scrollbar layout formatting for desktop viewports */
   .tblwrap::-webkit-scrollbar {
     height: 8px;
   }
@@ -54,12 +55,18 @@
     border-radius: 10px;
   }
   
-  /* Retains sticky tracking rules for checkboxes and undo buttons while fixing background transparency */
+  /* REVISION 1: Fix transparency & scrolling bleed for sticky action columns */
   th[style*="position:sticky"], td[style*="position:sticky"] {
     background: #fff !important;
-    z-index: 2;
+    position: sticky !important;
+    right: 0 !important;
+    z-index: 3; /* Raises layer above rolling data text */
+    box-shadow: -2px 0 5px rgba(0,0,0,0.04); /* Creates visual break */
   }
-  /* --- END OF REVISIONS --- */
+  
+  thead th[style*="position:sticky"] {
+    z-index: 4; /* Keeps sticky column headers locked above columns and rows */
+  }
 
   .pill{display:inline-block;background:#f1f5f9;border-radius:999px;padding:2px 8px;font-size:12px}
   .split{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
@@ -70,7 +77,7 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>Swift Staging Tracker — v2.65</h1>
+  <h1>Swift Staging Tracker — v5.0</h1>
   <div id="err" class="notice" style="display:none"></div>
 
   <div class="grid">
@@ -95,11 +102,11 @@
     <div class="row">
       <input id="so" placeholder="SO number" />
       <input id="customer" placeholder="Customer" />
-      <input id="due" type="date" />
       <select id="status">
-        <option>Waiting on buyout</option>
-        <option>Same-day</option>
-        <option>Long-lead</option>
+        <option>Partial</option>
+        <option>Ship Today</option>
+        <option>Ship On Future Date</option>
+        <option>Awaiting Shipping Instructions</option>
       </select>
       <select id="ctype">
         <option>Skid</option>
@@ -122,7 +129,8 @@
       <table id="tblStaging">
         <thead>
           <tr>
-            <th>SO</th><th>Customer</th><th>Due Date</th>
+            <th style="width:50px">Delete</th>
+            <th>SO</th><th>Customer</th><th>Entry Date</th>
             <th>Number of Containers</th><th>Staging Location(s)</th>
             <th>Shipping Status</th>
             <th style="width:90px;position:sticky;right:0">Shipped</th>
@@ -143,7 +151,8 @@
       <table id="tblShipped">
         <thead>
           <tr>
-            <th>SO</th><th>Customer</th><th>Due Date</th>
+            <th style="width:50px">Delete</th>
+            <th>SO</th><th>Customer</th><th>Entry Date</th>
             <th>Number of Containers</th><th>Staging Location(s) at Ship</th>
             <th>Status at Ship</th><th>Shipped At</th>
             <th style="width:70px;position:sticky;right:0">Undo</th>
@@ -226,7 +235,7 @@ function td(txt){ const d=document.createElement('td'); d.textContent=txt; retur
 function renderTables(){
   const queryText = $('#q').value.toLowerCase();
   
-  const filteredStaging = appData.staging.filter(o => o.so.toLowerCase().includes(queryText) || o.customer.toLowerCase().includes(queryText) || o.location.toLowerCase().includes(queryText));
+  const filteredStaging = appData.staging.filter(o => o.so.toLowerCase().includes(queryText) || o.customer.toLowerCase().includes(queryText) || (o.location && o.location.toLowerCase().includes(queryText)));
   const filteredShipped = appData.shipped.filter(o => o.so.toLowerCase().includes(queryText) || o.customer.toLowerCase().includes(queryText));
 
   const stagingBody = $('#tblStaging tbody');
@@ -235,7 +244,24 @@ function renderTables(){
   stagingBody.innerHTML='';
   filteredStaging.forEach((o)=>{
     const tr=document.createElement('tr');
-    tr.append(td(o.so), td(o.customer), td(o.dueDate), td(`${o.qty} ${o.type}(s)`), td(o.location), td(o.status));
+    
+    // REVISION 3: Front-Position Delete Trigger
+    const delTd = document.createElement('td');
+    const delBtn = document.createElement('button'); delBtn.className = 'btn-del'; delBtn.textContent = 'Delete';
+    delBtn.addEventListener('click', () => {
+      if(confirm(`Permanently delete active SO ${o.so}?`)) {
+        const exactIndex = appData.staging.indexOf(o);
+        if (exactIndex > -1) {
+          appData.staging.splice(exactIndex, 1);
+          syncStorage();
+        }
+      }
+    });
+    delTd.append(delBtn); tr.append(delTd);
+
+    // REVISION 2: Display Entry Timestamp using native Shipped At formatting pattern
+    const entryTime = o.entryDate ? new Date(o.entryDate).toLocaleString() : (o.dueDate || '');
+    tr.append(td(o.so), td(o.customer), td(entryTime), td(`${o.qty} ${o.type}(s)`), td(o.location), td(o.status));
     
     const shippedTd=document.createElement('td');
     shippedTd.style.position = 'sticky';
@@ -260,7 +286,24 @@ function renderTables(){
   shippedBody.innerHTML='';
   filteredShipped.forEach((o)=>{
     const tr=document.createElement('tr');
-    tr.append(td(o.so), td(o.customer), td(o.dueDate), td(`${o.qty} ${o.type}(s)`), td(o.location), td(o.status));
+    
+    // REVISION 3: Front-Position Delete Trigger
+    const delTd = document.createElement('td');
+    const delBtn = document.createElement('button'); delBtn.className = 'btn-del'; delBtn.textContent = 'Delete';
+    delBtn.addEventListener('click', () => {
+      if(confirm(`Permanently delete historical record for SO ${o.so}?`)) {
+        const exactIndex = appData.shipped.indexOf(o);
+        if (exactIndex > -1) {
+          appData.shipped.splice(exactIndex, 1);
+          syncStorage();
+        }
+      }
+    });
+    delTd.append(delBtn); tr.append(delTd);
+
+    // REVISION 2: Display Entry Timestamp alignment
+    const entryTime = o.entryDate ? new Date(o.entryDate).toLocaleString() : (o.dueDate || '');
+    tr.append(td(o.so), td(o.customer), td(entryTime), td(`${o.qty} ${o.type}(s)`), td(o.location), td(o.status));
     tr.append(td(o.shippedAt ? new Date(o.shippedAt).toLocaleString() : ''));
     
     const undo=document.createElement('td');
@@ -286,15 +329,15 @@ function renderTables(){
 $('#add').addEventListener('click', () => {
   const so  = $('#so').value.trim();
   const cust= $('#customer').value.trim();
-  const due = $('#due').value;
   const stat= $('#status').value;
   const typ = $('#ctype').value;
   const qty = Math.max(1, Number($('#qty').value||1));
   const loc = $('#loc').value.trim();
 
-  if(!so || !cust || !due || !loc){ showErr("SO, Customer, Due Date, Location are required."); return; }
+  if(!so || !cust || !loc){ showErr("SO, Customer, and Location are required."); return; }
 
-  appData.staging.push({ so, customer: cust, dueDate: due, status: stat, type: typ, qty, location: loc });
+  // REVISION 2: Automatically inject precise Entry Timestamp configuration matching Shipped At format
+  appData.staging.push({ so, customer: cust, entryDate: new Date().toISOString(), status: stat, type: typ, qty, location: loc });
   syncStorage();
   
   $('#saved').textContent = `Saved: ${qty} ${typ}(s) for ${so} @ ${loc}`;
