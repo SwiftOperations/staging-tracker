@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Staging Log — v5.5</title>
+<title>Staging Log — v6.0</title>
 <style>
   body{margin:0;background:#fff;font:16px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
   .wrap{max-width:1100px;margin:0 auto;padding:18px}
@@ -13,50 +13,35 @@
   .btn-del{background:#dc2626;color:#fff;border:0;border-radius:6px;padding:4px 8px;font-size:12px;font-weight:700;cursor:pointer}
   .btn-del:hover{background:#b91c1c}
   
-  .table-wrap{
-    overflow-x: auto;
-    border:1px solid #e5e7eb;
-    border-radius:10px
-  }
+  /* Modal display layers for popup handling standard mirrored view tracking */
+  .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 100; align-items: center; justify-content: center; padding: 16px; overflow-y: auto; }
+  .modal-window { background: #fff; border-radius: 16px; max-width: 500px; width: 100%; padding: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); display: flex; flex-direction: column; gap: 14px; color:#222; }
+  .modal-field { display: flex; flex-direction: column; gap: 4px; text-align: left; }
+  .modal-field label { font-size: 13px; font-weight: 700; color: #4b5563; }
+  .modal-field input:disabled { background: #f3f4f6; color: #9ca3af; }
+  .photo-uploader { border: 2px dashed #cbd5e1; border-radius: 10px; padding: 16px; text-align: center; cursor: pointer; background: #f8fafc; }
+  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
+  .chk-row { display: flex; align-items: center; gap: 8px; justify-content: flex-start; }
+  .photo-strip { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+  .photo-badge { background: #e2e8f0; font-size: 11px; padding: 2px 6px; border-radius: 4px; }
+
+  .table-wrap{ overflow-x: auto; border:1px solid #e5e7eb; border-radius:10px }
   .table-wrap::-webkit-scrollbar { height: 8px; }
   .table-wrap::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
   
-  table{width:100%;border-collapse:collapse}
-  th,td{border-top:1px solid #e5e7eb;padding:10px 8px;white-space:nowrap;background:#fff;text-align:left}
-  th{position:sticky;top:0;background:#fafafa;z-index: 1;}
+  table{width:100%; border-collapse:collapse}
+  th,td{border-top:1px solid #e5e7eb; padding:10px 8px; white-space:nowrap; background:#fff; text-align:left}
+  th{position:sticky; top:0; background:#fafafa; z-index: 1;}
   
-  th[style*="position:sticky"], td[style*="position:sticky"] {
-    background: #fff !important;
-    position: sticky !important;
-    right: 0 !important;
-    z-index: 3;
-    box-shadow: -2px 0 5px rgba(0,0,0,0.04);
-  }
+  th[style*="position:sticky"], td[style*="position:sticky"] { background: #fff !important; position: sticky !important; right: 0 !important; z-index: 3; box-shadow: -2px 0 5px rgba(0,0,0,0.04); }
   thead th[style*="position:sticky"] { z-index: 4; }
 
-  /* REVISION 2: Mobile Card Layout Conversion on expanded screen */
   @media (max-width:600px){
     .table-wrap { border: none; border-radius: 0; }
     table, thead, tbody, th, td, tr { display: block; width: 100% !important; min-width: 100% !important; }
     thead { display: none; }
-    
-    tbody tr {
-      background: #fff;
-      border: 1px solid #e6e7eb;
-      border-radius: 12px;
-      margin-bottom: 14px;
-      padding: 12px;
-    }
-    
-    tbody td {
-      border: none;
-      padding: 6px 0;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      text-align: right;
-      font-size: 14px;
-    }
+    tbody tr { background: #fff; border: 1px solid #e6e7eb; border-radius: 12px; margin-bottom: 14px; padding: 12px; }
+    tbody td { border: none; padding: 6px 0; display: flex; justify-content: space-between; align-items: center; text-align: right; font-size: 14px; }
     
     tbody td:nth-of-type(1)::before { content: "Action:"; font-weight: 700; color: #6b7280; }
     tbody td:nth-of-type(2)::before { content: "SO Number:"; font-weight: 700; color: #6b7280; }
@@ -67,7 +52,6 @@
     tbody td:nth-of-type(7)::before { content: "Status:"; font-weight: 700; color: #6b7280; }
     tbody td:nth-of-type(8)::before { content: "Staged By:"; font-weight: 700; color: #6b7280; }
     tbody td:nth-of-type(9)::before { content: "Ship Order:"; font-weight: 700; color: #6b7280; }
-    
     td[style*="position:sticky"] { position: static !important; box-shadow: none !important; }
   }
 </style>
@@ -96,77 +80,150 @@
   </div>
 </div>
 
+<div id="shipModal" class="modal-overlay">
+  <div class="modal-window">
+    <h3 style="margin:0">Confirm Freight Dispatch Log</h3>
+    <div class="photo-uploader" onclick="document.querySelector('#photoFiles').click()">
+      <span style="font-size:14px; font-weight:700; color:#4b5563;">📷 Click / Touch to Upload Freight Photos</span>
+      <input type="file" id="photoFiles" multiple accept="image/*" style="display:none" onchange="previewPhotos()" />
+      <div id="photoPreviewStrip" class="photo-strip"></div>
+    </div>
+    <div class="modal-field"><label>SO#</label><input id="m_so" type="text" readonly /></div>
+    <div class="modal-field"><label>Customer</label><input id="m_cust" type="text" readonly /></div>
+    <div class="modal-field"><label>Number of Containers</label><input id="m_qty" type="text" readonly /></div>
+    <div class="modal-field"><label>Staging Location(s)</label><input id="m_loc" type="text" readonly /></div>
+    <div class="modal-field"><label>Shipped At</label><input id="m_time" type="text" readonly /></div>
+    <div class="modal-field"><label>Shipped By</label><input id="m_by" type="text" list="pastShippers" /></div>
+    <div class="chk-row">
+      <input type="checkbox" id="m_pm_chk" onchange="togglePmField(this)" />
+      <label for="m_pm_chk" style="font-size:13px; font-weight:700;">E-mail PM Verification of Shipment</label>
+    </div>
+    <div class="modal-field"><input id="m_pm_email" type="text" list="pastEmails" disabled /></div>
+    <div class="modal-actions">
+      <button button style="background:#6b7280; border:0; color:#fff; border-radius:10px; height:36px; padding:0 12px; cursor:pointer;" onclick="closeShipModal()">Cancel</button>
+      <button id="modalConfirmBtn" style="background:#dd4d25; border:0; color:#fff; border-radius:10px; height:36px; padding:0 12px; cursor:pointer;" onclick="submitFreightDispatch()">Confirm Dispatch</button>
+    </div>
+  </div>
+</div>
+
+<datalist id="pastShippers"></datalist>
+<datalist id="pastEmails"></datalist>
+
 <script>
   const SUPABASE_PROJECT_ID = 'gdrpdiwykmnybmkadlrv';
   const SUPABASE_URL = `https://${SUPABASE_PROJECT_ID}.supabase.co`;
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdkcnBkaXd5a21ueWJta2FkbHJ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1MjMyMTIsImV4cCI6MjA5NjA5OTIxMn0.Z7ih_vQic1GtzCyZmTEV-RWJnmuaNZQDfOV2_Fvan5g';
 
   const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  let activeShipTargetItem = null;
+  let selectedPhotoBlobs = [];
+
+  function togglePmField(chk) {
+    document.querySelector('#m_pm_email').disabled = !chk.checked;
+  }
+  function closeShipModal() {
+    document.querySelector('#shipModal').style.display = 'none';
+    refreshStagingView();
+  }
+  function previewPhotos() {
+    const files = document.querySelector('#photoFiles').files;
+    const strip = document.querySelector('#photoPreviewStrip');
+    strip.innerHTML = '';
+    selectedPhotoBlobs = Array.from(files).slice(0, 10);
+    selectedPhotoBlobs.forEach((f, i) => {
+      const b = document.createElement('span'); b.className = 'photo-badge'; b.textContent = `📎 File-${i+1}`;
+      strip.appendChild(b);
+    });
+  }
+
+  function triggerShipModal(item) {
+    activeShipTargetItem = item; selectedPhotoBlobs = [];
+    document.querySelector('#photoPreviewStrip').innerHTML = '';
+    document.querySelector('#m_so').value = item.so;
+    document.querySelector('#m_cust').value = item.customer;
+    document.querySelector('#m_qty').value = item.type || `${item.qty} item(s)`;
+    document.querySelector('#m_loc').value = item.location;
+    document.querySelector('#m_time').value = new Date().toLocaleString();
+    document.querySelector('#m_by').value = '';
+    document.querySelector('#m_pm_chk').checked = false;
+    document.querySelector('#m_pm_email').value = '';
+    document.querySelector('#m_pm_email').disabled = true;
+    document.querySelector('#shipModal').style.display = 'flex';
+    
+    const shippers = JSON.parse(localStorage.getItem('mem_shippers') || '[]');
+    const emails = JSON.parse(localStorage.getItem('mem_emails') || '[]');
+    document.querySelector('#pastShippers').innerHTML = shippers.map(s => `<option value="${s}">`).join('');
+    document.querySelector('#pastEmails').innerHTML = emails.map(e => `<option value="${e}">`).join('');
+  }
+
+  async function submitFreightDispatch() {
+    const dispatcher = document.querySelector('#m_by').value.trim();
+    const pmChecked = document.querySelector('#m_pm_chk').checked;
+    const pmEmail = document.querySelector('#m_pm_email').value.trim();
+    if(!dispatcher || (pmChecked && !pmEmail)) { alert("Required fields missing."); return; }
+
+    try {
+      for (let i = 0; i < selectedPhotoBlobs.length; i++) {
+        const file = selectedPhotoBlobs[i];
+        const path = `${activeShipTargetItem.so}-${Date.now()}-${i}.${file.name.split('.').pop()}`;
+        await supabaseClient.storage.from('freight-photos').upload(path, file);
+      }
+      let pmNameString = '';
+      if (pmChecked && pmEmail) {
+        pmNameString = pmEmail.split('@')[0].split('.')[0];
+        pmNameString = pmNameString.charAt(0).toUpperCase() + pmNameString.slice(1);
+      }
+      await supabaseClient.from('shipped').insert([{
+        so: activeShipTargetItem.so, customer: activeShipTargetItem.customer,
+        type: activeShipTargetItem.type, qty: activeShipTargetItem.qty,
+        location: activeShipTargetItem.location, shipped_by: dispatcher, pmd_email: pmNameString || null
+      }]);
+      await supabaseClient.from('staging').delete().eq('id', activeShipTargetItem.id);
+      
+      let shippers = JSON.parse(localStorage.getItem('mem_shippers') || '[]');
+      if(!shippers.includes(dispatcher)) { shippers.push(dispatcher); localStorage.setItem('mem_shippers', JSON.stringify(shippers)); }
+      if(pmChecked) {
+        let emails = JSON.parse(localStorage.getItem('mem_emails') || '[]');
+        if(!emails.includes(pmEmail)) { emails.push(pmEmail); localStorage.setItem('mem_emails', JSON.stringify(emails)); }
+      }
+      document.querySelector('#shipModal').style.display = 'none';
+      refreshStagingView();
+    } catch(e) { alert("Network sync timeout."); }
+  }
 
   async function refreshStagingView() {
     const body = document.querySelector('#tbl tbody');
     try {
       const { data, error } = await supabaseClient.from('staging').select('*').order('entry_date', { ascending: false });
       if (error) throw error;
-      
       body.innerHTML = '';
       if (!data || data.length === 0) {
         body.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#667085;padding:20px;">No active entries staged on floor.</td></tr>';
         return;
       }
-
       data.forEach(e => {
         const tr = document.createElement('tr');
-        
         const delTd = document.createElement('td');
         const delBtn = document.createElement('button'); delBtn.className = 'btn-del'; delBtn.textContent = 'Delete';
         delBtn.addEventListener('click', async () => {
-          if(confirm(`Permanently delete active SO ${e.so}?`)) {
-            await supabaseClient.from('staging').delete().eq('id', e.id);
-            refreshStagingView();
-          }
+          if(confirm(`Delete active SO ${e.so}?`)) { await supabaseClient.from('staging').delete().eq('id', e.id); refreshStagingView(); }
         });
         delTd.appendChild(delBtn); tr.appendChild(delTd);
 
         const entryTime = e.entry_date ? new Date(e.entry_date).toLocaleString() : '';
-        
-        let tdFields = `<td><b>${e.so}</b></td><td>${e.customer}</td><td>${entryTime}</td>
-                      <td>${e.type || `${e.qty} item(s)`}</td>
-                      <td>${e.location || ''}</td><td>${e.status || ''}</td>
-                      <td>${e.staged_by || '—'}</td>`;
-        tr.insertAdjacentHTML('beforeend', tdFields);
+        tr.insertAdjacentHTML('beforeend', `<td><b>${e.so}</b></td><td>${e.customer}</td><td>${entryTime}</td><td>${e.type || `${e.qty} item(s)`}</td><td>${e.location || ''}</td><td>${e.status || ''}</td><td>${e.staged_by || '—'}</td>`);
         
         const shippedTd = document.createElement('td');
-        shippedTd.style.position = 'sticky';
-        shippedTd.style.right = '0';
-        const chk = document.createElement('input'); chk.type = 'checkbox';
-        chk.style.width = '18px'; chk.style.height = '18px'; chk.style.cursor = 'pointer';
-        chk.addEventListener('change', async () => {
-          if(chk.checked){
-            const { error: insertErr } = await supabaseClient.from('shipped').insert([{
-              so: e.so, customer: e.customer, entry_date: e.entry_date,
-              status: e.status, type: e.type, qty: e.qty, location: e.location, staged_by: e.staged_by
-            }]);
-            if (!insertErr) {
-              await supabaseClient.from('staging').delete().eq('id', e.id);
-              refreshStagingView();
-            }
-          }
-        });
-        shippedTd.appendChild(chk);
-        tr.appendChild(shippedTd);
-        
+        shippedTd.style.position = 'sticky'; shippedTd.style.right = '0';
+        const chk = document.createElement('input'); chk.type = 'checkbox'; chk.style.width = '18px'; chk.style.height = '18px';
+        chk.addEventListener('change', () => { if(chk.checked) triggerShipModal(e); });
+        shippedTd.appendChild(chk); tr.appendChild(shippedTd);
         body.appendChild(tr);
       });
-    } catch (e) {
-      body.innerHTML = '<tr><td colspan="9" style="color:#dd4d25;text-align:center;">Sync error reading cloud manifest.</td></tr>';
-    }
+    } catch (e) { body.innerHTML = '<tr><td colspan="9" style="color:#dd4d25;text-align:center;">Sync error reading cloud manifest.</td></tr>'; }
   }
 
-  window.addEventListener('DOMContentLoaded', () => {
-    refreshStagingView();
-    setInterval(refreshStagingView, 10000);
-  });
+  window.addEventListener('DOMContentLoaded', () => { refreshStagingView(); setInterval(refreshStagingView, 10000); });
 </script>
 </body>
 </html>
