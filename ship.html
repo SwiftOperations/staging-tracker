@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Shipped Log — v6.2</title>
+<title>Shipped Log — v7.0</title>
 <style>
   body{margin:0;background:#fff;font:13px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Arial;color:#222;}
   .wrap{padding:12px}
@@ -10,37 +10,38 @@
   button{background:#dd4d25;color:#fff;border:0;border-radius:8px;height:32px;padding:0 12px;cursor:pointer;font-weight:700}
   input { height: 34px; padding: 0 10px; border: 1px solid #cbd5e1; border-radius: 8px; width: 100%; max-width:300px; font-size:13px; }
   .table-wrap{ overflow-x: auto; border:1px solid #e5e7eb; border-radius:10px }
-  table{width:100%; border-collapse:collapse; min-width:850px}
+  table{width:100%; border-collapse:collapse; min-width:950px}
   th,td{border-top:1px solid #e5e7eb; padding:8px; white-space:nowrap; text-align:left}
   th{position:sticky; top:0; background:#fafafa; z-index: 1;}
+  .green-check { color: #16a34a; font-weight: bold; }
 </style>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 <div class="wrap">
-  <h2>Shipped Log</h2>
+  <h2>Shipped Log Historical Manifest</h2>
   <div class="actions">
-    <button onclick="window.print()">Print</button>
-    <button onclick="window.close()">Close</button>
-    <input id="f" placeholder="Quick search..." oninput="filter()"/>
+    <button onclick="window.print()">Print Manifest Log</button>
+    <button onclick="window.close()">Close Window</button>
+    <input id="f" placeholder="Quick filter contents..." oninput="filter()"/>
   </div>
   <div class="table-wrap"><table id="tbl">
-    <thead><tr><th>SO</th><th>Customer</th><th>Containers</th><th>Location</th><th>Shipped At</th><th>Shipped By</th><th>PM'd Email</th></tr></thead>
+    <thead><tr><th>SO</th><th>Customer</th><th>Containers</th><th>Location</th><th>Total Weight</th><th>Shipped At</th><th>Shipped By</th><th>PM'd Email</th></tr></thead>
     <tbody></tbody>
   </table></div>
 </div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
   const supabaseClient = supabase.createClient('https://gdrpdiwykmnybmkadlrv.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdkcnBkaXd5a21ueWJta2FkbHJ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1MjMyMTIsImV4cCI6MjA5NjA5OTIxMn0.Z7ih_vQic1GtzCyZmTEV-RWJnmuaNZQDfOV2_Fvan5g');
-  let data = [];
+  let cache = [];
   async function refresh() {
     const res = await supabaseClient.from('shipped').select('*').order('shipped_at', { ascending: false });
-    data = res.data || []; filter();
+    cache = res.data || []; filter();
   }
   function filter() {
     const q = document.querySelector('#f').value.toLowerCase();
     const body = document.querySelector('#tbl tbody'); body.innerHTML = '';
-    data.filter(e => e.so.toLowerCase().includes(q) || e.customer.toLowerCase().includes(q)).forEach(e => {
-      body.insertAdjacentHTML('beforeend', `<tr><td><b>${e.so}</b></td><td>${e.customer}</td><td>${e.type}</td><td>${e.location}</td><td>${new Date(e.shipped_at).toLocaleString()}</td><td>${e.shipped_by||'—'}</td><td>${e.pmd_email?e.pmd_email+' ✓':'—'}</td></tr>`);
+    cache.filter(e => e.so.toLowerCase().includes(q) || e.customer.toLowerCase().includes(q)).forEach(e => {
+      body.insertAdjacentHTML('beforeend', `<tr><td><b>${e.so}</b></td><td>${e.customer}</td><td>${e.type}</td><td>${e.location}</td><td><b>${e.weight || '—'}</b></td><td>${new Date(e.shipped_at).toLocaleString()}</td><td>${e.shipped_by||'—'}</td><td>${e.pmd_email?e.pmd_email+' <span class="green-check">✓</span>':'—'}</td></tr>`);
     });
   }
   window.onload = refresh; setInterval(refresh, 10000);
