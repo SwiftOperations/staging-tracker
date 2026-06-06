@@ -133,7 +133,6 @@
   </div>
 </div>
 
-<!-- SHIPPING WORKFLOW MODAL -->
 <div id="shipModal" class="modal-overlay" onclick="if(event.target===this) closeShipModal()">
   <div class="modal-window">
     <button class="modal-close-x" onclick="closeShipModal()">×</button>
@@ -155,7 +154,6 @@
   </div>
 </div>
 
-<!-- UNIVERSAL PARAMETRIC EDIT SYSTEM MODAL OVERLAY -->
 <div id="editModal" class="modal-overlay" onclick="if(event.target===this) $('#editModal').style.display='none'">
   <div class="modal-window">
     <button class="modal-close-x" onclick="$('#editModal').style.display='none'">×</button>
@@ -203,7 +201,6 @@
   </div>
 </div>
 
-<!-- GALLERY LIGHTBOX MODAL -->
 <div id="viewModal" class="modal-overlay" onclick="if(event.target===this) $('#viewModal').style.display='none'">
   <div class="modal-window" style="max-width: 600px;">
     <button class="modal-close-x" onclick="$('#viewModal').style.display='none'">×</button>
@@ -285,19 +282,26 @@ async function submitFreightDispatch() {
     let pmName = pmEmail ? pmEmail.split('@')[0].split('.')[0] : null;
     if(pmName) pmName = pmName.charAt(0).toUpperCase() + pmName.slice(1);
 
+    // Save payload details down to Supabase. 
+    // If verification box is checked, write down the email address; otherwise, save as null.
     await supabaseClient.from('shipped').insert([{
       so: activeShipTargetItem.so, customer: activeShipTargetItem.customer, type: activeShipTargetItem.type,
       qty: activeShipTargetItem.qty, location: activeShipTargetItem.location, weight: activeShipTargetItem.weight,
-      shipped_by: dispatcher, pmd_email: pmName, photo_urls: photoUrls
+      shipped_by: dispatcher, pmd_email: pmChecked ? pmEmail : null, photo_urls: photoUrls
     }]);
+    
     await supabaseClient.from('staging').delete().eq('id', activeShipTargetItem.id);
+    
+    // Success fallback local state tracking updates
+    let activeShippers = JSON.parse(localStorage.getItem('m_shippers') || '[]');
+    if(!activeShippers.includes(dispatcher)) { activeShippers.push(dispatcher); localStorage.setItem('m_shippers', JSON.stringify(activeShippers)); }
     if(pmChecked) {
-      const subject = `CONFIRMATION OF SHIPOUT: ${activeShipTargetItem.customer} SO# ${activeShipTargetItem.so} @ ${activeShipTargetItem.type}`;
-      const body = `Order Shipped Confirmation Lines.\nSO: ${activeShipTargetItem.so}\nCust: ${activeShipTargetItem.customer}\nLoc: ${activeShipTargetItem.location}\nWeight: ${activeShipTargetItem.weight||'—'}\nBy: ${dispatcher}`;
-      window.location.href = `mailto:${pmEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+      let activeEmails = JSON.parse(localStorage.getItem('m_emails') || '[]');
+      if(!activeEmails.includes(pmEmail)) { activeEmails.push(pmEmail); localStorage.setItem('m_emails', JSON.stringify(activeEmails)); }
     }
+
     closeShipModal();
-  } catch(e) { alert("Error."); }
+  } catch(e) { alert("Error updating records."); $('#modalConfirmBtn').disabled = false; }
 }
 
 function parseContainerString(typeStr) {
