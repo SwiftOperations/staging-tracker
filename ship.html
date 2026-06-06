@@ -2,8 +2,9 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Shipped Log — v7.1</title>
+<title>Shipped Expanded Log</title>
 <style>
+  :root{--brand:#dd4d25;}
   body{margin:0;background:#fff;font:13px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Arial;color:#222;}
   .wrap{padding:12px}
   .actions{display:flex;gap:8px;margin-bottom:12px;align-items:center}
@@ -11,30 +12,39 @@
   .btn-del{background:#dc2626;color:#fff;border:0;border-radius:6px;padding:4px 8px;font-size:12px;font-weight:700;cursor:pointer}
   .btn-edit{background:#0284c7;color:#fff;border:0;border-radius:6px;padding:4px 8px;font-size:12px;font-weight:700;cursor:pointer}
   input { height: 34px; padding: 0 10px; border: 1px solid #cbd5e1; border-radius: 8px; width: 100%; max-width:300px; font-size:13px; }
+  
+  .freight-block { flex: none; display: flex; gap: 8px; background: #fff; border: 1px solid #d1d5db; padding: 6px 10px; border-radius: 10px; align-items: center; width:100%; }
+  .counter-box { display: flex; align-items: center; gap: 4px; flex: 1; justify-content: center; }
+  .counter-box label { font-size: 13px; font-weight: 700; }
+  .counter-box input { width: 44px; height: 32px; text-align: center; border-radius: 6px; font-weight: 700; border:1px solid #d1d5db; }
+  
   .table-wrap{ overflow-x: auto; border:1px solid #e5e7eb; border-radius:10px }
   table{width:100%; border-collapse:collapse; min-width:1100px}
   th,td{border-top:1px solid #e5e7eb; padding:8px; white-space:nowrap; text-align:left}
   th{position:sticky; top:0; background:#fafafa; z-index: 1;}
   .green-check { color: #16a34a; font-weight: bold; }
   
-  /* MODALS */
   .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; padding: 12px; }
   .modal-window { background: #fff; border-radius: 16px; max-width: 500px; width: 100%; max-height: 90vh; padding: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); display: flex; flex-direction: column; gap: 12px; overflow-y: auto; position: relative; }
   .modal-close-x { position: absolute; top: 12px; right: 16px; font-size: 22px; font-weight: 700; color: #6b7280; cursor: pointer; border: 0; background: none; }
   .modal-field { display: flex; flex-direction: column; gap: 2px; }
   .modal-field label { font-size: 12px; font-weight: 700; color: #4b5563; }
+  .photo-options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .photo-uploader { border: 2px dashed #cbd5e1; border-radius: 10px; padding: 10px; text-align: center; cursor: pointer; background: #f8fafc; font-size: 12px; font-weight: 700; }
+  .photo-strip { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+  .photo-badge { background: #e2e8f0; font-size: 11px; padding: 2px 6px; border-radius: 4px; }
 </style>
 </head>
 <body>
 <div class="wrap">
-  <h2>Shipped Log Historical Manifest</h2>
+  <h2>Shipped Expanded Log</h2>
   <div class="actions">
     <button onclick="window.print()">Print Manifest Log</button>
     <button onclick="window.close()">Close Window</button>
-    <input id="f" placeholder="Quick filter contents..." oninput="filter()"/>
+    <input id="f" placeholder="Quick search..." oninput="filter()"/>
   </div>
   <div class="table-wrap"><table id="tbl">
-    <thead><tr><th>Delete</th><th>Edit</th><th>SO</th><th>Customer</th><th>Containers</th><th>Location</th><th>Total Weight</th><th>Shipped At</th><th>Shipped By</th><th>PM'd Email</th></tr></thead>
+    <thead><tr><th>Delete</th><th>Edit</th><th>Photo(s)</th><th>SO</th><th>Customer</th><th>Containers</th><th>Location</th><th>Total Weight</th><th>Shipped At</th><th>Shipped By</th><th>PM'd Email</th></tr></thead>
     <tbody></tbody>
   </table></div>
 </div>
@@ -43,24 +53,53 @@
   <div class="modal-window">
     <button class="modal-close-x" onclick="document.querySelector('#editModal').style.display='none'">×</button>
     <h3>Edit Shipped Entry</h3>
+    
+    <div style="display:flex; flex-direction:column; gap:4px;">
+      <label style="font-size:12px; font-weight:700; color:#4b5563;">Manage Freight Photos</label>
+      <div class="photo-options-grid">
+        <div class="photo-uploader" onclick="document.querySelector('#e_cameraFile').click()">📷 Take Live Photo<input type="file" id="e_cameraFile" accept="image/*" capture="environment" style="display:none" onchange="addEditPhotoBlob(this)" /></div>
+        <div class="photo-uploader" onclick="document.querySelector('#e_uploadFile').click()">📁 File Upload<input type="file" id="e_uploadFile" multiple accept="image/*" style="display:none" onchange="addEditPhotoBlob(this)" /></div>
+      </div>
+      <div id="editPhotoPreviewStrip" class="photo-strip"></div>
+    </div>
+
     <div class="modal-field"><label>SO#</label><input id="e_so" /></div>
     <div class="modal-field"><label>Customer</label><input id="e_cust" /></div>
+    
+    <label style="font-size:12px; font-weight:700; color:#4b5563; margin-bottom:-4px;">Container Quantities</label>
+    <div class="freight-block">
+      <div class="counter-box"><label>Skids</label><button onclick="adjustEditCount('e_skid',-1)">-</button><input id="e_skid" value="0" readonly/><button onclick="adjustEditCount('e_skid',1)">+</button></div>
+      <div class="counter-box"><label>Boxes</label><button onclick="adjustEditCount('e_box',-1)">-</button><input id="e_box" value="0" readonly/><button onclick="adjustEditCount('e_box',1)">+</button></div>
+      <div class="counter-box"><label>Crates</label><button onclick="adjustEditCount('e_crate',-1)">-</button><input id="e_crate" value="0" readonly/><button onclick="adjustEditCount('e_crate',1)">+</button></div>
+    </div>
+
     <div class="modal-field"><label>Location</label><input id="e_loc" /></div>
     <div class="modal-field"><label>Total Weight</label><input id="e_weight" /></div>
     <div class="modal-field"><label>Shipped By</label><input id="e_shipped_by" /></div>
     <div class="modal-field"><label>PM Shortname</label><input id="e_pm" /></div>
-    <div class="actions" style="justify-content: space-between; margin-top:8px;">
+    <div class="actions" style="justify-content: space-between; margin-top:8px; width:100%;">
       <button style="background:#4b5563" onclick="executeUndo()">Undo Shipment Action</button>
       <button onclick="saveEdit()">Save Changes</button>
     </div>
   </div>
 </div>
 
+<div id="viewModal" class="modal-overlay" onclick="if(event.target===this) document.querySelector('#viewModal').style.display='none'">
+  <div class="modal-window" style="max-width: 600px;">
+    <button class="modal-close-x" onclick="document.querySelector('#viewModal').style.display='none'">×</button>
+    <h3 style="margin:0 0 10px 0;">Staged Freight Photos</h3>
+    <div id="modalPhotoGallery" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:8px;"></div>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
   const supabaseClient = supabase.createClient('https://gdrpdiwykmnybmkadlrv.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdkcnBkaXd5a21ueWJta2FkbHJ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1MjMyMTIsImV4cCI6MjA5NjA5OTIxMn0.Z7ih_vQic1GtzCyZmTEV-RWJnmuaNZQDfOV2_Fvan5g');
-  let cache = [];
-  let currentEditRecord = null;
+  let cache = []; let currentEditRecord = null;
+
+  function adjustEditCount(id, amt) {
+    const el = document.querySelector(`#${id}`); el.value = Math.max(0, (parseInt(el.value)||0) + amt);
+  }
 
   async function refresh() {
     const res = await supabaseClient.from('shipped').select('*').order('shipped_at', { ascending: false });
@@ -71,9 +110,10 @@
     const q = document.querySelector('#f').value.toLowerCase();
     const body = document.querySelector('#tbl tbody'); body.innerHTML = '';
     cache.filter(e => e.so.toLowerCase().includes(q) || e.customer.toLowerCase().includes(q)).forEach(e => {
-      const row = document.createElement('tr');
+      const row = document.createElement('tr'); const urlStr = JSON.stringify(e.photo_urls || []);
       row.innerHTML = `<td><button class="btn-del" onclick="deleteItem('${e.id}')">Delete</button></td>
         <td><button class="btn-edit" onclick='openEditor(${JSON.stringify(e).replace(/"/g, '&quot;')})'>Edit</button></td>
+        <td><button style="background:#dd4d25; color:#fff; border:0; padding:4px 8px; font-size:12px; border-radius:6px; font-weight:700; cursor:pointer;" onclick='openPhotoViewer(${urlStr})'>View</button></td>
         <td><b>${e.so}</b></td><td>${e.customer}</td><td>${e.type}</td><td>${e.location}</td><td><b>${e.weight || '—'}</b></td>
         <td>${new Date(e.shipped_at).toLocaleString()}</td><td>${e.shipped_by||'—'}</td>
         <td>${e.pmd_email ? e.pmd_email+' <span class="green-check">✓</span>' : '—'}</td>`;
@@ -83,33 +123,67 @@
 
   async function deleteItem(id) { if(confirm("Permanently delete record?")) { await supabaseClient.from('shipped').delete().eq('id', id); refresh(); } }
 
+  function parseContainerString(typeStr) {
+    let sk = 0, bx = 0, cr = 0; if(!typeStr) return { sk, bx, cr };
+    const matchSk = typeStr.match(/(\d+)\s*Skid/); if(matchSk) sk = parseInt(matchSk[1]);
+    const matchBx = typeStr.match(/(\d+)\s*Box/);  if(matchBx) bx = parseInt(matchBx[1]);
+    const matchCr = typeStr.match(/(\d+)\s*Crate/);if(matchCr) cr = parseInt(matchCr[1]);
+    return { sk, bx, cr };
+  }
+
   function openEditor(e) {
     currentEditRecord = e;
     document.querySelector('#e_so').value = e.so; document.querySelector('#e_cust').value = e.customer;
     document.querySelector('#e_loc').value = e.location; document.querySelector('#e_weight').value = e.weight || '';
     document.querySelector('#e_shipped_by').value = e.shipped_by || ''; document.querySelector('#e_pm').value = e.pmd_email || '';
-    document.querySelector('#editModal').style.display = 'flex';
+    
+    const counts = parseContainerString(e.type);
+    document.querySelector('#e_skid').value = counts.sk; document.querySelector('#e_box').value = counts.bx; document.querySelector('#e_crate').value = counts.cr;
+    renderEditPhotoStrip(); document.querySelector('#editModal').style.display = 'flex';
+  }
+
+  function renderEditPhotoStrip() {
+    const strip = document.querySelector('#editPhotoPreviewStrip'); strip.innerHTML = '';
+    (currentEditRecord.photo_urls || []).forEach((url, index) => {
+      strip.insertAdjacentHTML('beforeend', `<span class="photo-badge">📎 Photo-${index+1} <span onclick="currentEditRecord.photo_urls.splice(${index},1); renderEditPhotoStrip()">×</span></span>`);
+    });
+  }
+
+  async function addEditPhotoBlob(inputEl) {
+    if(!inputEl.files || inputEl.files.length === 0) return;
+    Array.from(inputEl.files).forEach(async (file) => {
+      const path = `${currentEditRecord.so || 'edit'}-${Date.now()}-${Math.random().toString(36).substr(2, 5)}.${file.name.split('.').pop()}`;
+      const { error } = await supabaseClient.storage.from('freight-photos').upload(path, file);
+      if(!error) { if(!currentEditRecord.photo_urls) currentEditRecord.photo_urls = []; currentEditRecord.photo_urls.push(path); renderEditPhotoStrip(); }
+    });
   }
 
   async function saveEdit() {
+    const sk = parseInt(document.querySelector('#e_skid').value)||0, bx = parseInt(document.querySelector('#e_box').value)||0, cr = parseInt(document.querySelector('#e_crate').value)||0;
+    let typeParts = []; if(sk) typeParts.push(sk+' Skid'); if(bx) typeParts.push(bx+' Box'); if(cr) typeParts.push(cr+' Crate');
+    const dynamicType = typeParts.join(', ') || '1 Skid';
+
     await supabaseClient.from('shipped').update({
       so: document.querySelector('#e_so').value.trim(), customer: document.querySelector('#e_cust').value.trim(),
       location: document.querySelector('#e_loc').value.trim(), weight: document.querySelector('#e_weight').value.trim(),
-      shipped_by: document.querySelector('#e_shipped_by').value.trim(), pmd_email: document.querySelector('#e_pm').value.trim() || null
+      shipped_by: document.querySelector('#e_shipped_by').value.trim(), pmd_email: document.querySelector('#e_pm').value.trim() || null,
+      type: dynamicType, qty: sk+bx+cr, photo_urls: currentEditRecord.photo_urls
     }).eq('id', currentEditRecord.id);
-    document.querySelector('#editModal').style.display = 'none';
-    refresh();
+    document.querySelector('#editModal').style.display = 'none'; refresh();
   }
 
   async function executeUndo() {
     if(!confirm("Undo shipment action?")) return;
-    await supabaseClient.from('staging').insert([{
-      so: currentEditRecord.so, customer: currentEditRecord.customer, type: currentEditRecord.type,
-      qty: currentEditRecord.qty, location: currentEditRecord.location, weight: currentEditRecord.weight, status: 'Partial'
-    }]);
+    await supabaseClient.from('staging').insert([{ so: currentEditRecord.so, customer: currentEditRecord.customer, type: currentEditRecord.type, qty: currentEditRecord.qty, location: currentEditRecord.location, weight: currentEditRecord.weight, status: 'Partial' }]);
     await supabaseClient.from('shipped').delete().eq('id', currentEditRecord.id);
-    document.querySelector('#editModal').style.display = 'none';
-    refresh();
+    document.querySelector('#editModal').style.display = 'none'; refresh();
+  }
+
+  async function openPhotoViewer(paths) {
+    const gallery = document.querySelector('#modalPhotoGallery'); gallery.innerHTML = '';
+    if(!paths || paths.length === 0) gallery.innerHTML = '<p>No photos.</p>';
+    else paths.forEach(p => gallery.insertAdjacentHTML('beforeend', `<a href="https://gdrpdiwykmnybmkadlrv.supabase.co/storage/v1/object/public/freight-photos/${p}" target="_blank"><img src="https://gdrpdiwykmnybmkadlrv.supabase.co/storage/v1/object/public/freight-photos/${p}" style="width:100%; border-radius:8px; border:1px solid #ddd;" /></a>`));
+    document.querySelector('#viewModal').style.display = 'flex';
   }
 
   window.onload = refresh; setInterval(refresh, 10000);
