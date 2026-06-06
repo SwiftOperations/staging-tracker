@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Swift Staging Tracker — v7.2</title>
+<title>Swift Staging Tracker — v7.3</title>
 <style>
   :root{--brand:#dd4d25;}
   *{box-sizing:border-box}
@@ -23,26 +23,31 @@
   .btn-del{background:#dc2626;color:#fff;border:0;border-radius:6px;padding:4px 8px;font-size:12px;font-weight:700;cursor:pointer}
   .btn-edit{background:#0284c7;color:#fff;border:0;border-radius:6px;padding:4px 8px;font-size:12px;font-weight:700;cursor:pointer}
   
+  /* Shared Counter Styles matching Screenshot (20).png */
   .freight-block { flex: 2 1 320px; display: flex; gap: 8px; background: #fff; border: 1px solid #d1d5db; padding: 6px 10px; border-radius: 10px; align-items: center; }
   .counter-box { display: flex; align-items: center; gap: 4px; flex: 1; justify-content: center; }
-  .counter-box label { font-size: 13px; font-weight: 700; }
+  .counter-box label { font-size: 13px; font-weight: 700; margin-right: 4px; }
   .counter-box input { width: 44px; height: 32px; text-align: center; border-radius: 6px; font-weight: 700; border:1px solid #d1d5db; }
-  .counter-btn { width: 28px; height: 32px; background: #e5e7eb; border: 0; font-weight: 700; border-radius: 6px; cursor: pointer; }
+  .counter-btn { width: 28px; height: 32px; background: #e5e7eb; border: 0; font-weight: 700; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #222; }
+  .counter-btn:hover { background: #cbd5e1; }
   
-  /* MODALS STYLE SHEETS */
+  /* Modal Overlay Foundations */
   .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; padding: 12px; }
   .modal-window { background: #fff; border-radius: 16px; max-width: 500px; width: 100%; max-height: 90vh; padding: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); display: flex; flex-direction: column; gap: 12px; overflow-y: auto; position: relative; }
   .modal-close-x { position: absolute; top: 12px; right: 16px; font-size: 22px; font-weight: 700; color: #6b7280; cursor: pointer; border: 0; background: none; z-index: 10; }
   .modal-field { display: flex; flex-direction: column; gap: 2px; }
   .modal-field label { font-size: 12px; font-weight: 700; color: #4b5563; }
+  .modal-field input { height: 42px; border: 1px solid #cbd5e1; border-radius: 8px; padding: 0 12px; font-size: 14px; }
   .photo-options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
   .photo-uploader { border: 2px dashed #cbd5e1; border-radius: 10px; padding: 10px; text-align: center; cursor: pointer; background: #f8fafc; font-size: 12px; font-weight: 700; }
+  .photo-uploader:hover { border-color: var(--brand); }
   .photo-strip { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
   .photo-badge { background: #e2e8f0; font-size: 11px; padding: 2px 6px; border-radius: 4px; display: flex; align-items: center; gap: 4px; }
   .photo-badge span { color: #dc2626; cursor: pointer; font-weight: bold; }
   .chk-row { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; }
+  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 8px; }
 
-  /* TABLES STYLE FORMATS */
+  /* Tables Setup Layout */
   .tblwrap{ border: 1px solid #e6e7eb; border-radius: 12px; overflow: hidden; background: #fff; }
   .tbl-scroller { max-height: 320px; overflow-x: auto; overflow-y: auto; position: relative; }
   table{width:100%;border-collapse:separate;border-spacing:0;min-width:1050px}
@@ -65,7 +70,7 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>Swift Staging Tracker — v7.2</h1>
+  <h1>Swift Staging Tracker — v7.3</h1>
   <div id="err" style="display:none; background:#fee2e2; color:#991b1b; padding:10px; border-radius:10px; margin-bottom:10px"></div>
 
   <div class="grid">
@@ -90,9 +95,9 @@
         <option>Partial</option><option>Ship Today</option><option>Ship On Future Date</option><option>Awaiting Shipping Instructions</option>
       </select>
       <div class="freight-block">
-        <div class="counter-box"><label>Skids</label><button onclick="adjustCount('c_skid',-1)">-</button><input id="c_skid" value="0" readonly/><button onclick="adjustCount('c_skid',1)">+</button></div>
-        <div class="counter-box"><label>Boxes</label><button onclick="adjustCount('c_box',-1)">-</button><input id="c_box" value="0" readonly/><button onclick="adjustCount('c_box',1)">+</button></div>
-        <div class="counter-box"><label>Crates</label><button onclick="adjustCount('c_crate',-1)">-</button><input id="c_crate" value="0" readonly/><button onclick="adjustCount('c_crate',1)">+</button></div>
+        <div class="counter-box"><label>Skids</label><button class="counter-btn" onclick="adjustCount('c_skid',-1)">-</button><input id="c_skid" value="0" readonly/><button class="counter-btn" onclick="adjustCount('c_skid',1)">+</button></div>
+        <div class="counter-box"><label>Boxes</label><button class="counter-btn" onclick="adjustCount('c_box',-1)">-</button><input id="c_box" value="0" readonly/><button class="counter-btn" onclick="adjustCount('c_box',1)">+</button></div>
+        <div class="counter-box"><label>Crates</label><button class="counter-btn" onclick="adjustCount('c_crate',-1)">-</button><input id="c_crate" value="0" readonly/><button class="counter-btn" onclick="adjustCount('c_crate',1)">+</button></div>
       </div>
       <input id="loc" placeholder="Location" />
       <input id="weight" placeholder="Total Weight" />
@@ -128,6 +133,7 @@
   </div>
 </div>
 
+<!-- SHIPPING WORKFLOW MODAL -->
 <div id="shipModal" class="modal-overlay" onclick="if(event.target===this) closeShipModal()">
   <div class="modal-window">
     <button class="modal-close-x" onclick="closeShipModal()">×</button>
@@ -149,6 +155,7 @@
   </div>
 </div>
 
+<!-- UNIVERSAL PARAMETRIC EDIT SYSTEM MODAL OVERLAY -->
 <div id="editModal" class="modal-overlay" onclick="if(event.target===this) $('#editModal').style.display='none'">
   <div class="modal-window">
     <button class="modal-close-x" onclick="$('#editModal').style.display='none'">×</button>
@@ -168,9 +175,9 @@
     
     <label style="font-size:12px; font-weight:700; color:#4b5563; margin-bottom:-4px;">Container Quantities</label>
     <div class="freight-block" style="flex:none; padding:8px; width:100%;">
-      <div class="counter-box"><label>Skids</label><button onclick="adjustEditCount('e_skid',-1)">-</button><input id="e_skid" value="0" readonly/><button onclick="adjustEditCount('e_skid',1)">+</button></div>
-      <div class="counter-box"><label>Boxes</label><button onclick="adjustEditCount('e_box',-1)">-</button><input id="e_box" value="0" readonly/><button onclick="adjustEditCount('e_box',1)">+</button></div>
-      <div class="counter-box"><label>Crates</label><button onclick="adjustEditCount('e_crate',-1)">-</button><input id="e_crate" value="0" readonly/><button onclick="adjustEditCount('e_crate',1)">+</button></div>
+      <div class="counter-box"><label>Skids</label><button class="counter-btn" onclick="adjustEditCount('e_skid',-1)">-</button><input id="e_skid" value="0" readonly/><button class="counter-btn" onclick="adjustEditCount('e_skid',1)">+</button></div>
+      <div class="counter-box"><label>Boxes</label><button class="counter-btn" onclick="adjustEditCount('e_box',-1)">-</button><input id="e_box" value="0" readonly/><button class="counter-btn" onclick="adjustEditCount('e_box',1)">+</button></div>
+      <div class="counter-box"><label>Crates</label><button class="counter-btn" onclick="adjustEditCount('e_crate',-1)">-</button><input id="e_crate" value="0" readonly/><button class="counter-btn" onclick="adjustEditCount('e_crate',1)">+</button></div>
     </div>
 
     <div class="modal-field"><label>Location</label><input id="e_loc" /></div>
@@ -186,16 +193,17 @@
       <div class="modal-field"><label>PM Verified Shortname</label><input id="e_pm" /></div>
     </div>
 
-    <div class="modal-actions" style="justify-content: space-between; width:100%;">
-      <button id="editUndoBtn" class="btn" style="background:#4b5563; display:none;" onclick="executeShippedUndo()">Undo Shipment Action</button>
+    <div class="modal-actions" style="justify-content: space-between; width:100%; margin-top: 8px;">
+      <button id="editUndoBtn" class="btn" style="background:#4b5563; display:none; padding: 10px 16px; border-radius: 8px;" onclick="executeShippedUndo()">Undo Shipment Action</button>
       <span style="display:flex; gap:8px; margin-left:auto;">
-        <button class="btn" style="background:#9ca3af;" onclick="$('#editModal').style.display='none'">Cancel</button>
-        <button class="btn" onclick="saveEditedRecord()">Save Changes</button>
+        <button class="btn" style="background:#9ca3af; padding: 10px 16px; border-radius: 8px;" onclick="$('#editModal').style.display='none'">Cancel</button>
+        <button class="btn" style="padding: 10px 16px; border-radius: 8px; background: #e04f26;" onclick="saveEditedRecord()">Save Changes</button>
       </span>
     </div>
   </div>
 </div>
 
+<!-- GALLERY LIGHTBOX MODAL -->
 <div id="viewModal" class="modal-overlay" onclick="if(event.target===this) $('#viewModal').style.display='none'">
   <div class="modal-window" style="max-width: 600px;">
     <button class="modal-close-x" onclick="$('#viewModal').style.display='none'">×</button>
@@ -266,7 +274,7 @@ function renderPhotoStrip(containerSel, blobArray) {
 
 async function submitFreightDispatch() {
   const dispatcher = $('#m_by').value.trim(); const pmEmail = $('#m_pm_email').value.trim(); const pmChecked = $('#m_pm_chk').checked;
-  if(!dispatcher || (pmChecked && !pmEmail)) return alert("Required inputs missing.");
+  if(!dispatcher || (pmChecked && !pmEmail)) return alert("Required fields missing.");
   $('#modalConfirmBtn').disabled = true;
   try {
     let photoUrls = [];
