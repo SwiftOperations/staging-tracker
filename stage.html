@@ -2,17 +2,36 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Staging Log — v7.0</title>
+<title>Staging Log — v7.1</title>
 <style>
+  :root{--brand:#dd4d25;}
   body{margin:0;background:#fff;font:13px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Arial;color:#222;}
   .wrap{padding:12px}
   .actions{display:flex;gap:8px;margin-bottom:12px;align-items:center}
   button{background:#dd4d25;color:#fff;border:0;border-radius:8px;height:32px;padding:0 12px;cursor:pointer;font-weight:700}
+  .btn-del{background:#dc2626;color:#fff;border:0;border-radius:6px;padding:4px 8px;font-size:12px;font-weight:700;cursor:pointer}
+  .btn-edit{background:#0284c7;color:#fff;border:0;border-radius:6px;padding:4px 8px;font-size:12px;font-weight:700;cursor:pointer}
   input { height: 34px; padding: 0 10px; border: 1px solid #cbd5e1; border-radius: 8px; width: 100%; max-width:300px; font-size:13px; }
   .table-wrap{ overflow-x: auto; border:1px solid #e5e7eb; border-radius:10px }
-  table{width:100%; border-collapse:collapse; min-width:950px}
+  table{width:100%; border-collapse:collapse; min-width:1150px}
   th,td{border-top:1px solid #e5e7eb; padding:8px; white-space:nowrap; text-align:left}
   th{position:sticky; top:0; background:#fafafa; z-index: 1;}
+  th[style*="position:sticky"], td[style*="position:sticky"] { background: #fff !important; position: sticky !important; right: 0 !important; z-index: 3; box-shadow: -2px 0 5px rgba(0,0,0,0.04); }
+  
+  /* REVISION: Half-scale responsive tracking checkbox configurations */
+  input[type="checkbox"] { width: 13px; height: 13px; cursor: pointer; margin: 0; }
+  
+  /* MODAL */
+  .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; padding: 12px; }
+  .modal-window { background: #fff; border-radius: 16px; max-width: 500px; width: 100%; max-height: 90vh; padding: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); display: flex; flex-direction: column; gap: 12px; overflow-y: auto; position: relative; }
+  .modal-close-x { position: absolute; top: 12px; right: 16px; font-size: 22px; font-weight: 700; color: #6b7280; cursor: pointer; border: 0; background: none; }
+  .modal-field { display: flex; flex-direction: column; gap: 2px; }
+  .modal-field label { font-size: 12px; font-weight: 700; color: #4b5563; }
+  .photo-options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .photo-uploader { border: 2px dashed #cbd5e1; border-radius: 10px; padding: 10px; text-align: center; cursor: pointer; background: #f8fafc; font-size: 12px; font-weight: 700; }
+  .photo-strip { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+  .photo-badge { background: #e2e8f0; font-size: 11px; padding: 2px 6px; border-radius: 4px; }
+  .chk-row { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; }
 </style>
 </head>
 <body>
@@ -24,25 +43,137 @@
     <input id="f" placeholder="Quick filter contents..." oninput="filter()"/>
   </div>
   <div class="table-wrap"><table id="tbl">
-    <thead><tr><th>SO</th><th>Customer</th><th>Entry Date</th><th>Containers</th><th>Location</th><th>Total Weight</th><th>Status</th><th>Staged By</th></tr></thead>
+    <thead><tr><th>Delete</th><th>Edit</th><th>SO</th><th>Customer</th><th>Entry Date</th><th>Containers</th><th>Location</th><th>Total Weight</th><th>Status</th><th>Staged By</th><th style="position:sticky;right:0;width:70px;">Shipped</th></tr></thead>
     <tbody></tbody>
   </table></div>
 </div>
+
+<div id="shipModal" class="modal-overlay" onclick="if(event.target===this) closeShipModal()">
+  <div class="modal-window">
+    <button class="modal-close-x" onclick="closeShipModal()">×</button>
+    <h3>Confirm Freight Dispatch</h3>
+    <div class="photo-options-grid">
+      <div class="photo-uploader" onclick="document.querySelector('#cameraFile').click()">📷 Take Live Photo
+        <input type="file" id="cameraFile" accept="image/*" capture="environment" style="display:none" onchange="addPhotoBlob(this)" />
+      </div>
+      <div class="photo-uploader" onclick="document.querySelector('#uploadFile').click()">📁 File Upload
+        <input type="file" id="uploadFile" multiple accept="image/*" style="display:none" onchange="addPhotoBlob(this)" />
+      </div>
+    </div>
+    <div id="photoPreviewStrip" class="photo-strip"></div>
+    <div class="modal-field"><label>SO#</label><input id="m_so" readonly /></div>
+    <div class="modal-field"><label>Customer</label><input id="m_cust" readonly /></div>
+    <div class="modal-field"><label>Containers</label><input id="m_qty" readonly /></div>
+    <div class="modal-field"><label>Location</label><input id="m_loc" readonly /></div>
+    <div class="modal-field"><label>Total Weight</label><input id="m_weight" readonly /></div>
+    <div class="modal-field"><label>Shipped By</label><input id="m_by" list="pastShippers" /></div>
+    <div class="chk-row"><input type="checkbox" id="m_pm_chk" onchange="document.querySelector('#m_pm_email').disabled=!this.checked"/><label>E-mail PM Verification</label></div>
+    <div class="modal-field"><input id="m_pm_email" list="pastEmails" disabled /></div>
+    <div class="modal-actions"><button id="modalConfirmBtn" class="btn" onclick="submitFreightDispatch()">Confirm Dispatch</button></div>
+  </div>
+</div>
+
+<div id="editModal" class="modal-overlay" onclick="if(event.target===this) document.querySelector('#editModal').style.display='none'">
+  <div class="modal-window">
+    <button class="modal-close-x" onclick="document.querySelector('#editModal').style.display='none'">×</button>
+    <h3>Edit Staging Entry</h3>
+    <div class="modal-field"><label>SO#</label><input id="e_so" /></div>
+    <div class="modal-field"><label>Customer</label><input id="e_cust" /></div>
+    <div class="modal-field"><label>Location</label><input id="e_loc" /></div>
+    <div class="modal-field"><label>Total Weight</label><input id="e_weight" /></div>
+    <div class="modal-field"><label>Shipping Status</label><input id="e_status" /></div>
+    <div class="modal-field"><label>Staged By</label><input id="e_staged_by" /></div>
+    <div class="modal-actions"><button class="btn" onclick="saveEditedRecord()">Save Changes</button></div>
+  </div>
+</div>
+
+<datalist id="pastShippers"></datalist><datalist id="pastEmails"></datalist>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
   const supabaseClient = supabase.createClient('https://gdrpdiwykmnybmkadlrv.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdkcnBkaXd5a21ueWJta2FkbHJ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1MjMyMTIsImV4cCI6MjA5NjA5OTIxMn0.Z7ih_vQic1GtzCyZmTEV-RWJnmuaNZQDfOV2_Fvan5g');
   let cache = [];
+  let activeShipTargetItem = null;
+  let selectedPhotoBlobs = [];
+  let currentEditId = null;
+
   async function refresh() {
     const res = await supabaseClient.from('staging').select('*').order('entry_date', { ascending: false });
     cache = res.data || []; filter();
   }
+
   function filter() {
     const q = document.querySelector('#f').value.toLowerCase();
     const body = document.querySelector('#tbl tbody'); body.innerHTML = '';
     cache.filter(e => e.so.toLowerCase().includes(q) || e.customer.toLowerCase().includes(q) || (e.location && e.location.toLowerCase().includes(q))).forEach(e => {
-      body.insertAdjacentHTML('beforeend', `<tr><td><b>${e.so}</b></td><td>${e.customer}</td><td>${new Date(e.entry_date).toLocaleString()}</td><td>${e.type}</td><td>${e.location}</td><td><b>${e.weight || '—'}</b></td><td>${e.status}</td><td>${e.staged_by||'—'}</td></tr>`);
+      const row = document.createElement('tr');
+      row.innerHTML = `<td><button class="btn-del" onclick="deleteItem('${e.id}')">Delete</button></td>
+        <td><button class="btn-edit" onclick='openEditPrompt(${JSON.stringify(e).replace(/"/g, '&quot;')})'>Edit</button></td>
+        <td><b>${e.so}</b></td><td>${e.customer}</td><td>${new Date(e.entry_date).toLocaleString()}</td>
+        <td>${e.type}</td><td>${e.location}</td><td><b>${e.weight || '—'}</b></td><td>${e.status}</td><td>${e.staged_by||'—'}</td>
+        <td style="position:sticky;right:0;text-align:center;"><input type="checkbox" onchange="if(this.checked)openShipPrompt(${JSON.stringify(e).replace(/"/g, '&quot;')})"></td>`;
+      body.appendChild(row);
     });
   }
+
+  async function deleteItem(id) { if(confirm("Permanently delete item?")) { await supabaseClient.from('staging').delete().eq('id', id); refresh(); } }
+  
+  function openEditPrompt(e) {
+    currentEditId = e.id;
+    document.querySelector('#e_so').value = e.so; document.querySelector('#e_cust').value = e.customer;
+    document.querySelector('#e_loc').value = e.location; document.querySelector('#e_weight').value = e.weight || '';
+    document.querySelector('#e_status').value = e.status; document.querySelector('#e_staged_by').value = e.staged_by || '';
+    document.querySelector('#editModal').style.display = 'flex';
+  }
+
+  async function saveEditedRecord() {
+    await supabaseClient.from('staging').update({
+      so: document.querySelector('#e_so').value.trim(), customer: document.querySelector('#e_cust').value.trim(),
+      location: document.querySelector('#e_loc').value.trim(), weight: document.querySelector('#e_weight').value.trim(),
+      status: document.querySelector('#e_status').value.trim(), staged_by: document.querySelector('#e_staged_by').value.trim()
+    }).eq('id', currentEditId);
+    document.querySelector('#editModal').style.display = 'none';
+    refresh();
+  }
+
+  function openShipPrompt(item) {
+    activeShipTargetItem = item; selectedPhotoBlobs = [];
+    document.querySelector('#photoPreviewStrip').innerHTML = '';
+    document.querySelector('#m_so').value = item.so; document.querySelector('#m_cust').value = item.customer;
+    document.querySelector('#m_qty').value = item.type; document.querySelector('#m_loc').value = item.location;
+    document.querySelector('#m_weight').value = item.weight || '—'; document.querySelector('#m_by').value = '';
+    document.querySelector('#m_pm_chk').checked = false; document.querySelector('#m_pm_email').disabled = true;
+    document.querySelector('#shipModal').style.display = 'flex';
+  }
+  function closeShipModal() { document.querySelector('#shipModal').style.display = 'none'; refresh(); }
+  function addPhotoBlob(input) {
+    if(!input.files) return;
+    Array.from(input.files).forEach(f => { if(selectedPhotoBlobs.length < 10) selectedPhotoBlobs.push(f); });
+    const strip = document.querySelector('#photoPreviewStrip'); strip.innerHTML = '';
+    selectedPhotoBlobs.forEach((f, idx) => strip.insertAdjacentHTML('beforeend', `<span class="photo-badge">📎 Img-${idx+1}</span>`));
+  }
+
+  async function submitFreightDispatch() {
+    const by = document.querySelector('#m_by').value.trim();
+    if(!by) return alert("Enter Shipped By.");
+    try {
+      let photoUrls = [];
+      for (let i = 0; i < selectedPhotoBlobs.length; i++) {
+        const file = selectedPhotoBlobs[i];
+        const path = `${activeShipTargetItem.so}-${Date.now()}-${i}.${file.name.split('.').pop()}`;
+        await supabaseClient.storage.from('freight-photos').upload(path, file);
+        photoUrls.push(path);
+      }
+      await supabaseClient.from('shipped').insert([{
+        so: activeShipTargetItem.so, customer: activeShipTargetItem.customer, type: activeShipTargetItem.type,
+        qty: activeShipTargetItem.qty, location: activeShipTargetItem.location, weight: activeShipTargetItem.weight,
+        shipped_by: by, photo_urls: photoUrls
+      }]);
+      await supabaseClient.from('staging').delete().eq('id', activeShipTargetItem.id);
+      closeShipModal();
+    } catch(e) { alert("Error."); }
+  }
+
   window.onload = refresh; setInterval(refresh, 10000);
 </script>
 </body>
