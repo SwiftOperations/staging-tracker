@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Swift Staging Tracker — v7.0</title>
+<title>Swift Staging Tracker — v7.1</title>
 <style>
   :root{--brand:#dd4d25;}
   *{box-sizing:border-box}
@@ -53,6 +53,9 @@
   .log-limit-notice { display: none; background: #fff; border-top: 1px solid #e6e7eb; padding: 8px; text-align: center; font-size: 12px; font-weight: 700; color: #dd4d25; }
   .green-check { color: #16a34a; font-weight: bold; }
 
+  /* REVISION: Shrunk checkbox footprints directly to half dimensions */
+  input[type="checkbox"] { width: 13px; height: 13px; cursor: pointer; transform: scale(1); margin: 0; }
+
   @media (max-width: 600px) {
     .grid{grid-template-columns:repeat(2,1fr)}
     table { min-width: 950px; } 
@@ -65,7 +68,7 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>Swift Staging Tracker — v7.0</h1>
+  <h1>Swift Staging Tracker — v7.1</h1>
   <div id="err" style="display:none; background:#fee2e2; color:#991b1b; padding:10px; border-radius:10px; margin-bottom:10px"></div>
 
   <div class="grid">
@@ -106,7 +109,7 @@
     <div class="tblwrap">
       <div class="tbl-scroller">
         <table id="tblStaging">
-          <thead><tr><th>Delete</th><th>Edit</th><th>SO</th><th>Customer</th><th>Entry Date</th><th>Containers</th><th>Location</th><th>Total Weight</th><th>Status</th><th>Staged By</th><th style="position:sticky;right:0">Shipped</th></tr></thead>
+          <thead><tr><th>Delete</th><th>Edit</th><th>SO</th><th>Customer</th><th>Entry Date</th><th>Containers</th><th>Location</th><th>Total Weight</th><th>Status</th><th>Staged By</th><th style="position:sticky;right:0;width:70px;">Shipped</th></tr></thead>
           <tbody></tbody>
         </table>
       </div>
@@ -252,7 +255,6 @@ function triggerShipModal(item) {
 
 function closeShipModal() { $('#shipModal').style.display = 'none'; loadCloudData(); }
 
-// PHOTO BLOB HANDLERS FOR OPTION 1 AND OPTION 2
 function addPhotoBlob(inputEl) {
   if(!inputEl.files || inputEl.files.length === 0) return;
   Array.from(inputEl.files).forEach(f => {
@@ -318,7 +320,6 @@ async function submitFreightDispatch() {
   } catch(e) { alert("Error."); }
 }
 
-// UNIVERSAL REVISION 3 EDIT PROMPT SYSTEM MAPPED TO CACHE SCHEMAS
 function openUniversalEditor(table, o) {
   editTargetRecord = { table: table, id: o.id, so: o.so, photo_urls: o.photo_urls || [] };
   
@@ -389,31 +390,22 @@ async function saveEditedRecord() {
   loadCloudData();
 }
 
-// REVISION 3: SHIPPED DISPATCH MANIFEST BACKWARDS REVERSION UNDO CONTROLLER
 async function executeShippedUndo() {
-  if(!confirm("Are you sure you want to undo this shipment execution? This will return the order records directly back to the active Staging floor area logs.")) return;
-  
+  if(!confirm("Are you sure you want to undo this shipment execution?")) return;
   try {
     const { data: currentRecord, error } = await supabaseClient.from('shipped').select('*').eq('id', editTargetRecord.id).single();
     if(error || !currentRecord) return alert("Record fetch fail error.");
     
-    // Injects standard components directly back inside the staging array payload variables
     await supabaseClient.from('staging').insert([{
-      so: currentRecord.so,
-      customer: currentRecord.customer,
-      type: currentRecord.type || '1 Skid',
-      qty: currentRecord.qty || 1,
-      location: currentRecord.location,
-      weight: currentRecord.weight,
-      status: 'Partial'
+      so: currentRecord.so, customer: currentRecord.customer,
+      type: currentRecord.type || '1 Skid', qty: currentRecord.qty || 1,
+      location: currentRecord.location, weight: currentRecord.weight, status: 'Partial'
     }]);
 
-    // Purges old trace historical payload row references natively from the log
     await supabaseClient.from('shipped').delete().eq('id', currentRecord.id);
-    
     $('#editModal').style.display = 'none';
     loadCloudData();
-  } catch(e) { alert("Undo mutation processing error."); }
+  } catch(e) { alert("Undo processing error."); }
 }
 
 async function openPhotoViewer(paths) {
@@ -435,7 +427,7 @@ function renderTables() {
       <td><button class="btn-edit" onclick='openUniversalEditor("staging", ${JSON.stringify(o).replace(/"/g, '&quot;')})'>Edit</button></td>
       <td><b>${o.so}</b></td><td>${o.customer}</td><td>${new Date(o.entry_date).toLocaleString()}</td>
       <td>${o.type}</td><td>${o.location}</td><td>${o.weight || '—'}</td><td>${o.status}</td><td>${o.staged_by||'—'}</td>
-      <td style="position:sticky;right:0"><input type="checkbox" onchange="if(this.checked)triggerShipModal(${JSON.stringify(o).replace(/"/g, '&quot;')})"></td>`;
+      <td style="position:sticky;right:0;text-align:center;"><input type="checkbox" onchange="if(this.checked)triggerShipModal(${JSON.stringify(o).replace(/"/g, '&quot;')})"></td>`;
     sBody.appendChild(tr);
   });
 
@@ -454,7 +446,6 @@ function renderTables() {
   $('#stageLimitNotice').style.display = fStaging.length > 20 ? 'block' : 'none';
   $('#shippedLimitNotice').style.display = fShipped.length > 20 ? 'block' : 'none';
 
-  // Counters recalculation parameters
   const sumByType = t => appData.staging.reduce((acc, c) => c.type?.includes(t) ? acc + (parseInt(c.type.match(new RegExp(`(\\d+)\\s*${t}`))) || 0) : acc, 0);
   $('#kOrders').textContent     = appData.staging.length;
   $('#kContainers').textContent = appData.staging.reduce((acc, c) => acc + (parseInt(c.qty) || 0), 0);
