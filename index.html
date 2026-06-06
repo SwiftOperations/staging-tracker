@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Swift Staging Tracker — v7.3</title>
+<title>Swift Staging Tracker — v7.4</title>
 <style>
   :root{--brand:#dd4d25;}
   *{box-sizing:border-box}
@@ -23,7 +23,6 @@
   .btn-del{background:#dc2626;color:#fff;border:0;border-radius:6px;padding:4px 8px;font-size:12px;font-weight:700;cursor:pointer}
   .btn-edit{background:#0284c7;color:#fff;border:0;border-radius:6px;padding:4px 8px;font-size:12px;font-weight:700;cursor:pointer}
   
-  /* Shared Counter Styles matching Screenshot (20).png */
   .freight-block { flex: 2 1 320px; display: flex; gap: 8px; background: #fff; border: 1px solid #d1d5db; padding: 6px 10px; border-radius: 10px; align-items: center; }
   .counter-box { display: flex; align-items: center; gap: 4px; flex: 1; justify-content: center; }
   .counter-box label { font-size: 13px; font-weight: 700; margin-right: 4px; }
@@ -31,7 +30,6 @@
   .counter-btn { width: 28px; height: 32px; background: #e5e7eb; border: 0; font-weight: 700; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #222; }
   .counter-btn:hover { background: #cbd5e1; }
   
-  /* Modal Overlay Foundations */
   .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; padding: 12px; }
   .modal-window { background: #fff; border-radius: 16px; max-width: 500px; width: 100%; max-height: 90vh; padding: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); display: flex; flex-direction: column; gap: 12px; overflow-y: auto; position: relative; }
   .modal-close-x { position: absolute; top: 12px; right: 16px; font-size: 22px; font-weight: 700; color: #6b7280; cursor: pointer; border: 0; background: none; z-index: 10; }
@@ -47,7 +45,6 @@
   .chk-row { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; }
   .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 8px; }
 
-  /* Tables Setup Layout */
   .tblwrap{ border: 1px solid #e6e7eb; border-radius: 12px; overflow: hidden; background: #fff; }
   .tbl-scroller { max-height: 320px; overflow-x: auto; overflow-y: auto; position: relative; }
   table{width:100%;border-collapse:separate;border-spacing:0;min-width:1050px}
@@ -70,7 +67,7 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>Swift Staging Tracker — v7.3</h1>
+  <h1>Swift Staging Tracker — v7.4</h1>
   <div id="err" style="display:none; background:#fee2e2; color:#991b1b; padding:10px; border-radius:10px; margin-bottom:10px"></div>
 
   <div class="grid">
@@ -133,6 +130,7 @@
   </div>
 </div>
 
+<!-- SHIPPING WORKFLOW MODAL -->
 <div id="shipModal" class="modal-overlay" onclick="if(event.target===this) closeShipModal()">
   <div class="modal-window">
     <button class="modal-close-x" onclick="closeShipModal()">×</button>
@@ -154,6 +152,7 @@
   </div>
 </div>
 
+<!-- UNIVERSAL EDIT SYSTEM MODAL OVERLAY -->
 <div id="editModal" class="modal-overlay" onclick="if(event.target===this) $('#editModal').style.display='none'">
   <div class="modal-window">
     <button class="modal-close-x" onclick="$('#editModal').style.display='none'">×</button>
@@ -201,6 +200,7 @@
   </div>
 </div>
 
+<!-- GALLERY LIGHTBOX MODAL -->
 <div id="viewModal" class="modal-overlay" onclick="if(event.target===this) $('#viewModal').style.display='none'">
   <div class="modal-window" style="max-width: 600px;">
     <button class="modal-close-x" onclick="$('#viewModal').style.display='none'">×</button>
@@ -282,31 +282,70 @@ async function submitFreightDispatch() {
     let pmName = pmEmail ? pmEmail.split('@')[0].split('.')[0] : null;
     if(pmName) pmName = pmName.charAt(0).toUpperCase() + pmName.slice(1);
 
-    // Save payload details down to Supabase. 
-    // If verification box is checked, write down the email address; otherwise, save as null.
     await supabaseClient.from('shipped').insert([{
       so: activeShipTargetItem.so, customer: activeShipTargetItem.customer, type: activeShipTargetItem.type,
       qty: activeShipTargetItem.qty, location: activeShipTargetItem.location, weight: activeShipTargetItem.weight,
-      shipped_by: dispatcher, pmd_email: pmChecked ? pmEmail : null, photo_urls: photoUrls
+      shipped_by: dispatcher, pmd_email: pmName, photo_urls: photoUrls
     }]);
-    
     await supabaseClient.from('staging').delete().eq('id', activeShipTargetItem.id);
     
-    // Success fallback local state tracking updates
-    let activeShippers = JSON.parse(localStorage.getItem('m_shippers') || '[]');
-    if(!activeShippers.includes(dispatcher)) { activeShippers.push(dispatcher); localStorage.setItem('m_shippers', JSON.stringify(activeShippers)); }
+    // REVISION: Polished Web-App Reminiscent Spacing, Tables, and Auto-Attaching CDN Media Tags
     if(pmChecked) {
-      let activeEmails = JSON.parse(localStorage.getItem('m_emails') || '[]');
-      if(!activeEmails.includes(pmEmail)) { activeEmails.push(pmEmail); localStorage.setItem('m_emails', JSON.stringify(activeEmails)); }
-    }
+      const shipTimeStr = new Date().toLocaleString();
+      const subject = `CONFIRMATION OF SHIPOUT: ${activeShipTargetItem.customer} SO# ${activeShipTargetItem.so} @ ${activeShipTargetItem.type} ${shipTimeStr}`;
+      
+      let htmlBody = `
+        <div style="font-family: system-ui, -apple-system, Arial, sans-serif; padding: 20px; background-color: #f6f7f9; color: #222;">
+          <div style="max-width: 600px; margin: 0 auto; background: #fff; padding: 24px; border: 1px solid #e6e7eb; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+            <h2 style="color: #dd4d25; margin-top: 0; font-size: 20px; border-bottom: 2px solid #f0f1f3; padding-bottom: 12px;">Swift Freight Dispatch Confirmation Notice</h2>
+            <p style="font-size: 14px; color: #4b5563;">This formal notification confirms that your project order listed below has been fully processed, verified, and shipped out from active staging floor inventory space.</p>
+            
+            <table style="width: 100%; border-collapse: collapse; margin: 20px 0; background: #fafafa; border-radius: 8px; overflow: hidden; border: 1px solid #e6e7eb;">
+              <thead>
+                <tr style="background: #fafafa;">
+                  <th style="padding: 10px; border-bottom: 1px solid #e6e7eb; text-align: left; font-size: 13px; color: #6b7280;">Manifest Field</th>
+                  <th style="padding: 10px; border-bottom: 1px solid #e6e7eb; text-align: left; font-size: 13px; color: #222;">Logged Entry Value</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td style="padding: 10px; border-bottom: 1px solid #f0f1f3; font-weight: bold; color: #4b5563;">Sales Order #:</td><td style="padding: 10px; border-bottom: 1px solid #f0f1f3; font-weight: bold; color: #dd4d25;">${activeShipTargetItem.so}</td></tr>
+                <tr><td style="padding: 10px; border-bottom: 1px solid #f0f1f3; font-weight: bold; color: #4b5563;">Customer:</td><td style="padding: 10px; border-bottom: 1px solid #f0f1f3;">${activeShipTargetItem.customer}</td></tr>
+                <tr><td style="padding: 10px; border-bottom: 1px solid #f0f1f3; font-weight: bold; color: #4b5563;">Containers:</td><td style="padding: 10px; border-bottom: 1px solid #f0f1f3;">${activeShipTargetItem.type}</td></tr>
+                <tr><td style="padding: 10px; border-bottom: 1px solid #f0f1f3; font-weight: bold; color: #4b5563;">Staging Location:</td><td style="padding: 10px; border-bottom: 1px solid #f0f1f3; color: #0284c7; font-weight: bold;">${activeShipTargetItem.location}</td></tr>
+                <tr><td style="padding: 10px; border-bottom: 1px solid #f0f1f3; font-weight: bold; color: #4b5563;">Total Weight:</td><td style="padding: 10px; border-bottom: 1px solid #f0f1f3; font-weight: bold;">${activeShipTargetItem.weight || '—'}</td></tr>
+                <tr><td style="padding: 10px; border-bottom: 1px solid #f0f1f3; font-weight: bold; color: #4b5563;">Shipped By:</td><td style="padding: 10px; border-bottom: 1px solid #f0f1f3;">${dispatcher}</td></tr>
+                <tr><td style="padding: 10px; font-weight: bold; color: #4b5563;">Shipped At:</td><td style="padding: 10px;">${shipTimeStr}</td></tr>
+              </tbody>
+            </table>
+      `;
 
+      if (photoUrls.length > 0) {
+        htmlBody += `
+          <h3 style="color: #4b5563; font-size: 14px; margin-top: 24px; margin-bottom: 10px; border-bottom: 1px solid #e6e7eb; padding-bottom: 6px;">📷 Verified Staged Freight Photos:</h3>
+          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 16px;">
+        `;
+        photoUrls.forEach(p => {
+          const cloudUrl = `${SUPABASE_URL}/storage/v1/object/public/freight-photos/${p}`;
+          htmlBody += `<div style="border: 1px solid #cbd5e1; border-radius: 8px; overflow: hidden;"><img src="${cloudUrl}" style="width: 100%; height: 140px; object-fit: cover; display: block;" /></div>`;
+        });
+        htmlBody += `</div>`;
+      }
+
+      htmlBody += `
+            <hr style="border: 0; border-top: 1px solid #e6e7eb; margin: 24px 0;" />
+            <p style="font-size: 11px; color: #9ca3af; text-align: center; margin-bottom: 0;">Swift Staging Tracker System • Automated Distribution Hub</p>
+          </div>
+        </div>
+      `;
+
+      window.location.href = `mailto:${pmEmail}?subject=${encodeURIComponent(subject)}&body=Please open this email inside an HTML-supported view to inspect full tables and images.%0D%0A%0D%0A${encodeURIComponent(htmlBody)}`;
+    }
     closeShipModal();
-  } catch(e) { alert("Error updating records."); $('#modalConfirmBtn').disabled = false; }
+  } catch(e) { alert("Error."); }
 }
 
 function parseContainerString(typeStr) {
-  let sk = 0, bx = 0, cr = 0;
-  if(!typeStr) return { sk, bx, cr };
+  let sk = 0, bx = 0, cr = 0; if(!typeStr) return { sk, bx, cr };
   const matchSk = typeStr.match(/(\d+)\s*Skid/); if(matchSk) sk = parseInt(matchSk[1]);
   const matchBx = typeStr.match(/(\d+)\s*Box/);  if(matchBx) bx = parseInt(matchBx[1]);
   const matchCr = typeStr.match(/(\d+)\s*Crate/);if(matchCr) cr = parseInt(matchCr[1]);
@@ -316,7 +355,6 @@ function parseContainerString(typeStr) {
 function openUniversalEditor(table, o) {
   editTargetRecord = { table: table, id: o.id, so: o.so, photo_urls: o.photo_urls || [] };
   $('#e_so').value = o.so; $('#e_cust').value = o.customer; $('#e_loc').value = o.location; $('#e_weight').value = o.weight || '';
-  
   const counts = parseContainerString(o.type);
   $('#e_skid').value = counts.sk; $('#e_box').value = counts.bx; $('#e_crate').value = counts.cr;
   
@@ -345,12 +383,8 @@ async function saveEditedRecord() {
   let typeParts = []; if(sk) typeParts.push(sk+' Skid'); if(bx) typeParts.push(bx+' Box'); if(cr) typeParts.push(cr+' Crate');
   const dynamicType = typeParts.join(', ') || '1 Skid';
   
-  const basePayload = {
-    so: $('#e_so').value.trim(), customer: $('#e_cust').value.trim(),
-    location: $('#e_loc').value.trim(), weight: $('#e_weight').value.trim(),
-    type: dynamicType, qty: sk+bx+cr
-  };
-  if(!basePayload.so || !basePayload.customer || !basePayload.location) return alert("Required fields missing.");
+  const basePayload = { so: $('#e_so').value.trim(), customer: $('#e_cust').value.trim(), location: $('#e_loc').value.trim(), weight: $('#e_weight').value.trim(), type: dynamicType, qty: sk+bx+cr };
+  if(!basePayload.so || !basePayload.customer || !basePayload.location) return alert("Fields Missing.");
 
   if (editTargetRecord.table === 'staging') {
     await supabaseClient.from('staging').update({ ...basePayload, status: $('#e_status').value.trim(), staged_by: $('#e_staged_by').value.trim() }).eq('id', editTargetRecord.id);
@@ -361,7 +395,7 @@ async function saveEditedRecord() {
 }
 
 async function executeShippedUndo() {
-  if(!confirm("Are you sure you want to undo this shipment action?")) return;
+  if(!confirm("Are you sure?")) return;
   try {
     const { data: currentRecord } = await supabaseClient.from('shipped').select('*').eq('id', editTargetRecord.id).single();
     await supabaseClient.from('staging').insert([{ so: currentRecord.so, customer: currentRecord.customer, type: currentRecord.type, qty: currentRecord.qty, location: currentRecord.location, weight: currentRecord.weight, status: 'Partial' }]);
