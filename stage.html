@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Staging Entries Expanded Log — v7.7</title>
+<title>Staging Entries Expanded Log — v7.8</title>
 <style>
   :root{--brand:#dd4d25;}
   body{margin:0;background:#fff;font:13px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Arial;color:#222;}
@@ -33,10 +33,10 @@
   <div class="actions">
     <button onclick="window.print()">Print Log</button>
     <button onclick="window.close()">Close Window</button>
-    <input id="f" placeholder="Quick filter contents..." oninput="filter()"/>
+    <input id="f" placeholder="Quick search..." oninput="filter()"/>
   </div>
   <div class="table-wrap"><table id="tbl">
-    <thead><tr><th>Delete</th><th>Edit</th><th>SO</th><th>Customer</th><th>Entry Date</th><th>Containers</th><th>Location</th><th>Coords</th><th>Total Weight (in lbs)</th><th>Status</th><th>Staged By</th></tr></thead>
+    <thead><tr><th>Delete</th><th>Edit</th><th>SO</th><th>Customer</th><th>Entry Date</th><th>Containers</th><th>Location</th><th>Coords</th><th>Total Weight (in lbs)</th><th>Status</th><th>Staged By</th><th style="position:sticky;right:0;width:70px;text-align:center;">Shipped</th></tr></thead>
     <tbody></tbody>
   </table></div>
 </div>
@@ -47,6 +47,14 @@
     <h3>Edit Staging Entry</h3>
     <div class="modal-field"><label>SO#</label><input id="e_so" /></div>
     <div class="modal-field"><label>Customer</label><input id="e_cust" /></div>
+    
+    <label style="font-size:12px; font-weight:700; color:#4b5563; margin-bottom:-4px; text-align: left;">Container Quantities</label>
+    <div class="freight-block">
+      <div class="counter-box"><label>Skids</label><button class="counter-btn" onclick="adjustEditCount('e_skid',-1)">-</button><input id="e_skid" value="0" readonly/><button class="counter-btn" onclick="adjustEditCount('e_skid',1)">+</button></div>
+      <div class="counter-box"><label>Boxes</label><button class="counter-btn" onclick="adjustEditCount('e_box',-1)">-</button><input id="e_box" value="0" readonly/><button class="counter-btn" onclick="adjustEditCount('e_box',1)">+</button></div>
+      <div class="counter-box"><label>Crates</label><button class="counter-btn" onclick="adjustEditCount('e_crate',-1)">-</button><input id="e_crate" value="0" readonly/><button class="counter-btn" onclick="adjustEditCount('e_crate',1)">+</button></div>
+    </div>
+
     <div class="modal-field"><label>Location</label><input id="e_loc" /></div>
     <div class="modal-field"><label>Coords</label><input id="e_coords" readonly onclick="fetchBrowserGPS('e_coords')" style="background:#fafafa; cursor:pointer;" /></div>
     <div class="modal-field"><label>Total Weight (in lbs)</label><input id="e_weight" /></div>
@@ -56,16 +64,22 @@
       </select>
     </div>
     <div class="modal-field"><label>Staged By</label><input id="e_staged_by" /></div>
-    <div class="actions" style="margin-top:8px;"><button style="background:#dd4d25; color:#fff; font-weight:700; border:0; padding:8px 16px; border-radius:8px; cursor:pointer;" onclick="saveEditedRecord()">Save Changes</button></div>
+    
+    <div class="modal-actions">
+      <button class="btn" style="background:#9ca3af; border-radius: 8px; padding: 10px 16px; border: 0; color:#fff; font-weight:700; cursor:pointer;" onclick="document.querySelector('#editModal').style.display='none'">Cancel</button>
+      <button class="btn" style="background:#e04f26; border-radius: 8px; padding: 10px 16px; border: 0; color:#fff; font-weight:700; cursor:pointer;" onclick="saveEditedRecord()">Save Changes</button>
+    </div>
   </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
   const supabaseClient = supabase.createClient('https://gdrpdiwykmnybmkadlrv.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdkcnBkaXd5a21ueWJta2FkbHJ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1MjMyMTIsImV4cCI6MjA5NjA5OTIxMn0.Z7ih_vQic1GtzCyZmTEV-RWJnmuaNZQDfOV2_Fvan5g');
-  let cache = [];
-  let currentEditId = null;
+  let cache = []; let currentEditId = null;
 
+  function adjustEditCount(id, amt) {
+    const el = document.querySelector(`#${id}`); el.value = Math.max(0, (parseInt(el.value)||0) + amt);
+  }
   function fetchBrowserGPS(targetInputId) {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -83,35 +97,48 @@
   function filter() {
     const q = document.querySelector('#f').value.toLowerCase();
     const body = document.querySelector('#tbl tbody'); body.innerHTML = '';
-    cache.filter(e => e.so.toLowerCase().includes(q) || e.customer.toLowerCase().includes(q)).forEach(e => {
+    cache.filter(e => e.so.toLowerCase().includes(q) || e.customer.toLowerCase().includes(q) || (e.location && e.location.toLowerCase().includes(q))).forEach(e => {
       const row = document.createElement('tr');
-      const geoLink = e.coords ? `<a class="coord-link" href="geo:0,0?q=${encodeURIComponent(e.coords)}" target="_blank">${e.coords}</a>` : '—';
+      const geoLink = e.coords ? `<a class="coord-link" href="geo:0,0?q=${encodeURIComponent(e.coords)}">${e.coords}</a>` : '—';
       row.innerHTML = `<td><button class="btn-del" onclick="deleteItem('${e.id}')">Delete</button></td>
         <td><button class="btn-edit" onclick='openEditPrompt(${JSON.stringify(e).replace(/"/g, '&quot;')})'>Edit</button></td>
         <td><b>${e.so}</b></td><td>${e.customer}</td><td>${new Date(e.entry_date).toLocaleString()}</td>
-        <td>${e.type}</td><td>${e.location}</td><td><small>${geoLink}</small></td><td><b>${e.weight || '—'}</b></td><td>${e.status}</td><td>${e.staged_by||'—'}</td>`;
+        <td>${e.type}</td><td>${e.location}</td><td><small>${geoLink}</small></td><td><b>${e.weight || '—'}</b></td><td>${e.status}</td><td>${e.staged_by||'—'}</td>
+        <td style="position:sticky;right:0;text-align:center;"><input type="checkbox" onchange="if(this.checked)parent.triggerShipModal(${JSON.stringify(e).replace(/"/g, '&quot;')})"></td>`;
       body.appendChild(row);
     });
+  }
+
+  function parseContainerString(typeStr) {
+    let sk = 0, bx = 0, cr = 0; if(!typeStr) return { sk, bx, cr };
+    const matchSk = typeStr.match(/(\d+)\s*Skid/); if(matchSk) sk = parseInt(matchSk[1]);
+    const matchBx = typeStr.match(/(\d+)\s*Box/);  if(matchBx) bx = parseInt(matchBx[1]);
+    const matchCr = typeStr.match(/(\d+)\s*Crate/);if(matchCr) cr = parseInt(matchCr[1]);
+    return { sk, bx, cr };
   }
 
   function openEditPrompt(e) {
     currentEditId = e.id;
     document.querySelector('#e_so').value = e.so; document.querySelector('#e_cust').value = e.customer;
-    document.querySelector('#e_loc').value = e.location || ''; document.querySelector('#e_coords').value = e.coords || '';
-    document.querySelector('#e_weight').value = e.weight || ''; document.querySelector('#e_status').value = e.status || '';
-    document.querySelector('#e_staged_by').value = e.staged_by || '';
+    document.querySelector('#e_loc').value = e.location; document.querySelector('#e_coords').value = e.coords || ''; document.querySelector('#e_weight').value = e.weight || '';
+    document.querySelector('#e_status').value = e.status; document.querySelector('#e_staged_by').value = e.staged_by || '';
+    const counts = parseContainerString(e.type);
+    document.querySelector('#e_skid').value = counts.sk; document.querySelector('#e_box').value = counts.bx; document.querySelector('#e_crate').value = counts.cr;
     document.querySelector('#editModal').style.display = 'flex';
   }
 
   async function saveEditedRecord() {
+    const sk = parseInt(document.querySelector('#e_skid').value)||0, bx = parseInt(document.querySelector('#e_box').value)||0, cr = parseInt(document.querySelector('#e_crate').value)||0;
+    let typeParts = []; if(sk) typeParts.push(sk+' Skid'); if(bx) typeParts.push(bx+' Box'); if(cr) typeParts.push(cr+' Crate');
+    const dynamicType = typeParts.join(', ') || '1 Skid';
+
     await supabaseClient.from('staging').update({
       so: document.querySelector('#e_so').value.trim(), customer: document.querySelector('#e_cust').value.trim(),
-      location: document.querySelector('#e_loc').value.trim(), coords: document.querySelector('#e_coords').value.trim(),
-      weight: document.querySelector('#e_weight').value.trim(), status: document.querySelector('#e_status').value.trim(),
-      staged_by: document.querySelector('#e_staged_by').value.trim()
+      location: document.querySelector('#e_loc').value.trim(), coords: document.querySelector('#e_coords').value.trim(), weight: document.querySelector('#e_weight').value.trim(),
+      status: document.querySelector('#e_status').value.trim(), staged_by: document.querySelector('#e_staged_by').value.trim(),
+      type: dynamicType, qty: sk+bx+cr
     }).eq('id', currentEditId);
-    document.querySelector('#editModal').style.display = 'none';
-    refresh();
+    document.querySelector('#editModal').style.display = 'none'; refresh();
   }
 
   async function deleteItem(id) { if(confirm("Permanently delete item?")) { await supabaseClient.from('staging').delete().eq('id', id); refresh(); } }
