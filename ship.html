@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Shipped Expanded Log — v7.8</title>
+<title>Shipped Expanded Log — v7.9</title>
 <style>
   :root{--brand:#dd4d25;}
   body{margin:0;background:#fff;font:13px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Arial;color:#222;}
@@ -12,23 +12,6 @@
   .btn-del{background:#dc2626;color:#fff;border:0;border-radius:6px;padding:4px 8px;font-size:12px;font-weight:700;cursor:pointer}
   .btn-edit{background:#0284c7;color:#fff;border:0;border-radius:6px;padding:4px 8px;font-size:12px;font-weight:700;cursor:pointer}
   input { height: 34px; padding: 0 10px; border: 1px solid #cbd5e1; border-radius: 8px; width: 100%; max-width:300px; font-size:13px; }
-  
-  .freight-block { flex: none; display: flex; gap: 8px; background: #fff; border: 1px solid #cbd5e1; padding: 6px 10px; border-radius: 10px; align-items: center; width:100%; }
-  .counter-box { display: flex; align-items: center; gap: 4px; flex: 1; justify-content: center; }
-  .counter-box label { font-size: 13px; font-weight: 700; margin-right: 4px; }
-  .counter-box input { width: 44px; height: 32px; text-align: center; border-radius: 6px; font-weight: 700; border:1px solid #cbd5e1; }
-  .counter-btn { width: 28px; height: 32px; background: #e5e7eb; border: 0; font-weight: 700; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #222; }
-  .counter-btn:hover { background: #cbd5e1; }
-  
-  .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; padding: 12px; }
-  .modal-window { background: #fff; border-radius: 16px; max-width: 500px; width: 100%; max-height: 90vh; padding: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); display: flex; flex-direction: column; gap: 12px; overflow-y: auto; position: relative; font-family: system-ui,-apple-system,Arial; }
-  .modal-close-x { position: absolute; top: 12px; right: 16px; font-size: 22px; font-weight: 700; color: #6b7280; cursor: pointer; border: 0; background: none; z-index: 10; }
-  .modal-field { display: flex; flex-direction: column; gap: 2px; text-align: left; }
-  .modal-field label { font-size: 12px; font-weight: 700; color: #4b5563; }
-  .modal-field input { height: 42px; border: 1px solid #cbd5e1; border-radius: 8px; padding: 0 12px; font-size: 14px; background: #fff; width: 100%; color: #222; }
-  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 8px; }
-  .modal-actions .btn { background: #e04f26; color: #fff; border: 0; border-radius: 8px; padding: 10px 16px; font-weight: 700; cursor: pointer; }
-
   .table-wrap{ overflow-x: auto; border:1px solid #e5e7eb; border-radius:10px }
   table{width:100%; border-collapse:collapse; min-width:1100px}
   th,td{border-top:1px solid #e5e7eb; padding:8px; white-space:nowrap; text-align:left}
@@ -44,7 +27,7 @@
   <div class="actions">
     <button onclick="window.print()">Print Manifest Log</button>
     <button onclick="window.close()">Close Window</button>
-    <input id="f" placeholder="Quick search..." oninput="filter()"/>
+    <input id="f" placeholder="Quick filter contents..." oninput="filter()"/>
   </div>
   <div class="table-wrap"><table id="tbl">
     <thead><tr><th>Delete</th><th>Edit</th><th>Photo(s)</th><th>SO</th><th>Customer</th><th>Containers</th><th>Carrier</th><th>Location</th><th>Coords</th><th>Total Weight (in lbs)</th><th>Shipped At</th><th>Shipped By</th><th>PM'd Email</th></tr></thead>
@@ -58,27 +41,15 @@
     <h3>Edit Shipped Entry</h3>
     <div class="modal-field"><label>SO#</label><input id="e_so" /></div>
     <div class="modal-field"><label>Customer</label><input id="e_cust" /></div>
-    
-    <label style="font-size:12px; font-weight:700; color:#4b5563; margin-bottom:-4px; text-align: left;">Container Quantities</label>
-    <div class="freight-block">
-      <div class="counter-box"><label>Skids</label><button class="counter-btn" onclick="adjustEditCount('e_skid',-1)">-</button><input id="e_skid" value="0" readonly/><button class="counter-btn" onclick="adjustEditCount('e_skid',1)">+</button></div>
-      <div class="counter-box"><label>Boxes</label><button class="counter-btn" onclick="adjustEditCount('e_box',-1)">-</button><input id="e_box" value="0" readonly/><button class="counter-btn" onclick="adjustEditCount('e_box',1)">+</button></div>
-      <div class="counter-box"><label>Crates</label><button class="counter-btn" onclick="adjustEditCount('e_crate',-1)">-</button><input id="e_crate" value="0" readonly/><button class="counter-btn" onclick="adjustEditCount('e_crate',1)">+</button></div>
-    </div>
-
     <div class="modal-field"><label>Location</label><input id="e_loc" /></div>
     <div class="modal-field"><label>Coords</label><input id="e_coords" readonly onclick="fetchBrowserGPS('e_coords')" style="background:#fafafa; cursor:pointer;" /></div>
     <div class="modal-field"><label>Total Weight (in lbs)</label><input id="e_weight" /></div>
     <div class="modal-field"><label>Carrier</label><input id="e_carrier" /></div>
     <div class="modal-field"><label>Shipped By</label><input id="e_shipped_by" /></div>
-    <div class="modal-field"><label>PM Verified Shortname</label><input id="e_pm" /></div>
-    
-    <div class="modal-actions" style="justify-content: space-between; width:100%; margin-top: 8px;">
-      <button class="btn" style="background:#4b5563; padding: 10px 16px; border-radius: 8px; border: 0; color: #fff; font-weight: 700; cursor: pointer;" onclick="executeUndo()">Undo Shipment Action</button>
-      <span style="display:flex; gap:8px;">
-        <button class="btn" style="background:#9ca3af; padding: 10px 16px; border-radius: 8px; border: 0; color: #fff; font-weight: 700; cursor: pointer;" onclick="document.querySelector('#editModal').style.display='none'">Cancel</button>
-        <button class="btn" style="background:#e04f26; padding: 10px 16px; border-radius: 8px; border: 0; color: #fff; font-weight: 700; cursor: pointer;" onclick="saveEdit()">Save Changes</button>
-      </span>
+    <div class="modal-field"><label>PM Shortname</label><input id="e_pm" /></div>
+    <div class="actions" style="justify-content: space-between; margin-top:8px; display:flex;">
+      <button style="background:#4b5563; color:#fff; border:0; padding:8px 12px; border-radius:8px; cursor:pointer;" onclick="executeUndo()">Undo Shipment Action</button>
+      <button style="background:#dd4d25; color:#fff; border:0; padding:8px 12px; border-radius:8px; cursor:pointer;" onclick="saveEdit()">Save Changes</button>
     </div>
   </div>
 </div>
@@ -89,9 +60,6 @@
   const supabaseClient = supabase.createClient(SUPABASE_URL, 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdkcnBkaXd5a21ueWJta2FkbHJ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1MjMyMTIsImV4cCI6MjA5NjA5OTIxMn0.Z7ih_vQic1GtzCyZmTEV-RWJnmuaNZQDfOV2_Fvan5g');
   let cache = []; let currentEditRecord = null;
 
-  function adjustEditCount(id, amt) {
-    const el = document.querySelector(`#${id}`); el.value = Math.max(0, (parseInt(el.value)||0) + amt);
-  }
   function fetchBrowserGPS(targetInputId) {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -112,7 +80,6 @@
     cache.filter(e => e.so.toLowerCase().includes(q) || e.customer.toLowerCase().includes(q)).forEach(e => {
       const row = document.createElement('tr');
       const geoLink = e.coords ? `<a class="coord-link" href="geo:0,0?q=${encodeURIComponent(e.coords)}">${e.coords}</a>` : '—';
-      // REVISION 2: Inject carrier cell output explicitly into expanded view matrix line
       row.innerHTML = `<td><button class="btn-del" onclick="deleteItem('${e.id}')">Delete</button></td>
         <td><button class="btn-edit" onclick='openEditor(${JSON.stringify(e).replace(/"/g, '&quot;')})'>Edit</button></td>
         <td><b>${e.so}</b></td><td>${e.customer}</td><td>${e.type}</td><td>${e.carrier || '—'}</td><td>${e.location}</td><td><small>${geoLink}</small></td><td><b>${e.weight || '—'}</b></td>
@@ -122,43 +89,27 @@
     });
   }
 
-  function parseContainerString(typeStr) {
-    let sk = 0, bx = 0, cr = 0; if(!typeStr) return { sk, bx, cr };
-    const matchSk = typeStr.match(/(\d+)\s*Skid/); if(matchSk) sk = parseInt(matchSk[1]);
-    const matchBx = typeStr.match(/(\d+)\s*Box/);  if(matchBx) bx = parseInt(matchBx[1]);
-    const matchCr = typeStr.match(/(\d+)\s*Crate/);if(matchCr) cr = parseInt(matchCr[1]);
-    return { sk, bx, cr };
-  }
-
   function openEditor(e) {
     currentEditRecord = e;
     document.querySelector('#e_so').value = e.so; document.querySelector('#e_cust').value = e.customer;
     document.querySelector('#e_loc').value = e.location; document.querySelector('#e_coords').value = e.coords || ''; document.querySelector('#e_weight').value = e.weight || '';
     document.querySelector('#e_carrier').value = e.carrier || '';
     document.querySelector('#e_shipped_by').value = e.shipped_by || ''; document.querySelector('#e_pm').value = e.pmd_email || '';
-    const counts = parseContainerString(e.type);
-    document.querySelector('#e_skid').value = counts.sk; document.querySelector('#e_box').value = counts.bx; document.querySelector('#e_crate').value = counts.cr;
     document.querySelector('#editModal').style.display = 'flex';
   }
 
   async function saveEdit() {
-    const sk = parseInt(document.querySelector('#e_skid').value)||0, bx = parseInt(document.querySelector('#e_box').value)||0, cr = parseInt(document.querySelector('#e_crate').value)||0;
-    let typeParts = []; if(sk) typeParts.push(sk+' Skid'); if(bx) typeParts.push(bx+' Box'); if(cr) typeParts.push(cr+' Crate');
-    const dynamicType = typeParts.join(', ') || '1 Skid';
-
     await supabaseClient.from('shipped').update({
       so: document.querySelector('#e_so').value.trim(), customer: document.querySelector('#e_cust').value.trim(),
       location: document.querySelector('#e_loc').value.trim(), coords: document.querySelector('#e_coords').value.trim(), weight: document.querySelector('#e_weight').value.trim(),
-      carrier: document.querySelector('#e_carrier').value.trim(), shipped_by: document.querySelector('#e_shipped_by').value.trim(), pmd_email: document.querySelector('#e_pm').value.trim() || null,
-      type: dynamicType, qty: sk+bx+cr
+      carrier: document.querySelector('#e_carrier').value.trim(), shipped_by: document.querySelector('#e_shipped_by').value.trim(), pmd_email: document.querySelector('#e_pm').value.trim() || null
     }).eq('id', currentEditRecord.id);
     document.querySelector('#editModal').style.display = 'none'; refresh();
   }
 
   async function executeUndo() {
     if(!confirm("Undo shipment action?")) return;
-    // REVISION 2: Re-stating entries inside the table logs while leaving the transient carrier input parameter out completely
-    await supabaseClient.from('staging').insert([{ so: currentEditRecord.so, customer: currentEditRecord.customer, type: currentEditRecord.type, qty: currentEditRecord.qty, location: currentEditRecord.location, coords: currentEditRecord.coords, weight: currentEditRecord.weight, status: 'Partial' }]);
+    await supabaseClient.from('staging').insert([{ so: currentEditRecord.so, customer: currentEditRecord.customer, type: currentEditRecord.type, qty: currentEditRecord.qty, location: currentEditRecord.location, coords: currentRecord.coords, weight: currentEditRecord.weight, status: 'Partial' }]);
     await supabaseClient.from('shipped').delete().eq('id', currentEditRecord.id);
     document.querySelector('#editModal').style.display = 'none'; refresh();
   }
