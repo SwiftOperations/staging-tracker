@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Swift Staging Tracker — v7.9</title>
+<title>Swift Staging Tracker — v8.0</title>
 
 <!-- PROGRESSIVE WEB APP (PWA) MANIFEST ORCHESTRATION -->
 <link rel="manifest" href="data:application/manifest+json;charset=utf-8,%7B%22short_name%22%3A%22StagingTracker%22%2C%22name%22%3A%22Swift%20Staging%20Tracker%20Hub%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22https%3A%2F%2Fcdn-icons-png.flaticon.com%2F512%2F3014%2F3014166.png%22%2C%22type%22%3A%22image%22%2C%22sizes%22%3A%22512x512%22%7D%5D%2C%22start_url%22%3A%22.%22%2C%22background_color%22%3A%22%23f6f7f9%22%2C%22theme_color%22%3A%22%23dd4d25%22%2C%22display%22%3A%22standalone%22%2C%22orientation%22%3A%22portrait%22%7D" id="pwa-manifest">
@@ -37,11 +37,13 @@
   .counter-box input { width: 44px; height: 32px; text-align: center; border-radius: 6px; font-weight: 700; border:1px solid #d1d5db; }
   .counter-btn { width: 28px; height: 32px; background: #e5e7eb; border: 0; font-weight: 700; border-radius: 6px; cursor: pointer; }
   
+  /* REVISION 1: CORE MODAL LAYOUT BLUEPRINT SYMMETRY */
   .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; padding: 12px; }
-  .modal-window { background: #fff; border-radius: 16px; max-width: 500px; width: 100%; max-height: 90vh; padding: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); display: flex; flex-direction: column; gap: 12px; overflow-y: auto; position: relative; }
+  .modal-window { background: #fff; border-radius: 16px; max-width: 500px; width: 100%; max-height: 90vh; padding: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); display: flex; flex-direction: column; gap: 12px; overflow-y: auto; position: relative; font-family: system-ui, -apple-system, sans-serif; }
   .modal-close-x { position: absolute; top: 12px; right: 16px; font-size: 22px; font-weight: 700; color: #6b7280; cursor: pointer; border: 0; background: none; z-index: 10; }
-  .modal-field { display: flex; flex-direction: column; gap: 2px; }
+  .modal-field { display: flex; flex-direction: column; gap: 2px; text-align: left; }
   .modal-field label { font-size: 12px; font-weight: 700; color: #4b5563; }
+  .modal-field input, .modal-field select { height: 42px; border: 1px solid #cbd5e1; border-radius: 8px; padding: 0 12px; font-size: 14px; background: #fff; color: #222; }
   .photo-options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
   .photo-uploader { border: 2px dashed #cbd5e1; border-radius: 10px; padding: 10px; text-align: center; cursor: pointer; background: #f8fafc; font-size: 12px; font-weight: 700; }
   .photo-uploader:hover { border-color: var(--brand); }
@@ -77,10 +79,9 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>Swift Staging Tracker — v7.9</h1>
+  <h1>Swift Staging Tracker — v8.0</h1>
   <div id="err" style="display:none; background:#fee2e2; color:#991b1b; padding:10px; border-radius:10px; margin-bottom:10px"></div>
 
-  <!-- KPI tabulation windows matching stable default -->
   <div class="grid">
     <div class="tile"><h4>Orders</h4><div id="kOrders" class="big">0</div></div>
     <div class="tile"><h4>Containers</h4><div id="kContainers" class="big">0</div></div>
@@ -220,7 +221,7 @@
       <div class="modal-field"><label>PM Verified Shortname</label><input id="e_pm" /></div>
     </div>
 
-    <div class="modal-actions" style="justify-content: space-between; width:100%; margin-top: 8px;">
+    <div class="modal-actions" style="justify-content: space-between; width:100%; margin-top: 8px; display: flex; gap: 8px;">
       <button id="editUndoBtn" class="btn" style="background:#4b5563; display:none; padding: 10px 16px; border-radius: 8px;" onclick="executeShippedUndo()">Undo Shipment Action</button>
       <span style="display:flex; gap:8px; margin-left:auto;">
         <button class="btn" style="background:#9ca3af; padding: 10px 16px; border-radius: 8px;" onclick="$('#editModal').style.display='none'">Cancel</button>
@@ -360,7 +361,7 @@ function openStaticMapPromptWindow(item) {
   if (item.photo_urls && item.photo_urls.length > 0) {
     $('#mapViewPhotoSection').style.display = 'flex';
     item.photo_urls.forEach(path => {
-      gallery.insertAdjacentHTML('beforeend', `<img src="${SUPABASE_URL}/storage/v1/object/public/freight-photos/${path}" style="width:70px; height:70px; object-fit:cover; border-radius:6px; border:1px solid #ddd;"/>`);
+      gallery.insertAdjacentHTML('beforeend', `<img src="${SUPABASE_URL}/storage/v1/object/public/freight-photos/${path}" style="width:70px; height:70px; object-fit:cover; border-radius:6px; border:1px solid #ddd Papin;"/>`);
     });
   } else {
     $('#mapViewPhotoSection').style.display = 'none';
@@ -421,7 +422,7 @@ function renderPhotoStrip(containerSel, blobArray) {
   });
 }
 
-// REVISIONS 1 & 2: CLEAR REFORMATTED MAILTO DISPATCH LAYER GENERATOR
+// REVISION 2: RELIABLE DISPATCH TRANSACTION ROUTING PRESERVING STATE MUTATION ORDER
 async function submitFreightDispatch() {
   const dispatcher = $('#m_by').value.trim(); const pmEmail = $('#m_pm_email').value.trim(); const pmChecked = $('#m_pm_chk').checked;
   const carrierVal = $('#m_carrier').value.trim() || 'Unassigned Carrier';
@@ -431,7 +432,9 @@ async function submitFreightDispatch() {
   try {
     let photoUrls = [];
     for (let i = 0; i < selectedPhotoBlobs.length; i++) {
-      const file = selectedPhotoBlobs[i]; const path = `${activeShipTargetItem.so}-${Date.now()}-${i}.${file.name.split('.').pop()}`;
+      const file = selectedPhotoBlobs[i]; 
+      const cleanFileName = file.name.replace(/[^a-zA-SUv-z0-9.]/g, '');
+      const path = `${activeShipTargetItem.so}-${Date.now()}-${i}-${cleanFileName}`;
       await supabaseClient.storage.from('freight-photos').upload(path, file); photoUrls.push(path);
     }
     
@@ -440,6 +443,7 @@ async function submitFreightDispatch() {
 
     const currentTimeStamp = new Date().toLocaleString();
 
+    // 1. Commit all Supabase cloud updates completely first
     await supabaseClient.from('shipped').insert([{
       so: activeShipTargetItem.so, customer: activeShipTargetItem.customer, type: activeShipTargetItem.type,
       qty: activeShipTargetItem.qty, carrier: carrierVal, location: activeShipTargetItem.location, coords: activeShipTargetItem.coords,
@@ -447,35 +451,40 @@ async function submitFreightDispatch() {
     }]);
     await supabaseClient.from('staging').delete().eq('id', activeShipTargetItem.id);
     
-    if(pmChecked) {
-      // Revision 2: Exact parametric subject composition structure rules
-      const subject = `CONFIRMATION OF SHIPOUT: ${activeShipTargetItem.customer} ${activeShipTargetItem.so} @ ${activeShipTargetItem.type} via ${carrierVal}`;
-      
-      // Revision 1 & 2: Clean visual spacing blocks mirroring security9.png structure rules
-      let photoLinksBlock = "";
-      if (photoUrls.length > 0) {
-        photoLinksBlock = "\nUploaded Freight Photos (Click link to view full size):\n" + 
-          photoUrls.map((path, index) => `📎 Photo ${index + 1}: ${SUPABASE_URL}/storage/v1/object/public/freight-photos/${path}`).join("\n");
-      } else {
-        photoLinksBlock = "\nNo photos uploaded for this shipment.";
-      }
-
-      const body = `Your order has now been shipped! Order details:\n\n` +
-        `----------------------------------------------------------------------\n` +
-        `SO#                 | ${activeShipTargetItem.so}\n` +
-        `Customer            | ${activeShipTargetItem.customer}\n` +
-        `Container(s)        | ${activeShipTargetItem.type}\n` +
-        `Total Weight        | ${activeShipTargetItem.weight || '—'}\n` +
-        `Carrier             | ${carrierVal}\n` +
-        `Shipped At          | ${currentTimeStamp}\n` +
-        `Shipped By          | ${dispatcher}\n` +
-        `----------------------------------------------------------------------\n` +
-        `${photoLinksBlock}`;
-
-      window.location.href = `mailto:${pmEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    // 2. Cache variables before window prompt changes state layers
+    const cachedSubject = `CONFIRMATION OF SHIPOUT: ${activeShipTargetItem.customer} ${activeShipTargetItem.so} @ ${activeShipTargetItem.type} via ${carrierVal}`;
+    let photoLinksBlock = "";
+    if (photoUrls.length > 0) {
+      photoLinksBlock = "\nUploaded Freight Photos (Click link to view full size):\n" + 
+        photoUrls.map((path, index) => `📎 Photo ${index + 1}: ${SUPABASE_URL}/storage/v1/object/public/freight-photos/${path}`).join("\n");
+    } else {
+      photoLinksBlock = "\nNo photos uploaded for this shipment.";
     }
+
+    const cachedBody = `Your order has now been shipped! Order details:\n\n` +
+      `----------------------------------------------------------------------\n` +
+      `SO#                 | ${activeShipTargetItem.so}\n` +
+      `Customer            | ${activeShipTargetItem.customer}\n` +
+      `Container(s)        | ${activeShipTargetItem.type}\n` +
+      `Total Weight        | ${activeShipTargetItem.weight || '—'}\n` +
+      `Carrier             | ${carrierVal}\n` +
+      `Shipped At          | ${currentTimeStamp}\n` +
+      `楽しみ / Shipped By | ${dispatcher}\n` +
+      `----------------------------------------------------------------------\n` +
+      `${photoLinksBlock}`;
+
+    // 3. Clear interface windows and sync UI rows cleanly before jumping external
     closeShipModal();
-  } catch(e) { alert("Error processing transaction logs."); }
+    
+    // 4. Safely push plain text draft to mail client as the final step
+    if(pmChecked) {
+      window.location.href = `mailto:${pmEmail}?subject=${encodeURIComponent(cachedSubject)}&body=${encodeURIComponent(cachedBody)}`;
+    }
+  } catch(e) { 
+    alert("Error executing data dispatch pipeline. Retry option unlocked."); 
+  } finally {
+    $('#modalConfirmBtn').disabled = false;
+  }
 }
 
 function parseContainerString(typeStr) {
@@ -535,7 +544,7 @@ async function executeShippedUndo() {
   try {
     const { data: currentRecord } = await supabaseClient.from('shipped').select('*').eq('id', editTargetRecord.id).single();
     await supabaseClient.from('staging').insert([{ so: currentRecord.so, customer: currentRecord.customer, type: currentRecord.type, qty: currentRecord.qty, location: currentRecord.location, coords: currentRecord.coords, weight: currentRecord.weight, status: 'Partial' }]);
-    await supabaseClient.from('shipped').delete().eq('id', currentRecord.id);
+    await supabaseClient.from('shipped').delete().eq('id', editTargetRecord.id);
     $('#editModal').style.display = 'none'; loadCloudData();
   } catch(e) { alert("Undo error."); }
 }
