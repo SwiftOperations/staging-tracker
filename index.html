@@ -4,6 +4,10 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Swift Staging Tracker — v7.6</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
 <style>
   :root{--brand:#dd4d25;}
   *{box-sizing:border-box}
@@ -54,6 +58,9 @@
   .log-limit-notice { display: none; background: #fff; border-top: 1px solid #e6e7eb; padding: 8px; text-align: center; font-size: 12px; font-weight: 700; color: #dd4d25; }
   .green-check { color: #16a34a; font-weight: bold; }
   input[type="checkbox"] { width: 13px; height: 13px; cursor: pointer; transform: scale(1); margin: 0; }
+
+  /* Leaflet popup cleanups */
+  .leaflet-popup-content-wrapper { border-radius: 8px; font-family: system-ui, sans-serif; }
 
   @media (max-width: 600px) {
     .grid{grid-template-columns:repeat(2,1fr)}
@@ -109,7 +116,7 @@
     <div class="tblwrap">
       <div class="tbl-scroller">
         <table id="tblStaging">
-          <thead><tr><th>Delete</th><th>Edit</th><th>SO</th><th>Customer</th><th>Entry Date</th><th>Containers</th><th>Location</th><th>Coords</th><th>Total Weight</th><th>Status</th><th>Staged By</th><th style="position:sticky;right:0;width:70px;">Shipped</th></tr></thead>
+          <thead><tr><th>Delete</th><th>Edit</th><th>SO</th><th>Customer</th><th>Entry Date</th><th>Containers</th><th>Location</th><th>Coords</th><th>Total Weight</th><th>Status</th><th>Staged By</th><th style="position:sticky;right:0;width:70px;text-align:center;">Shipped</th></tr></thead>
           <tbody></tbody>
         </table>
       </div>
@@ -130,14 +137,12 @@
     </div>
   </div>
 
-  <!-- REVISION 3: GOOGLE MAPS PANEL HUB -->
   <div class="card">
     <h3>Staged Inventory Location Mapping</h3>
-    <div id="googleFreightMap" style="width:100%; height:420px; background:#e5e7eb; border-radius:10px; border:1px solid #cbd5e1;"></div>
+    <div id="openFreightMap" style="width:100%; height:420px; background:#e5e7eb; border-radius:10px; border:1px solid #cbd5e1; z-index:1;"></div>
   </div>
 </div>
 
-<!-- SHIPPING WORKFLOW MODAL -->
 <div id="shipModal" class="modal-overlay" onclick="if(event.target===this) closeShipModal()">
   <div class="modal-window">
     <button class="modal-close-x" onclick="closeShipModal()">×</button>
@@ -163,7 +168,6 @@
   </div>
 </div>
 
-<!-- UNIVERSAL ITEM EDIT MODAL -->
 <div id="editModal" class="modal-overlay" onclick="if(event.target===this) $('#editModal').style.display='none'">
   <div class="modal-window">
     <button class="modal-close-x" onclick="$('#editModal').style.display='none'">×</button>
@@ -203,7 +207,6 @@
   </div>
 </div>
 
-<!-- MAP PIN STATIC VIEW MODAL OVERLAY -->
 <div id="mapViewModal" class="modal-overlay" onclick="if(event.target===this) $('#mapViewModal').style.display='none'">
   <div class="modal-window">
     <button class="modal-close-x" onclick="$('#mapViewModal').style.display='none'">×</button>
@@ -224,7 +227,6 @@
   </div>
 </div>
 
-<!-- VIEW PHOTO GALLERY MODAL -->
 <div id="viewModal" class="modal-overlay" onclick="if(event.target===this) $('#viewModal').style.display='none'">
   <div class="modal-window" style="max-width: 600px;">
     <button class="modal-close-x" onclick="$('#viewModal').style.display='none'">×</button>
@@ -235,9 +237,6 @@
 
 <datalist id="pastShippers"></datalist><datalist id="pastEmails"></datalist>
 
-<!-- Injecting Google Maps script handler dependency context safely -->
-<script src="https://maps.googleapis.com/maps/api/js?key=&callback=initGoogleMapEngine" async defer></script>
-
 <script>
 const SUPABASE_URL = 'https://gdrpdiwykmnybmkadlrv.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdkcnBkaXd5a21ueWJta2FkbHJ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1MjMyMTIsImV4cCI6MjA5NjA5OTIxMn0.Z7ih_vQic1GtzCyZmTEV-RWJnmuaNZQDfOV2_Fvan5g';
@@ -246,8 +245,10 @@ let appData = { staging: [], shipped: [] };
 let activeShipTargetItem = null;
 let editTargetRecord = { table: null, id: null, photo_urls: [] };
 let selectedPhotoBlobs = [];
-let googleMapInstance = null;
-let globalMapMarkers = [];
+
+// Leaflet State management fields
+let openMapInstance = null;
+let openMapMarkers = [];
 const $ = sel => document.querySelector(sel);
 
 function adjustCount(id, amt) {
@@ -255,7 +256,6 @@ function adjustCount(id, amt) {
   el.value = Math.max(0, (parseInt(el.value)||0) + amt);
 }
 
-// REVISION 2: GEOLOCATION BRIDGING INTERFACE ENGINE
 function fetchBrowserGPS(targetInputId) {
   if (navigator.geolocation) {
     navigator.geolocation.getCurrentPosition(
@@ -269,21 +269,25 @@ function fetchBrowserGPS(targetInputId) {
   }
 }
 
-// REVISION 3: INITIALIZE GOOGLE MAP CORE ENGINE
-function initGoogleMapEngine() {
-  const defaultCenterCoord = { lat: 53.5461, lng: -113.4938 }; // Default Edmonton
-  googleMapInstance = new google.maps.Map($('#googleFreightMap'), {
-    zoom: 11,
-    center: defaultCenterCoord,
-    mapTypeId: 'roadmap'
-  });
+// REVISION: OpenStreetMap Engine initialization utilizing Leaflet Engine bounds
+function initOpenStreetMapEngine() {
+  // Center map on Edmonton warehouse bounds region
+  openMapInstance = L.map('openFreightMap').setView([53.5461, -113.4938], 11);
+  
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+  }).addTo(openMapInstance);
+
   syncMapPins();
 }
 
 function syncMapPins() {
-  if (!googleMapInstance) return;
-  globalMapMarkers.forEach(m => m.setMap(null));
-  globalMapMarkers = [];
+  if (!openMapInstance) return;
+  
+  // Wipe old canvas trace layers safely
+  openMapMarkers.forEach(m => openMapInstance.removeLayer(m));
+  openMapMarkers = [];
 
   appData.staging.forEach(item => {
     if (!item.coords || !item.coords.includes(',')) return;
@@ -292,16 +296,13 @@ function syncMapPins() {
     const lngVal = parseFloat(segments[1].trim());
     
     if (!isNaN(latVal) && !isNaN(lngVal)) {
-      const marker = new google.maps.Marker({
-        position: { lat: latVal, lng: lngVal },
-        map: googleMapInstance,
-        title: `SO# ${item.so} - ${item.customer}`
-      });
-
-      marker.addListener('click', () => {
+      // Inject standard pin point into layer grid arrays
+      const marker = L.marker([latVal, lngVal]).addTo(openMapInstance);
+      
+      marker.on('click', () => {
         openStaticMapPromptWindow(item);
       });
-      globalMapMarkers.push(marker);
+      openMapMarkers.push(marker);
     }
   });
 }
@@ -383,7 +384,7 @@ function renderPhotoStrip(containerSel, blobArray) {
   blobArray.forEach((f, idx) => {
     const badge = document.createElement('span');
     badge.className = 'photo-badge';
-    badge.innerHTML = `📎 Img-%0D${idx+1} <span onclick="selectedPhotoBlobs.splice(${idx},1); renderPhotoStrip('${containerSel}', selectedPhotoBlobs)">×</span>`;
+    badge.innerHTML = `📎 Img-${idx+1} <span onclick="selectedPhotoBlobs.splice(${idx},1); renderPhotoStrip('${containerSel}', selectedPhotoBlobs)">×</span>`;
     container.appendChild(badge);
   });
 }
@@ -536,7 +537,7 @@ function renderTables() {
     tr.innerHTML = `<td><button class="btn-del" onclick="deleteItem('shipped','${o.id}')">Delete</button></td>
       <td><button class="btn-edit" onclick='openUniversalEditor("shipped", ${JSON.stringify(o).replace(/"/g, '&quot;')})'>Edit</button></td>
       <td><button class="btn" style="padding:4px 8px; font-size:11px;" onclick='openPhotoViewer(${JSON.stringify(o.photo_urls)})'>View</button></td>
-      <td><b>${o.so}</b></td><td>${o.customer}</td><td>${o.type}</td><td>${o.location}</td><td><small>${o.coords || '—'}</small></td><td>${o.weight || '—'}</td>
+      <td><b>${o.so}</b></td><td>${e.customer}</td><td>${o.type}</td><td>${o.location}</td><td><small>${o.coords || '—'}</small></td><td>${o.weight || '—'}</td>
       <td>${new Date(o.shipped_at).toLocaleString()}</td><td>${o.shipped_by || '—'}</td>
       <td>${o.pmd_email ? o.pmd_email+'<span class="green-check"> ✓</span>' : '—'}</td>`;
     shBody.appendChild(tr);
@@ -574,10 +575,10 @@ $('#q').oninput = renderTables;
 $('#expandStaging').onclick = () => window.open('stage.html', '_blank');
 $('#expandShipped').onclick = () => window.open('ship.html', '_blank');
 
-// REVISION 1: ABSOLUTE BACKGROUND REALTIME POLL AUTO-REFRESH
 window.onload = () => {
+  initOpenStreetMapEngine();
   loadCloudData();
-  setInterval(loadCloudData, 5000); // Polls every 5 seconds silently in background
+  setInterval(loadCloudData, 5000); 
 };
 </script>
 </body>
