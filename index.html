@@ -3,7 +3,15 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Swift Staging Tracker — v7.6</title>
+<title>Swift Staging Tracker — v7.7</title>
+
+<!-- REVISION 5: PROGRESSIVE WEB APP (PWA) MANIFEST ORCHESTRATION -->
+<link rel="manifest" href="data:application/manifest+json,HtmlUrlEncoder" id="pwa-manifest">
+
+<!-- REVISION 1: Open-Source Leaflet Mapping Engine Stylesheets -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
 <style>
   :root{--brand:#dd4d25;}
   *{box-sizing:border-box}
@@ -29,7 +37,6 @@
   .counter-box input { width: 44px; height: 32px; text-align: center; border-radius: 6px; font-weight: 700; border:1px solid #d1d5db; }
   .counter-btn { width: 28px; height: 32px; background: #e5e7eb; border: 0; font-weight: 700; border-radius: 6px; cursor: pointer; }
   
-  /* MODALS */
   .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; padding: 12px; }
   .modal-window { background: #fff; border-radius: 16px; max-width: 500px; width: 100%; max-height: 90vh; padding: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); display: flex; flex-direction: column; gap: 12px; overflow-y: auto; position: relative; }
   .modal-close-x { position: absolute; top: 12px; right: 16px; font-size: 22px; font-weight: 700; color: #6b7280; cursor: pointer; border: 0; background: none; z-index: 10; }
@@ -54,6 +61,10 @@
   .log-limit-notice { display: none; background: #fff; border-top: 1px solid #e6e7eb; padding: 8px; text-align: center; font-size: 12px; font-weight: 700; color: #dd4d25; }
   .green-check { color: #16a34a; font-weight: bold; }
   input[type="checkbox"] { width: 13px; height: 13px; cursor: pointer; transform: scale(1); margin: 0; }
+  
+  /* Link modifications for Clickable Coordinates */
+  .coord-link { color: #0284c7; text-decoration: none; font-weight: bold; }
+  .coord-link:hover { text-decoration: underline; }
 
   @media (max-width: 600px) {
     .grid{grid-template-columns:repeat(2,1fr)}
@@ -67,9 +78,10 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>Swift Staging Tracker — v7.6</h1>
+  <h1>Swift Staging Tracker — v7.7</h1>
   <div id="err" style="display:none; background:#fee2e2; color:#991b1b; padding:10px; border-radius:10px; margin-bottom:10px"></div>
 
+  <!-- KPI tabulation windows completely unaltered -->
   <div class="grid">
     <div class="tile"><h4>Orders</h4><div id="kOrders" class="big">0</div></div>
     <div class="tile"><h4>Containers</h4><div id="kContainers" class="big">0</div></div>
@@ -89,7 +101,7 @@
       <input id="so" placeholder="SO number" />
       <input id="customer" placeholder="Customer" />
       <select id="status">
-        <option>Partial</option><option>Ship Today</option><option>Ship On Future Date</option><option>Awaiting Shipping Instructions</option>
+        <option>Partial</option><option>Ship Today</option><option>Ship Tomorrow</option><option>Ship On Future Date</option><option>Awaiting Shipping Instructions</option>
       </select>
       <div class="freight-block">
         <div class="counter-box"><label>Skids</label><button onclick="adjustCount('c_skid',-1)">-</button><input id="c_skid" value="0" readonly/><button onclick="adjustCount('c_skid',1)">+</button></div>
@@ -109,7 +121,7 @@
     <div class="tblwrap">
       <div class="tbl-scroller">
         <table id="tblStaging">
-          <thead><tr><th>Delete</th><th>Edit</th><th>SO</th><th>Customer</th><th>Entry Date</th><th>Containers</th><th>Location</th><th>Coords</th><th>Total Weight</th><th>Status</th><th>Staged By</th><th style="position:sticky;right:0;width:70px;">Shipped</th></tr></thead>
+          <thead><tr><th>Delete</th><th>Edit</th><th>SO</th><th>Customer</th><th>Entry Date</th><th>Containers</th><th>Location</th><th>Coords</th><th>Total Weight (in lbs)</th><th>Status</th><th>Staged By</th><th style="position:sticky;right:0;width:70px;text-align:center;">Shipped</th></tr></thead>
           <tbody></tbody>
         </table>
       </div>
@@ -122,7 +134,7 @@
     <div class="tblwrap">
       <div class="tbl-scroller">
         <table id="tblShipped">
-          <thead><tr><th>Delete</th><th>Edit</th><th>Photo(s)</th><th>SO</th><th>Customer</th><th>Containers</th><th>Location</th><th>Coords</th><th>Total Weight</th><th>Shipped At</th><th>Shipped By</th><th>PM'd Email</th></tr></thead>
+          <thead><tr><th>Delete</th><th>Edit</th><th>Photo(s)</th><th>SO</th><th>Customer</th><th>Containers</th><th>Location</th><th>Coords</th><th>Total Weight (in lbs)</th><th>Shipped At</th><th>Shipped By</th><th>PM'd Email</th></tr></thead>
           <tbody></tbody>
         </table>
       </div>
@@ -130,10 +142,10 @@
     </div>
   </div>
 
-  <!-- REVISION 3: GOOGLE MAPS PANEL HUB -->
+  <!-- REVISION 1: OPEN-SOURCE OPENSTREETMAP INTERFACE PORTS -->
   <div class="card">
     <h3>Staged Inventory Location Mapping</h3>
-    <div id="googleFreightMap" style="width:100%; height:420px; background:#e5e7eb; border-radius:10px; border:1px solid #cbd5e1;"></div>
+    <div id="openFreightMap" style="width:100%; height:420px; background:#e5e7eb; border-radius:10px; border:1px solid #cbd5e1; z-index:1;"></div>
   </div>
 </div>
 
@@ -155,7 +167,7 @@
     <div class="modal-field"><label>Customer</label><input id="m_cust" readonly /></div>
     <div class="modal-field"><label>Containers</label><input id="m_qty" readonly /></div>
     <div class="modal-field"><label>Location</label><input id="m_loc" readonly /></div>
-    <div class="modal-field"><label>Total Weight</label><input id="m_weight" readonly /></div>
+    <div class="modal-field"><label>Total Weight (in lbs)</label><input id="m_weight" readonly /></div>
     <div class="modal-field"><label>Shipped By</label><input id="m_by" list="pastShippers" /></div>
     <div class="chk-row"><input type="checkbox" id="m_pm_chk" onchange="$('#m_pm_email').disabled=!this.checked"/><label>E-mail PM Verification</label></div>
     <div class="modal-field"><input id="m_pm_email" list="pastEmails" disabled /></div>
@@ -184,9 +196,13 @@
     <div class="modal-field"><label>Customer</label><input id="e_cust" /></div>
     <div class="modal-field"><label>Location</label><input id="e_loc" /></div>
     <div class="modal-field"><label>Coords</label><input id="e_coords" readonly onclick="fetchBrowserGPS('e_coords')" style="background:#fafafa; cursor:pointer;" placeholder="Tap to update coordinates" /></div>
-    <div class="modal-field"><label>Total Weight</label><input id="e_weight" /></div>
+    <div class="modal-field"><label>Total Weight (in lbs)</label><input id="e_weight" /></div>
     <div id="editStagingFields">
-      <div class="modal-field"><label>Shipping Status</label><input id="e_status" /></div>
+      <div class="modal-field"><label>Shipping Status</label>
+        <select id="e_status">
+          <option>Partial</option><option>Ship Today</option><option>Ship Tomorrow</option><option>Ship On Future Date</option><option>Awaiting Shipping Instructions</option>
+        </select>
+      </div>
       <div class="modal-field"><label>Staged By</label><input id="e_staged_by" /></div>
     </div>
     <div id="editShippedFields" style="display:none;">
@@ -218,7 +234,7 @@
     <div class="modal-field"><label>Containers</label><input id="v_type" readonly /></div>
     <div class="modal-field"><label>Location</label><input id="v_loc" readonly /></div>
     <div class="modal-field"><label>Coords</label><input id="v_coords" readonly /></div>
-    <div class="modal-field"><label>Total Weight</label><input id="v_weight" readonly /></div>
+    <div class="modal-field"><label>Total Weight (in lbs)</label><input id="v_weight" readonly /></div>
     <div class="modal-field"><label>Status</label><input id="v_status" readonly /></div>
     <div class="modal-field"><label>Staged By</label><input id="v_staged_by" readonly /></div>
   </div>
@@ -235,9 +251,6 @@
 
 <datalist id="pastShippers"></datalist><datalist id="pastEmails"></datalist>
 
-<!-- Injecting Google Maps script handler dependency context safely -->
-<script src="https://maps.googleapis.com/maps/api/js?key=&callback=initGoogleMapEngine" async defer></script>
-
 <script>
 const SUPABASE_URL = 'https://gdrpdiwykmnybmkadlrv.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdkcnBkaXd5a21ueWJta2FkbHJ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1MjMyMTIsImV4cCI6MjA5NjA5OTIxMn0.Z7ih_vQic1GtzCyZmTEV-RWJnmuaNZQDfOV2_Fvan5g';
@@ -246,44 +259,59 @@ let appData = { staging: [], shipped: [] };
 let activeShipTargetItem = null;
 let editTargetRecord = { table: null, id: null, photo_urls: [] };
 let selectedPhotoBlobs = [];
-let googleMapInstance = null;
-let globalMapMarkers = [];
+
+// Leaflet engine state properties
+let openMapInstance = null;
+let openMapMarkers = [];
 const $ = sel => document.querySelector(sel);
+
+// REVISION 5: BUILD INSTANT RUNTIME PWA MANIFEST STRUC UTILS
+function bootstrapStandalonePWA() {
+  const pwaData = {
+    "short_name": "StagingTracker",
+    "name": "Swift Staging Tracker Hub",
+    "icons": [{"src": "https://cdn-icons-png.flaticon.com/512/3014/3014166.png", "type": "image/png", "sizes": "512x512"}],
+    "start_url": window.location.href,
+    "background_color": "#f6f7f9",
+    "theme_color": "#dd4d25",
+    "display": "standalone",
+    "orientation": "portrait"
+  };
+  $('#pwa-manifest').setAttribute('href', 'data:application/manifest+json;charset=utf-8,' + encodeURIComponent(JSON.stringify(pwaData)));
+}
 
 function adjustCount(id, amt) {
   const el = $(`#${id}`);
   el.value = Math.max(0, (parseInt(el.value)||0) + amt);
 }
 
-// REVISION 2: GEOLOCATION BRIDGING INTERFACE ENGINE
 function fetchBrowserGPS(targetInputId) {
   if (navigator.geolocation) {
     navigator.geolocation.getCurrentPosition(
       (position) => {
         $(`#${targetInputId}`).value = position.coords.latitude.toFixed(6) + ", " + position.coords.longitude.toFixed(6);
       },
-      (error) => { alert("GPS Tracking Denied or Timeout: " + error.message); }
+      (error) => { alert("GPS Tracking Timeout or Denied: " + error.message); }
     );
   } else {
-    alert("Geolocation is completely disabled or unsupported by this device.");
+    alert("Geolocation features disabled on this device hardware.");
   }
 }
 
-// REVISION 3: INITIALIZE GOOGLE MAP CORE ENGINE
-function initGoogleMapEngine() {
-  const defaultCenterCoord = { lat: 53.5461, lng: -113.4938 }; // Default Edmonton
-  googleMapInstance = new google.maps.Map($('#googleFreightMap'), {
-    zoom: 11,
-    center: defaultCenterCoord,
-    mapTypeId: 'roadmap'
-  });
+// REVISION 1: LEAFLET-BASED OPENSTREETMAP COMPONENT LOGIC
+function initOpenStreetMapEngine() {
+  openMapInstance = L.map('openFreightMap').setView([53.5461, -113.4938], 11);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(openMapInstance);
   syncMapPins();
 }
 
 function syncMapPins() {
-  if (!googleMapInstance) return;
-  globalMapMarkers.forEach(m => m.setMap(null));
-  globalMapMarkers = [];
+  if (!openMapInstance) return;
+  openMapMarkers.forEach(m => openMapInstance.removeLayer(m));
+  openMapMarkers = [];
 
   appData.staging.forEach(item => {
     if (!item.coords || !item.coords.includes(',')) return;
@@ -292,16 +320,9 @@ function syncMapPins() {
     const lngVal = parseFloat(segments[1].trim());
     
     if (!isNaN(latVal) && !isNaN(lngVal)) {
-      const marker = new google.maps.Marker({
-        position: { lat: latVal, lng: lngVal },
-        map: googleMapInstance,
-        title: `SO# ${item.so} - ${item.customer}`
-      });
-
-      marker.addListener('click', () => {
-        openStaticMapPromptWindow(item);
-      });
-      globalMapMarkers.push(marker);
+      const marker = L.marker([latVal, lngVal]).addTo(openMapInstance);
+      marker.on('click', () => { openStaticMapPromptWindow(item); });
+      openMapMarkers.push(marker);
     }
   });
 }
@@ -360,9 +381,7 @@ function closeShipModal() { $('#shipModal').style.display = 'none'; loadCloudDat
 
 function addPhotoBlob(inputEl) {
   if(!inputEl.files || inputEl.files.length === 0) return;
-  Array.from(inputEl.files).forEach(f => {
-    if(selectedPhotoBlobs.length < 10) selectedPhotoBlobs.push(f);
-  });
+  Array.from(inputEl.files).forEach(f => { if(selectedPhotoBlobs.length < 10) selectedPhotoBlobs.push(f); });
   renderPhotoStrip('#photoPreviewStrip', selectedPhotoBlobs);
 }
 
@@ -371,37 +390,29 @@ function addEditPhotoBlob(inputEl) {
   Array.from(inputEl.files).forEach(async (file) => {
     const path = `${editTargetRecord.so || 'edit'}-${Date.now()}-${Math.random().toString(36).substr(2, 5)}.${file.name.split('.').pop()}`;
     const { error } = await supabaseClient.storage.from('freight-photos').upload(path, file);
-    if(!error) {
-      editTargetRecord.photo_urls.push(path);
-      renderEditPhotoStrip();
-    }
+    if(!error) { editTargetRecord.photo_urls.push(path); renderEditPhotoStrip(); }
   });
 }
 
 function renderPhotoStrip(containerSel, blobArray) {
   const container = $(containerSel); container.innerHTML = '';
   blobArray.forEach((f, idx) => {
-    const badge = document.createElement('span');
-    badge.className = 'photo-badge';
-    badge.innerHTML = `📎 Img-%0D${idx+1} <span onclick="selectedPhotoBlobs.splice(${idx},1); renderPhotoStrip('${containerSel}', selectedPhotoBlobs)">×</span>`;
+    const badge = document.createElement('span'); badge.className = 'photo-badge';
+    badge.innerHTML = `📎 Img-${idx+1} <span onclick="selectedPhotoBlobs.splice(${idx},1); renderPhotoStrip('${containerSel}', selectedPhotoBlobs)">×</span>`;
     container.appendChild(badge);
   });
 }
 
 async function submitFreightDispatch() {
-  const dispatcher = $('#m_by').value.trim();
-  const pmEmail = $('#m_pm_email').value.trim();
-  const pmChecked = $('#m_pm_chk').checked;
-  if(!dispatcher || (pmChecked && !pmEmail)) return alert("Missing required inputs.");
+  const dispatcher = $('#m_by').value.trim(); const pmEmail = $('#m_pm_email').value.trim(); const pmChecked = $('#m_pm_chk').checked;
+  if(!dispatcher || (pmChecked && !pmEmail)) return alert("Missing inputs.");
   
   $('#modalConfirmBtn').disabled = true;
   try {
     let photoUrls = [];
     for (let i = 0; i < selectedPhotoBlobs.length; i++) {
-      const file = selectedPhotoBlobs[i];
-      const path = `${activeShipTargetItem.so}-${Date.now()}-${i}.${file.name.split('.').pop()}`;
-      await supabaseClient.storage.from('freight-photos').upload(path, file);
-      photoUrls.push(path);
+      const file = selectedPhotoBlobs[i]; const path = `${activeShipTargetItem.so}-${Date.now()}-${i}.${file.name.split('.').pop()}`;
+      await supabaseClient.storage.from('freight-photos').upload(path, file); photoUrls.push(path);
     }
     
     let pmName = pmEmail ? pmEmail.split('@')[0].split('.')[0] : null;
@@ -420,33 +431,21 @@ async function submitFreightDispatch() {
       window.location.href = `mailto:${pmEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     }
     closeShipModal();
-  } catch(e) { alert("Error processing transaction logs."); }
+  } catch(e) { alert("Error."); }
 }
 
 function openUniversalEditor(table, o) {
   editTargetRecord = { table: table, id: o.id, so: o.so, photo_urls: o.photo_urls || [] };
-  $('#e_so').value = o.so;
-  $('#e_cust').value = o.customer;
-  $('#e_loc').value = o.location;
-  $('#e_coords').value = o.coords || '';
-  $('#e_weight').value = o.weight || '';
+  $('#e_so').value = o.so; $('#e_cust').value = o.customer; $('#e_loc').value = o.location; $('#e_coords').value = o.coords || ''; $('#e_weight').value = o.weight || '';
   
   if (table === 'staging') {
-    $('#editModalTitle').textContent = 'Edit Staging Entry';
-    $('#editStagingFields').style.display = 'block';
-    $('#editShippedFields').style.display = 'none';
-    $('#editShippedPhotoSection').style.display = 'none';
-    $('#editUndoBtn').style.display = 'none';
-    $('#e_status').value = o.status;
-    $('#e_staged_by').value = o.staged_by || '';
+    $('#editModalTitle').textContent = 'Edit Staging Entry'; $('#editStagingFields').style.display = 'block';
+    $('#editShippedFields').style.display = 'none'; $('#editShippedPhotoSection').style.display = 'none'; $('#editUndoBtn').style.display = 'none';
+    $('#e_status').value = o.status; $('#e_staged_by').value = o.staged_by || '';
   } else {
-    $('#editModalTitle').textContent = 'Edit Shipped Entry Logs';
-    $('#editStagingFields').style.display = 'none';
-    $('#editShippedFields').style.display = 'block';
-    $('#editShippedPhotoSection').style.display = 'flex';
-    $('#editUndoBtn').style.display = 'block';
-    $('#e_shipped_by').value = o.shipped_by || '';
-    $('#e_pm').value = o.pmd_email || '';
+    $('#editModalTitle').textContent = 'Edit Shipped Entry Logs'; $('#editStagingFields').style.display = 'none';
+    $('#editShippedFields').style.display = 'block'; $('#editShippedPhotoSection').style.display = 'flex'; $('#editUndoBtn').style.display = 'block';
+    $('#e_shipped_by').value = o.shipped_by || ''; $('#e_pm').value = o.pmd_email || '';
     renderEditPhotoStrip();
   }
   $('#editModal').style.display = 'flex';
@@ -460,51 +459,28 @@ function renderEditPhotoStrip() {
 }
 
 async function saveEditedRecord() {
-  const table = editTargetRecord.table;
-  const id = editTargetRecord.id;
-  const basePayload = {
-    so: $('#e_so').value.trim(),
-    customer: $('#e_cust').value.trim(),
-    location: $('#e_loc').value.trim(),
-    coords: $('#e_coords').value.trim(),
-    weight: $('#e_weight').value.trim()
-  };
-
+  const table = editTargetRecord.table; const id = editTargetRecord.id;
+  const basePayload = { so: $('#e_so').value.trim(), customer: $('#e_cust').value.trim(), location: $('#e_loc').value.trim(), coords: $('#e_coords').value.trim(), weight: $('#e_weight').value.trim() };
   if(!basePayload.so || !basePayload.customer || !basePayload.location) return alert("Required fields missing.");
 
   if (table === 'staging') {
-    await supabaseClient.from('staging').update({
-      ...basePayload,
-      status: $('#e_status').value.trim(),
-      staged_by: $('#e_staged_by').value.trim()
-    }).eq('id', id);
+    await supabaseClient.from('staging').update({ ...basePayload, status: $('#e_status').value.trim(), staged_by: $('#e_staged_by').value.trim() }).eq('id', id);
   } else {
-    await supabaseClient.from('shipped').update({
-      ...basePayload,
-      shipped_by: $('#e_shipped_by').value.trim(),
-      pmd_email: $('#e_pm').value.trim() || null,
-      photo_urls: editTargetRecord.photo_urls
-    }).eq('id', id);
+    await supabaseClient.from('shipped').update({ ...basePayload, shipped_by: $('#e_shipped_by').value.trim(), pmd_email: $('#e_pm').value.trim() || null, photo_urls: editTargetRecord.photo_urls }).eq('id', id);
   }
-  $('#editModal').style.display = 'none';
-  loadCloudData();
+  $('#editModal').style.display = 'none'; loadCloudData();
 }
 
 async function executeShippedUndo() {
-  if(!confirm("Are you sure you want to undo this shipment action?")) return;
+  if(!confirm("Are you sure?")) return;
   try {
     const { data: currentRecord, error } = await supabaseClient.from('shipped').select('*').eq('id', editTargetRecord.id).single();
-    if(error || !currentRecord) return alert("Record fetch fail error.");
+    if(error || !currentRecord) return alert("Fetch error.");
     
-    await supabaseClient.from('staging').insert([{
-      so: currentRecord.so, customer: currentRecord.customer,
-      type: currentRecord.type || '1 Skid', qty: currentRecord.qty || 1,
-      location: currentRecord.location, coords: currentRecord.coords, weight: currentRecord.weight, status: 'Partial'
-    }]);
+    await supabaseClient.from('staging').insert([{ so: currentRecord.so, customer: currentRecord.customer, type: currentRecord.type || '1 Skid', qty: currentRecord.qty || 1, location: currentRecord.location, coords: currentRecord.coords, weight: currentRecord.weight, status: 'Partial' }]);
     await supabaseClient.from('shipped').delete().eq('id', currentRecord.id);
-    $('#editModal').style.display = 'none';
-    loadCloudData();
-  } catch(e) { alert("Undo processing error."); }
+    $('#editModal').style.display = 'none'; loadCloudData();
+  } catch(e) { alert("Undo error."); }
 }
 
 async function openPhotoViewer(paths) {
@@ -522,10 +498,12 @@ function renderTables() {
   const sBody = $('#tblStaging tbody'); sBody.innerHTML = '';
   fStaging.slice(0, 20).forEach(o => {
     const tr = document.createElement('tr');
+    // REVISION 4: COORDS NATIVE MAP TRIGGER
+    const geoLink = o.coords ? `<a class="coord-link" href="geo:0,0?q=${encodeURIComponent(o.coords)}" target="_blank">${o.coords}</a>` : '—';
     tr.innerHTML = `<td><button class="btn-del" onclick="deleteItem('staging','${o.id}')">Delete</button></td>
       <td><button class="btn-edit" onclick='openUniversalEditor("staging", ${JSON.stringify(o).replace(/"/g, '&quot;')})'>Edit</button></td>
       <td><b>${o.so}</b></td><td>${o.customer}</td><td>${new Date(o.entry_date).toLocaleString()}</td>
-      <td>${o.type}</td><td>${o.location}</td><td><small>${o.coords || '—'}</small></td><td>${o.weight || '—'}</td><td>${o.status}</td><td>${o.staged_by||'—'}</td>
+      <td>${o.type}</td><td>${o.location}</td><td><small>${geoLink}</small></td><td>${o.weight || '—'}</td><td>${o.status}</td><td>${o.staged_by||'—'}</td>
       <td style="position:sticky;right:0;text-align:center;"><input type="checkbox" onchange="if(this.checked)triggerShipModal(${JSON.stringify(o).replace(/"/g, '&quot;')})"></td>`;
     sBody.appendChild(tr);
   });
@@ -533,10 +511,11 @@ function renderTables() {
   const shBody = $('#tblShipped tbody'); shBody.innerHTML = '';
   fShipped.slice(0, 20).forEach(o => {
     const tr = document.createElement('tr');
+    const geoLink = o.coords ? `<a class="coord-link" href="geo:0,0?q=${encodeURIComponent(o.coords)}" target="_blank">${o.coords}</a>` : '—';
     tr.innerHTML = `<td><button class="btn-del" onclick="deleteItem('shipped','${o.id}')">Delete</button></td>
       <td><button class="btn-edit" onclick='openUniversalEditor("shipped", ${JSON.stringify(o).replace(/"/g, '&quot;')})'>Edit</button></td>
       <td><button class="btn" style="padding:4px 8px; font-size:11px;" onclick='openPhotoViewer(${JSON.stringify(o.photo_urls)})'>View</button></td>
-      <td><b>${o.so}</b></td><td>${o.customer}</td><td>${o.type}</td><td>${o.location}</td><td><small>${o.coords || '—'}</small></td><td>${o.weight || '—'}</td>
+      <td><b>${o.so}</b></td><td>${o.customer}</td><td>${o.type}</td><td>${o.location}</td><td><small>${geoLink}</small></td><td>${o.weight || '—'}</td>
       <td>${new Date(o.shipped_at).toLocaleString()}</td><td>${o.shipped_by || '—'}</td>
       <td>${o.pmd_email ? o.pmd_email+'<span class="green-check"> ✓</span>' : '—'}</td>`;
     shBody.appendChild(tr);
@@ -546,11 +525,8 @@ function renderTables() {
   $('#shippedLimitNotice').style.display = fShipped.length > 20 ? 'block' : 'none';
 
   const sumByType = t => appData.staging.reduce((acc, c) => c.type?.includes(t) ? acc + (parseInt(c.type.match(new RegExp(`(\\d+)\\s*${t}`))) || 0) : acc, 0);
-  $('#kOrders').textContent     = appData.staging.length;
-  $('#kContainers').textContent = appData.staging.reduce((acc, c) => acc + (parseInt(c.qty) || 0), 0);
-  $('#kSkids').textContent      = sumByType('Skid');
-  $('#kBoxes').textContent      = sumByType('Box');
-  $('#kCrates').textContent     = sumByType('Crate');
+  $('#kOrders').textContent     = appData.staging.length; $('#kContainers').textContent = appData.staging.reduce((acc, c) => acc + (parseInt(c.qty) || 0), 0);
+  $('#kSkids').textContent      = sumByType('Skid'); $('#kBoxes').textContent      = sumByType('Box'); $('#kCrates').textContent     = sumByType('Crate');
   $('#kShipped').textContent    = appData.shipped.length;
 }
 
@@ -560,24 +536,19 @@ $('#add').onclick = async () => {
   const sk = parseInt($('#c_skid').value)||0, bx = parseInt($('#c_box').value)||0, cr = parseInt($('#c_crate').value)||0;
   if(!$('#so').value || !$('#customer').value || !$('#loc').value) return alert("Fields Missing.");
   let type = []; if(sk) type.push(sk+' Skid'); if(bx) type.push(bx+' Box'); if(cr) type.push(cr+' Crate');
-  await supabaseClient.from('staging').insert([{ 
-    so: $('#so').value.trim(), customer: $('#customer').value.trim(), status: $('#status').value, 
-    location: $('#loc').value.trim(), coords: $('#coords').value.trim(), weight: $('#weight').value.trim(), staged_by: $('#staged_by').value.trim(), 
-    type: type.join(', '), qty: sk+bx+cr 
-  }]);
-  $('#so').value=''; $('#customer').value=''; $('#loc').value=''; $('#coords').value=''; $('#staged_by').value=''; $('#weight').value='';
-  $('#c_skid').value=0; $('#c_box').value=0; $('#c_crate').value=0;
-  loadCloudData();
+  await supabaseClient.from('staging').insert([{ so: $('#so').value.trim(), customer: $('#customer').value.trim(), status: $('#status').value, location: $('#loc').value.trim(), coords: $('#coords').value.trim(), weight: $('#weight').value.trim(), staged_by: $('#staged_by').value.trim(), type: type.join(', '), qty: sk+bx+cr }]);
+  $('#so').value=''; $('#customer').value=''; $('#loc').value=''; $('#coords').value=''; $('#staged_by').value=''; $('#weight').value=''; $('#c_skid').value=0; $('#c_box').value=0; $('#c_crate').value=0; loadCloudData();
 };
 
 $('#q').oninput = renderTables;
 $('#expandStaging').onclick = () => window.open('stage.html', '_blank');
 $('#expandShipped').onclick = () => window.open('ship.html', '_blank');
 
-// REVISION 1: ABSOLUTE BACKGROUND REALTIME POLL AUTO-REFRESH
 window.onload = () => {
+  bootstrapStandalonePWA();
+  initOpenStreetMapEngine();
   loadCloudData();
-  setInterval(loadCloudData, 5000); // Polls every 5 seconds silently in background
+  setInterval(loadCloudData, 5000); // 5-second polling interval loop maintained
 };
 </script>
 </body>
