@@ -3,12 +3,10 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Swift Staging Tracker — v7.7</title>
+<title>Swift Staging Tracker — v7.8</title>
 
-<!-- REVISION 5: PROGRESSIVE WEB APP (PWA) MANIFEST ORCHESTRATION -->
 <link rel="manifest" href="data:application/manifest+json,HtmlUrlEncoder" id="pwa-manifest">
 
-<!-- REVISION 1: Open-Source Leaflet Mapping Engine Stylesheets -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
@@ -62,7 +60,6 @@
   .green-check { color: #16a34a; font-weight: bold; }
   input[type="checkbox"] { width: 13px; height: 13px; cursor: pointer; transform: scale(1); margin: 0; }
   
-  /* Link modifications for Clickable Coordinates */
   .coord-link { color: #0284c7; text-decoration: none; font-weight: bold; }
   .coord-link:hover { text-decoration: underline; }
 
@@ -78,10 +75,9 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>Swift Staging Tracker — v7.7</h1>
+  <h1>Swift Staging Tracker — v7.8</h1>
   <div id="err" style="display:none; background:#fee2e2; color:#991b1b; padding:10px; border-radius:10px; margin-bottom:10px"></div>
 
-  <!-- KPI tabulation windows completely unaltered -->
   <div class="grid">
     <div class="tile"><h4>Orders</h4><div id="kOrders" class="big">0</div></div>
     <div class="tile"><h4>Containers</h4><div id="kContainers" class="big">0</div></div>
@@ -134,7 +130,7 @@
     <div class="tblwrap">
       <div class="tbl-scroller">
         <table id="tblShipped">
-          <thead><tr><th>Delete</th><th>Edit</th><th>Photo(s)</th><th>SO</th><th>Customer</th><th>Containers</th><th>Location</th><th>Coords</th><th>Total Weight (in lbs)</th><th>Shipped At</th><th>Shipped By</th><th>PM'd Email</th></tr></thead>
+          <thead><tr><th>Delete</th><th>Edit</th><th>Photo(s)</th><th>SO</th><th>Customer</th><th>Containers</th><th>Carrier</th><th>Location</th><th>Coords</th><th>Total Weight (in lbs)</th><th>Shipped At</th><th>Shipped By</th><th>PM'd Email</th></tr></thead>
           <tbody></tbody>
         </table>
       </div>
@@ -142,14 +138,12 @@
     </div>
   </div>
 
-  <!-- REVISION 1: OPEN-SOURCE OPENSTREETMAP INTERFACE PORTS -->
   <div class="card">
     <h3>Staged Inventory Location Mapping</h3>
     <div id="openFreightMap" style="width:100%; height:420px; background:#e5e7eb; border-radius:10px; border:1px solid #cbd5e1; z-index:1;"></div>
   </div>
 </div>
 
-<!-- SHIPPING WORKFLOW MODAL -->
 <div id="shipModal" class="modal-overlay" onclick="if(event.target===this) closeShipModal()">
   <div class="modal-window">
     <button class="modal-close-x" onclick="closeShipModal()">×</button>
@@ -166,6 +160,7 @@
     <div class="modal-field"><label>SO#</label><input id="m_so" readonly /></div>
     <div class="modal-field"><label>Customer</label><input id="m_cust" readonly /></div>
     <div class="modal-field"><label>Containers</label><input id="m_qty" readonly /></div>
+    <div class="modal-field"><label>Carrier / Logistics Provider</label><input id="m_carrier" placeholder="e.g. Swift Trucking, Courier, Customer Pickup" /></div>
     <div class="modal-field"><label>Location</label><input id="m_loc" readonly /></div>
     <div class="modal-field"><label>Total Weight (in lbs)</label><input id="m_weight" readonly /></div>
     <div class="modal-field"><label>Shipped By</label><input id="m_by" list="pastShippers" /></div>
@@ -175,7 +170,6 @@
   </div>
 </div>
 
-<!-- UNIVERSAL ITEM EDIT MODAL -->
 <div id="editModal" class="modal-overlay" onclick="if(event.target===this) $('#editModal').style.display='none'">
   <div class="modal-window">
     <button class="modal-close-x" onclick="$('#editModal').style.display='none'">×</button>
@@ -194,9 +188,18 @@
     </div>
     <div class="modal-field"><label>SO#</label><input id="e_so" /></div>
     <div class="modal-field"><label>Customer</label><input id="e_cust" /></div>
+    
+    <label style="font-size:12px; font-weight:700; color:#4b5563; margin-bottom:-4px;">Container Quantities</label>
+    <div class="freight-block" style="flex:none; padding:8px; width:100%;">
+      <div class="counter-box"><label>Skids</label><button class="counter-btn" onclick="adjustEditCount('e_skid',-1)">-</button><input id="e_skid" value="0" readonly/><button class="counter-btn" onclick="adjustEditCount('e_skid',1)">+</button></div>
+      <div class="counter-box"><label>Boxes</label><button class="counter-btn" onclick="adjustEditCount('e_box',-1)">-</button><input id="e_box" value="0" readonly/><button class="counter-btn" onclick="adjustEditCount('e_box',1)">+</button></div>
+      <div class="counter-box"><label>Crates</label><button class="counter-btn" onclick="adjustEditCount('e_crate',-1)">-</button><input id="e_crate" value="0" readonly/><button class="counter-btn" onclick="adjustEditCount('e_crate',1)">+</button></div>
+    </div>
+
     <div class="modal-field"><label>Location</label><input id="e_loc" /></div>
     <div class="modal-field"><label>Coords</label><input id="e_coords" readonly onclick="fetchBrowserGPS('e_coords')" style="background:#fafafa; cursor:pointer;" placeholder="Tap to update coordinates" /></div>
     <div class="modal-field"><label>Total Weight (in lbs)</label><input id="e_weight" /></div>
+    
     <div id="editStagingFields">
       <div class="modal-field"><label>Shipping Status</label>
         <select id="e_status">
@@ -205,21 +208,23 @@
       </div>
       <div class="modal-field"><label>Staged By</label><input id="e_staged_by" /></div>
     </div>
+    
     <div id="editShippedFields" style="display:none;">
+      <div class="modal-field"><label>Carrier</label><input id="e_carrier" /></div>
       <div class="modal-field"><label>Shipped By</label><input id="e_shipped_by" /></div>
-      <div class="modal-field"><label>PM Verified Shortname</label><input id="e_pm" placeholder="—" /></div>
+      <div class="modal-field"><label>PM Verified Shortname</label><input id="e_pm" /></div>
     </div>
-    <div class="modal-actions" style="justify-content: space-between; width:100%;">
-      <button id="editUndoBtn" class="btn" style="background:#4b5563; display:none;" onclick="executeShippedUndo()">Undo Shipment Action</button>
+
+    <div class="modal-actions" style="justify-content: space-between; width:100%; margin-top: 8px;">
+      <button id="editUndoBtn" class="btn" style="background:#4b5563; display:none; padding: 10px 16px; border-radius: 8px;" onclick="executeShippedUndo()">Undo Shipment Action</button>
       <span style="display:flex; gap:8px; margin-left:auto;">
-        <button class="btn" style="background:#9ca3af;" onclick="$('#editModal').style.display='none'">Cancel</button>
-        <button class="btn" onclick="saveEditedRecord()">Save Record Changes</button>
+        <button class="btn" style="background:#9ca3af; padding: 10px 16px; border-radius: 8px;" onclick="$('#editModal').style.display='none'">Cancel</button>
+        <button class="btn" style="padding: 10px 16px; border-radius: 8px; background: #e04f26;" onclick="saveEditedRecord()">Save Changes</button>
       </span>
     </div>
   </div>
 </div>
 
-<!-- MAP PIN STATIC VIEW MODAL OVERLAY -->
 <div id="mapViewModal" class="modal-overlay" onclick="if(event.target===this) $('#mapViewModal').style.display='none'">
   <div class="modal-window">
     <button class="modal-close-x" onclick="$('#mapViewModal').style.display='none'">×</button>
@@ -240,7 +245,6 @@
   </div>
 </div>
 
-<!-- VIEW PHOTO GALLERY MODAL -->
 <div id="viewModal" class="modal-overlay" onclick="if(event.target===this) $('#viewModal').style.display='none'">
   <div class="modal-window" style="max-width: 600px;">
     <button class="modal-close-x" onclick="$('#viewModal').style.display='none'">×</button>
@@ -248,8 +252,6 @@
     <div id="modalPhotoGallery" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:8px;"></div>
   </div>
 </div>
-
-<datalist id="pastShippers"></datalist><datalist id="pastEmails"></datalist>
 
 <script>
 const SUPABASE_URL = 'https://gdrpdiwykmnybmkadlrv.supabase.co';
@@ -260,12 +262,10 @@ let activeShipTargetItem = null;
 let editTargetRecord = { table: null, id: null, photo_urls: [] };
 let selectedPhotoBlobs = [];
 
-// Leaflet engine state properties
 let openMapInstance = null;
 let openMapMarkers = [];
 const $ = sel => document.querySelector(sel);
 
-// REVISION 5: BUILD INSTANT RUNTIME PWA MANIFEST STRUC UTILS
 function bootstrapStandalonePWA() {
   const pwaData = {
     "short_name": "StagingTracker",
@@ -281,8 +281,10 @@ function bootstrapStandalonePWA() {
 }
 
 function adjustCount(id, amt) {
-  const el = $(`#${id}`);
-  el.value = Math.max(0, (parseInt(el.value)||0) + amt);
+  const el = $(`#${id}`); el.value = Math.max(0, (parseInt(el.value)||0) + amt);
+}
+function adjustEditCount(id, amt) {
+  const el = $(`#${id}`); el.value = Math.max(0, (parseInt(el.value)||0) + amt);
 }
 
 function fetchBrowserGPS(targetInputId) {
@@ -291,14 +293,13 @@ function fetchBrowserGPS(targetInputId) {
       (position) => {
         $(`#${targetInputId}`).value = position.coords.latitude.toFixed(6) + ", " + position.coords.longitude.toFixed(6);
       },
-      (error) => { alert("GPS Tracking Timeout or Denied: " + error.message); }
+      (error) => { alert("GPS Tracking Denied or Timeout: " + error.message); }
     );
   } else {
-    alert("Geolocation features disabled on this device hardware.");
+    alert("Geolocation is completely disabled or unsupported by this device.");
   }
 }
 
-// REVISION 1: LEAFLET-BASED OPENSTREETMAP COMPONENT LOGIC
 function initOpenStreetMapEngine() {
   openMapInstance = L.map('openFreightMap').setView([53.5461, -113.4938], 11);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -308,10 +309,14 @@ function initOpenStreetMapEngine() {
   syncMapPins();
 }
 
+// REVISION 1: AUTOMATIC ADAPTIVE BOUND FOCUS (PLACES ZOOM REPLICA)
 function syncMapPins() {
   if (!openMapInstance) return;
   openMapMarkers.forEach(m => openMapInstance.removeLayer(m));
   openMapMarkers = [];
+
+  // Group all valid coordinates for dynamic boundary evaluation
+  let pointsForBoundFocus = [];
 
   appData.staging.forEach(item => {
     if (!item.coords || !item.coords.includes(',')) return;
@@ -323,8 +328,17 @@ function syncMapPins() {
       const marker = L.marker([latVal, lngVal]).addTo(openMapInstance);
       marker.on('click', () => { openStaticMapPromptWindow(item); });
       openMapMarkers.push(marker);
+      pointsForBoundFocus.push([latVal, lngVal]);
     }
   });
+
+  // Calculate and zoom dynamically to the exact radius matching current pins
+  if (pointsForBoundFocus.length === 1) {
+    openMapInstance.setView(pointsForBoundFocus[0], 16); // High focus zoom for a single container pin
+  } else if (pointsForBoundFocus.length > 1) {
+    const trackingBounds = L.latLngBounds(pointsForBoundFocus);
+    openMapInstance.fitBounds(trackingBounds, { padding: [40, 40], maxZoom: 16 }); // Keep adaptive group context cleanly padded
+  }
 }
 
 function openStaticMapPromptWindow(item) {
@@ -369,6 +383,7 @@ function triggerShipModal(item) {
   $('#m_so').value = item.so;
   $('#m_cust').value = item.customer;
   $('#m_qty').value = item.type;
+  $('#m_carrier').value = ''; // Reset carrier field on prompt activation
   $('#m_loc').value = item.location;
   $('#m_weight').value = item.weight || '—';
   $('#m_by').value = '';
@@ -405,7 +420,8 @@ function renderPhotoStrip(containerSel, blobArray) {
 
 async function submitFreightDispatch() {
   const dispatcher = $('#m_by').value.trim(); const pmEmail = $('#m_pm_email').value.trim(); const pmChecked = $('#m_pm_chk').checked;
-  if(!dispatcher || (pmChecked && !pmEmail)) return alert("Missing inputs.");
+  const carrierVal = $('#m_carrier').value.trim() || 'Unassigned Carrier';
+  if(!dispatcher || (pmChecked && !pmEmail)) return alert("Missing required inputs.");
   
   $('#modalConfirmBtn').disabled = true;
   try {
@@ -418,25 +434,37 @@ async function submitFreightDispatch() {
     let pmName = pmEmail ? pmEmail.split('@')[0].split('.')[0] : null;
     if(pmName) pmName = pmName.charAt(0).toUpperCase() + pmName.slice(1);
 
+    // REVISION 2: Injecting Carrier value into the table dispatch write loop
     await supabaseClient.from('shipped').insert([{
       so: activeShipTargetItem.so, customer: activeShipTargetItem.customer, type: activeShipTargetItem.type,
-      qty: activeShipTargetItem.qty, location: activeShipTargetItem.location, coords: activeShipTargetItem.coords,
+      qty: activeShipTargetItem.qty, carrier: carrierVal, location: activeShipTargetItem.location, coords: activeShipTargetItem.coords,
       weight: activeShipTargetItem.weight, shipped_by: dispatcher, pmd_email: pmName, photo_urls: photoUrls
     }]);
     await supabaseClient.from('staging').delete().eq('id', activeShipTargetItem.id);
     
     if(pmChecked) {
       const subject = `CONFIRMATION OF SHIPOUT: ${activeShipTargetItem.customer} SO# ${activeShipTargetItem.so} @ ${activeShipTargetItem.type}`;
-      const body = `Order Shipped Confirmation.\nSO: ${activeShipTargetItem.so}\nCust: ${activeShipTargetItem.customer}\nLoc: ${activeShipTargetItem.location}\nCoords: ${activeShipTargetItem.coords || '—'}\nWeight: ${activeShipTargetItem.weight||'—'}\nBy: ${dispatcher}`;
+      const body = `Order Shipped Confirmation Lines.\nSO: ${activeShipTargetItem.so}\nCust: ${activeShipTargetItem.customer}\nCarrier: ${carrierVal}\nLoc: ${activeShipTargetItem.location}\nCoords: ${activeShipTargetItem.coords || '—'}\nWeight: ${activeShipTargetItem.weight||'—'}\nBy: ${dispatcher}`;
       window.location.href = `mailto:${pmEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     }
     closeShipModal();
-  } catch(e) { alert("Error."); }
+  } catch(e) { alert("Error processing transaction logs."); }
+}
+
+function parseContainerString(typeStr) {
+  let sk = 0, bx = 0, cr = 0; if(!typeStr) return { sk, bx, cr };
+  const matchSk = typeStr.match(/(\d+)\s*Skid/); if(matchSk) sk = parseInt(matchSk[1]);
+  const matchBx = typeStr.match(/(\d+)\s*Box/);  if(matchBx) bx = parseInt(matchBx[1]);
+  const matchCr = typeStr.match(/(\d+)\s*Crate/);if(matchCr) cr = parseInt(matchCr[1]);
+  return { sk, bx, cr };
 }
 
 function openUniversalEditor(table, o) {
   editTargetRecord = { table: table, id: o.id, so: o.so, photo_urls: o.photo_urls || [] };
   $('#e_so').value = o.so; $('#e_cust').value = o.customer; $('#e_loc').value = o.location; $('#e_coords').value = o.coords || ''; $('#e_weight').value = o.weight || '';
+  
+  const counts = parseContainerString(o.type);
+  $('#e_skid').value = counts.sk; $('#e_box').value = counts.bx; $('#e_crate').value = counts.cr;
   
   if (table === 'staging') {
     $('#editModalTitle').textContent = 'Edit Staging Entry'; $('#editStagingFields').style.display = 'block';
@@ -445,6 +473,7 @@ function openUniversalEditor(table, o) {
   } else {
     $('#editModalTitle').textContent = 'Edit Shipped Entry Logs'; $('#editStagingFields').style.display = 'none';
     $('#editShippedFields').style.display = 'block'; $('#editShippedPhotoSection').style.display = 'flex'; $('#editUndoBtn').style.display = 'block';
+    $('#e_carrier').value = o.carrier || ''; // Populate active carrier configuration inside editor input
     $('#e_shipped_by').value = o.shipped_by || ''; $('#e_pm').value = o.pmd_email || '';
     renderEditPhotoStrip();
   }
@@ -459,14 +488,17 @@ function renderEditPhotoStrip() {
 }
 
 async function saveEditedRecord() {
-  const table = editTargetRecord.table; const id = editTargetRecord.id;
-  const basePayload = { so: $('#e_so').value.trim(), customer: $('#e_cust').value.trim(), location: $('#e_loc').value.trim(), coords: $('#e_coords').value.trim(), weight: $('#e_weight').value.trim() };
+  const sk = parseInt($('#e_skid').value)||0, bx = parseInt($('#e_box').value)||0, cr = parseInt($('#e_crate').value)||0;
+  let typeParts = []; if(sk) typeParts.push(sk+' Skid'); if(bx) typeParts.push(bx+' Box'); if(cr) typeParts.push(cr+' Crate');
+  const dynamicType = typeParts.join(', ') || '1 Skid';
+  
+  const basePayload = { so: $('#e_so').value.trim(), customer: $('#e_cust').value.trim(), location: $('#e_loc').value.trim(), coords: $('#e_coords').value.trim(), weight: $('#e_weight').value.trim(), type: dynamicType, qty: sk+bx+cr };
   if(!basePayload.so || !basePayload.customer || !basePayload.location) return alert("Required fields missing.");
 
-  if (table === 'staging') {
-    await supabaseClient.from('staging').update({ ...basePayload, status: $('#e_status').value.trim(), staged_by: $('#e_staged_by').value.trim() }).eq('id', id);
+  if (editTargetRecord.table === 'staging') {
+    await supabaseClient.from('staging').update({ ...basePayload, status: $('#e_status').value.trim(), staged_by: $('#e_staged_by').value.trim() }).eq('id', editTargetRecord.id);
   } else {
-    await supabaseClient.from('shipped').update({ ...basePayload, shipped_by: $('#e_shipped_by').value.trim(), pmd_email: $('#e_pm').value.trim() || null, photo_urls: editTargetRecord.photo_urls }).eq('id', id);
+    await supabaseClient.from('shipped').update({ ...basePayload, carrier: $('#e_carrier').value.trim(), shipped_by: $('#e_shipped_by').value.trim(), pmd_email: $('#e_pm').value.trim() || null, photo_urls: editTargetRecord.photo_urls }).eq('id', editTargetRecord.id);
   }
   $('#editModal').style.display = 'none'; loadCloudData();
 }
@@ -474,10 +506,9 @@ async function saveEditedRecord() {
 async function executeShippedUndo() {
   if(!confirm("Are you sure?")) return;
   try {
-    const { data: currentRecord, error } = await supabaseClient.from('shipped').select('*').eq('id', editTargetRecord.id).single();
-    if(error || !currentRecord) return alert("Fetch error.");
-    
-    await supabaseClient.from('staging').insert([{ so: currentRecord.so, customer: currentRecord.customer, type: currentRecord.type || '1 Skid', qty: currentRecord.qty || 1, location: currentRecord.location, coords: currentRecord.coords, weight: currentRecord.weight, status: 'Partial' }]);
+    const { data: currentRecord } = await supabaseClient.from('shipped').select('*').eq('id', editTargetRecord.id).single();
+    // REVISION 2: Transfer baseline details back to staging panel while completely omitting the carrier field mapping
+    await supabaseClient.from('staging').insert([{ so: currentRecord.so, customer: currentRecord.customer, type: currentRecord.type, qty: currentRecord.qty, location: currentRecord.location, coords: currentRecord.coords, weight: currentRecord.weight, status: 'Partial' }]);
     await supabaseClient.from('shipped').delete().eq('id', currentRecord.id);
     $('#editModal').style.display = 'none'; loadCloudData();
   } catch(e) { alert("Undo error."); }
@@ -498,8 +529,7 @@ function renderTables() {
   const sBody = $('#tblStaging tbody'); sBody.innerHTML = '';
   fStaging.slice(0, 20).forEach(o => {
     const tr = document.createElement('tr');
-    // REVISION 4: COORDS NATIVE MAP TRIGGER
-    const geoLink = o.coords ? `<a class="coord-link" href="geo:0,0?q=${encodeURIComponent(o.coords)}" target="_blank">${o.coords}</a>` : '—';
+    const geoLink = o.coords ? `<a class="coord-link" href="geo:0,0?q=${encodeURIComponent(o.coords)}">${o.coords}</a>` : '—';
     tr.innerHTML = `<td><button class="btn-del" onclick="deleteItem('staging','${o.id}')">Delete</button></td>
       <td><button class="btn-edit" onclick='openUniversalEditor("staging", ${JSON.stringify(o).replace(/"/g, '&quot;')})'>Edit</button></td>
       <td><b>${o.so}</b></td><td>${o.customer}</td><td>${new Date(o.entry_date).toLocaleString()}</td>
@@ -511,11 +541,12 @@ function renderTables() {
   const shBody = $('#tblShipped tbody'); shBody.innerHTML = '';
   fShipped.slice(0, 20).forEach(o => {
     const tr = document.createElement('tr');
-    const geoLink = o.coords ? `<a class="coord-link" href="geo:0,0?q=${encodeURIComponent(o.coords)}" target="_blank">${o.coords}</a>` : '—';
+    const geoLink = o.coords ? `<a class="coord-link" href="geo:0,0?q=${encodeURIComponent(o.coords)}">${o.coords}</a>` : '—';
+    // REVISION 2: Inject Carrier field value output cell smoothly into row generation logic
     tr.innerHTML = `<td><button class="btn-del" onclick="deleteItem('shipped','${o.id}')">Delete</button></td>
       <td><button class="btn-edit" onclick='openUniversalEditor("shipped", ${JSON.stringify(o).replace(/"/g, '&quot;')})'>Edit</button></td>
       <td><button class="btn" style="padding:4px 8px; font-size:11px;" onclick='openPhotoViewer(${JSON.stringify(o.photo_urls)})'>View</button></td>
-      <td><b>${o.so}</b></td><td>${o.customer}</td><td>${o.type}</td><td>${o.location}</td><td><small>${geoLink}</small></td><td>${o.weight || '—'}</td>
+      <td><b>${o.so}</b></td><td>${o.customer}</td><td>${o.type}</td><td>${o.carrier || '—'}</td><td>${o.location}</td><td><small>${geoLink}</small></td><td>${o.weight || '—'}</td>
       <td>${new Date(o.shipped_at).toLocaleString()}</td><td>${o.shipped_by || '—'}</td>
       <td>${o.pmd_email ? o.pmd_email+'<span class="green-check"> ✓</span>' : '—'}</td>`;
     shBody.appendChild(tr);
@@ -548,7 +579,7 @@ window.onload = () => {
   bootstrapStandalonePWA();
   initOpenStreetMapEngine();
   loadCloudData();
-  setInterval(loadCloudData, 5000); // 5-second polling interval loop maintained
+  setInterval(loadCloudData, 5000); 
 };
 </script>
 </body>
