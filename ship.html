@@ -33,6 +33,7 @@
   .modal-window .counter-box .counter-controls { display: flex; align-items: center; gap: 6px; }
   .modal-window .counter-box input { width: 48px; height: 32px; text-align: center; border-radius: 6px; font-weight: 700; border: 1px solid #cbd5e1; background: #fff; }
   .modal-window .counter-btn { width: 32px; height: 32px; background: #e5e7eb; border: 0; font-weight: 700; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #222; }
+
   .photo-options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
   .photo-uploader { border: 2px dashed #cbd5e1; border-radius: 10px; padding: 10px; text-align: center; cursor: pointer; background: #f8fafc; font-size: 12px; font-weight: 700; }
   .photo-strip { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
@@ -105,7 +106,7 @@
 <div id="viewModal" class="modal-overlay" onclick="if(event.target===this) document.querySelector('#viewModal').style.display='none'">
   <div class="modal-window" style="max-width: 500px;">
     <button class="modal-close-x" onclick="document.querySelector('#viewModal').style.display='none'">×</button>
-    <h3 style="margin:0 0 10px 0;">Staged Freight Photos</h3>
+    <h3>Staged Freight Photos</h3>
     <div id="modalPhotoGallery" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:12px; padding: 4px 0;"></div>
   </div>
 </div>
@@ -139,7 +140,7 @@
       const row = document.createElement('tr');
       const geoLink = e.coords ? `<a class="coord-link" href="geo:0,0?q=${encodeURIComponent(e.coords)}" target="_blank">${e.coords}</a>` : '—';
       
-      // FIX: Absolute matching ID lookup structure isolates variables and safely renders data on expand logs
+      // FIX: Clean identification parameters pass simple keys to completely bypass unescaped character crashes
       row.innerHTML = `<td><button class="btn-del" onclick="deleteItem('${e.id}')">Delete</button></td>
         <td><button class="btn-edit" onclick="openEditor('${e.id}')">Edit</button></td>
         <td><button class="btn" style="padding:4px 8px; font-size:12px;" onclick="openPhotoViewer('${e.id}')">View</button></td>
