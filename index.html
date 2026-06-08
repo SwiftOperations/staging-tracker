@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Swift Staging Tracker — v8.4</title>
+<title>Swift Staging Tracker — v8.5</title>
 
 <link rel="manifest" href="data:application/manifest+json;charset=utf-8,%7B%22short_name%22%3A%22StagingTracker%22%2C%22name%22%3A%22Swift%20Staging%20Tracker%20Hub%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22https%3A%2F%2Fcdn-icons-png.flaticon.com%2F512%2F3014%2F3014166.png%22%2C%22type%22%3A%22image%22%2C%22sizes%22%3A%22512x512%22%7D%5D%2C%22start_url%22%3A%22.%22%2C%22background_color%22%3A%22%23f6f7f9%22%2C%22theme_color%22%3A%22%23dd4d25%22%2C%22display%22%3A%22standalone%22%2C%22orientation%22%3A%22portrait%22%7D" id="pwa-manifest">
 
@@ -22,7 +22,7 @@
   .big{font-size:22px;font-weight:700}
   .card{background:#fff;border:1px solid #e6e7eb;border-radius:12px;padding:14px;margin:14px 0}
   .row{display:flex;gap:8px;flex-wrap:wrap}
-  input,select{height:42px;padding:0 12px;border:1px solid #d1d5db;border-radius:10px;background:#fff;width:100%}
+  input,select{height:42px;padding:0 12px;border:1px solid #d1d5db;border-radius:10px;background:#fff;width}
   .row > *{flex:1 1 150px}
   .btn{background:var(--brand);color:#fff;border:0;border-radius:12px;padding:12px 20px;font-weight:700;cursor:pointer}
   .btn-del{background:#dc2626;color:#fff;border:0;border-radius:6px;padding:4px 8px;font-size:12px;font-weight:700;cursor:pointer}
@@ -85,7 +85,7 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>Swift Staging Tracker — v8.4</h1>
+  <h1>Swift Staging Tracker — v8.5</h1>
   <div id="err" style="display:none; background:#fee2e2; color:#991b1b; padding:10px; border-radius:10px; margin-bottom:10px"></div>
 
   <div class="grid">
@@ -107,7 +107,7 @@
       <input id="so" placeholder="SO number" />
       <input id="customer" placeholder="Customer" />
       <select id="status">
-        <option>Partial</option><option>Ship Today</option><option>Ship Tomorrow</option><option>Ship On Future Date</option><option>Awaiting Shipping Instructions</option>
+        <option>Partial</option><option>Ship Today</option><option>Ship Tomorrow</option><option>Ship On Future Date</option><option>Corp Pick (Not Consolidated)</option><option>Awaiting Shipping Instructions</option>
       </select>
       <div class="freight-block">
         <div class="counter-box"><label>Skids</label><button onclick="adjustCount('c_skid',-1)">-</button><input id="c_skid" value="0" readonly/><button onclick="adjustCount('c_skid',1)">+</button></div>
@@ -215,7 +215,7 @@
     <div id="editStagingFields">
       <div class="modal-field"><label>Shipping Status</label>
         <select id="e_status">
-          <option>Partial</option><option>Ship Today</option><option>Ship Tomorrow</option><option>Ship On Future Date</option><option>Awaiting Shipping Instructions</option>
+          <option>Partial</option><option>Ship Today</option><option>Ship Tomorrow</option><option>Ship On Future Date</option><option>Corp Pick (Not Consolidated)</option><option>Awaiting Shipping Instructions</option>
         </select>
       </div>
       <div class="modal-field"><label>Staged By</label><input id="e_staged_by" /></div>
@@ -321,6 +321,13 @@ function syncMapPins() {
   }
 }
 
+function openStaticMapPromptWindow(item) {
+  $('#v_so').value = item.so; $('#v_cust').value = item.customer; $('#v_date').value = new Date(item.entry_date).toLocaleString();
+  $('#v_type').value = item.type || '—'; $('#v_loc').value = item.location || '—'; $('#v_coords').value = item.coords || '—';
+  $('#v_weight').value = item.weight || '—'; $('#v_status').value = item.status || '—'; $('#v_staged_by').value = item.staged_by || '—';
+  $('#mapViewModal').style.display = 'flex';
+}
+
 async function loadCloudData() {
   const [st, sh] = await Promise.all([
     supabaseClient.from('staging').select('*').order('entry_date', { ascending: false }),
@@ -344,7 +351,6 @@ function addPhotoBlob(inputEl) {
   renderPhotoStrip('#photoPreviewStrip', selectedPhotoBlobs);
 }
 
-// REVISION 1: ACTION SEED LOGIC TO APPEND IMAGES TO EXISTING SHIPPED MANIFESTS DURING EDIT
 function addEditPhotoBlob(inputEl) {
   if(!inputEl.files || inputEl.files.length === 0) return;
   Array.from(inputEl.files).forEach(async (file) => {
@@ -465,7 +471,6 @@ async function executeShippedUndo() {
   } catch(e) { alert("Undo error."); }
 }
 
-// REVISION 2: RESTORED dedicated PHOTO VIEWER MODAL FUNCTIONALITY OVER OVERLAY PROMPTS
 function openPhotoViewer(paths) {
   const gallery = $('#modalPhotoGallery'); gallery.innerHTML = '';
   if(!paths || paths.length === 0) {
