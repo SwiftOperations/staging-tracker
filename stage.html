@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Staging Entries Expanded Log — v8.6</title>
+<title>Staging Entries Expanded Log — v8.5</title>
 <style>
   :root{--brand:#dd4d25;}
   body{margin:0;background:#fff;font:13px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Arial;color:#222;}
@@ -118,7 +118,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
   const SUPABASE_URL = 'https://gdrpdiwykmnybmkadlrv.supabase.co';
-  const supabaseClient = supabase.createClient(SUPABASE_URL, 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdkcnBkaXd5a21ueWJta2FkbHJ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1MjMyMTIsImV4cCI6MjA5NjA5OTIxMn0.Z7ih_vQic1GtzCyZmTEV-RWJnmuaNZQDfOV2_Fvan5g');
+  const supabaseClient = supabase.createClient(SUPABASE_URL, 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdkcnBkaXd5a21ueWJta2FkbHJ2Iiwicm9sZSI6ImFub24iLAJpYXQiOjE3ODA1MjMyMTIsImV4cCI6MjA5NjA5OTIxMn0.Z7ih_vQic1GtzCyZmTEV-RWJnmuaNZQDfOV2_Fvan5g');
   let cache = []; let currentEditId = null; let activeShipTargetItem = null; let selectedPhotoBlobs = [];
 
   function adjustEditCount(id, amt) {
@@ -143,11 +143,12 @@
     cache.filter(e => e.so.toLowerCase().includes(q) || e.customer.toLowerCase().includes(q)).forEach(e => {
       const row = document.createElement('tr');
       const geoLink = e.coords ? `<a class="coord-link" href="geo:0,0?q=${encodeURIComponent(e.coords)}" target="_blank">${e.coords}</a>` : '—';
+      const escapedJson = JSON.stringify(e).replace(/'/g, "\\'").replace(/"/g, '&quot;');
       
       row.innerHTML = `<td><button class="btn-del" onclick="deleteItem('${e.id}')">Delete</button></td>
-        <td><button class="btn-edit" onclick="openEditPrompt('${e.id}')">Edit</button></td>
+        <td><button class="btn-edit" onclick="openEditPrompt(${escapedJson})">Edit</button></td>
         <td><b>${e.so}</b></td><td>${e.customer}</td><td>${new Date(e.entry_date).toLocaleString()}</td><td>${e.type}</td><td>${e.location}</td><td><small>${geoLink}</small></td><td><b>${e.weight || '—'}</b></td><td>${e.status}</td><td>${e.staged_by||'—'}</td>
-        <td style="position:sticky;right:0;text-align:center;"><input type="checkbox" onchange="if(this.checked) { openShipPrompt('${e.id}'); this.checked = false; }"></td>`;
+        <td style="position:sticky;right:0;text-align:center;"><input type="checkbox" onchange="if(this.checked) { openShipPrompt(${escapedJson}); this.checked = false; }"></td>`;
       body.appendChild(row);
     });
   }
@@ -160,9 +161,7 @@
     return { sk, bx, cr };
   }
 
-  function openEditPrompt(id) {
-    const e = cache.find(x => x.id === id);
-    if (!e) return;
+  function openEditPrompt(e) {
     currentEditId = e.id;
     document.querySelector('#e_so').value = e.so; document.querySelector('#e_cust').value = e.customer;
     document.querySelector('#e_loc').value = e.location || ''; document.querySelector('#e_coords').value = e.coords || '';
@@ -187,9 +186,7 @@
     document.querySelector('#editModal').style.display = 'none'; refresh();
   }
 
-  function openShipPrompt(id) {
-    const item = cache.find(x => x.id === id);
-    if (!item) return;
+  function openShipPrompt(item) {
     activeShipTargetItem = item; selectedPhotoBlobs = []; document.querySelector('#photoPreviewStrip').innerHTML = '';
     document.querySelector('#m_so').value = item.so; document.querySelector('#m_cust').value = item.customer;
     document.querySelector('#m_qty').value = item.type; document.querySelector('#m_carrier').value = '';
@@ -229,15 +226,14 @@
       const cachedSubject = `CONFIRMATION OF SHIPOUT: ${activeShipTargetItem.customer} ${activeShipTargetItem.so} @ ${activeShipTargetItem.type} via ${carrierVal}`;
       const cachedBody = `Your order has now been shipped! Order details:\n\n` +
         `----------------------------------------------------------------------\n` +
-        `SO#                   | ${activeShipTargetItem.so}\n` +
-        `Customer              | ${activeShipTargetItem.customer}\n` +
-        `Container(s)          | ${activeShipTargetItem.type}\n` +
-        `Total Weight (In lbs) | ${activeShipTargetItem.weight || '—'}\n` +
-        `Carrier               | ${carrierVal}\n` +
-        `Shipped At            | ${currentTimeStamp}\n` +
-        `Shipped By            | ${dispatcher}\n` +
-        `----------------------------------------------------------------------\n\n` +
-        `For more shipment details, visit the following link: https://swiftoperations.github.io/staging-tracker/\n`;
+        `SO#                 | ${activeShipTargetItem.so}\n` +
+        `Customer            | ${activeShipTargetItem.customer}\n` +
+        `Container(s)        | ${activeShipTargetItem.type}\n` +
+        `Total Weight        | ${activeShipTargetItem.weight || '—'}\n` +
+        `Carrier             | ${carrierVal}\n` +
+        `Shipped At          | ${currentTimeStamp}\n` +
+        `Shipped By          | ${dispatcher}\n` +
+        `----------------------------------------------------------------------\n`;
 
       closeShipModal();
       if(pmChecked) { window.location.href = `mailto:${pmEmail}?subject=${encodeURIComponent(cachedSubject)}&body=${encodeURIComponent(cachedBody)}`; }
