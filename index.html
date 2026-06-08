@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Swift Staging Tracker — v8.7</title>
+<title>Swift Staging Tracker — v8.8</title>
 
 <link rel="manifest" href="data:application/manifest+json;charset=utf-8,%7B%22short_name%22%3A%22StagingTracker%22%2C%22name%22%3A%22Swift%20Staging%20Tracker%20Hub%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22https%3A%2F%2Fcdn-icons-png.flaticon.com%2F512%2F3014%2F3014166.png%22%2C%22type%22%3A%22image%22%2C%22sizes%22%3A%22512x512%22%7D%5D%2C%22start_url%22%3A%22.%22%2C%22background_color%22%3A%22%23f6f7f9%22%2C%22theme_color%22%3A%22%23dd4d25%22%2C%22display%22%3A%22standalone%22%2C%22orientation%22%3A%22portrait%22%7D" id="pwa-manifest">
 
@@ -85,7 +85,7 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>Swift Staging Tracker — v8.7</h1>
+  <h1>Swift Staging Tracker — v8.8</h1>
   <div id="err" style="display:none; background:#fee2e2; color:#991b1b; padding:10px; border-radius:10px; margin-bottom:10px"></div>
 
   <div class="grid">
@@ -337,7 +337,6 @@ async function loadCloudData() {
   renderTables(); syncMapPins();
 }
 
-// FIX: Pass individual clean text ID values from localized cache index points
 function triggerShipModal(id) {
   const item = appData.staging.find(x => x.id === id);
   if (!item) return;
@@ -400,8 +399,6 @@ async function submitFreightDispatch() {
     await supabaseClient.from('staging').delete().eq('id', activeShipTargetItem.id);
     
     const cachedSubject = `CONFIRMATION OF SHIPOUT: ${activeShipTargetItem.customer} ${activeShipTargetItem.so} @ ${activeShipTargetItem.type} via ${carrierVal}`;
-    
-    // REVISION 2: Adjusted Total Weight text label and cleanly appended the web tracker index hyperlink block 
     const cachedBody = `Your order has now been shipped! Order details:\n\n` +
       `----------------------------------------------------------------------\n` +
       `SO#                   | ${activeShipTargetItem.so}\n` +
@@ -428,7 +425,6 @@ function parseContainerString(typeStr) {
   return { sk, bx, cr };
 }
 
-// FIX: Absolute matching ID lookup structure isolates variables and safely renders data on tables
 function openUniversalEditor(table, id) {
   const o = appData[table].find(x => x.id === id);
   if (!o) return;
@@ -481,7 +477,6 @@ async function executeShippedUndo() {
   } catch(e) { alert("Undo error."); }
 }
 
-// FIX: Clean identification parameters pass simple keys to completely bypass unescaped character crashes
 function openPhotoViewer(id) {
   const o = appData.shipped.find(x => x.id === id);
   const paths = o ? o.photo_urls : [];
@@ -502,8 +497,8 @@ function openPhotoViewer(id) {
 
 function renderTables() {
   const q = $('#q').value.toLowerCase();
-  const fStaging = appData.staging.filter(o => o.so.toLowerCase().includes(q) || o.customer.toLowerCase().includes(q));
-  const fShipped = appData.shipped.filter(o => o.so.toLowerCase().includes(q) || o.customer.toLowerCase().includes(q));
+  const fStaging = appData.staging.filter(o => (o.so||'').toLowerCase().includes(q) || (o.customer||'').toLowerCase().includes(q));
+  const fShipped = appData.shipped.filter(o => (o.so||'').toLowerCase().includes(q) || (o.customer||'').toLowerCase().includes(q));
 
   const sBody = $('#tblStaging tbody'); sBody.innerHTML = '';
   fStaging.slice(0, 20).forEach(o => {
