@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Shipped Expanded Log — v8.6</title>
+<title>Shipped Expanded Log — v8.4</title>
 <style>
   :root{--brand:#dd4d25;}
   body{margin:0;background:#fff;font:13px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Arial;color:#222;}
@@ -50,7 +50,7 @@
   <div class="actions">
     <button onclick="window.print()">Print Manifest Log</button>
     <button onclick="window.close()">Close Window</button>
-    <input id="f" placeholder="Quick search..." oninput="filter()"/>
+    <input id="f" placeholder="Quick filter contents..." oninput="filter()"/>
   </div>
   <div class="table-wrap"><table id="tbl">
     <thead><tr><th>Delete</th><th>Edit</th><th>Photo(s)</th><th>SO</th><th>Customer</th><th>Containers</th><th>Carrier</th><th>Location</th><th>Coords</th><th>Total Weight (in lbs)</th><th>Shipped At</th><th>Shipped By</th><th>PM'd Email</th></tr></thead>
@@ -139,9 +139,10 @@
     cache.filter(e => e.so.toLowerCase().includes(q) || e.customer.toLowerCase().includes(q)).forEach(e => {
       const row = document.createElement('tr');
       const geoLink = e.coords ? `<a class="coord-link" href="geo:0,0?q=${encodeURIComponent(e.coords)}" target="_blank">${e.coords}</a>` : '—';
+      const escapedJson = JSON.stringify(e).replace(/'/g, "\\'").replace(/"/g, '&quot;');
       row.innerHTML = `<td><button class="btn-del" onclick="deleteItem('${e.id}')">Delete</button></td>
-        <td><button class="btn-edit" onclick="openEditor('${e.id}')">Edit</button></td>
-        <td><button class="btn" style="padding:4px 8px; font-size:12px;" onclick="openPhotoViewer('${e.id}')">View</button></td>
+        <td><button class="btn-edit" onclick='openEditor(${escapedJson})'>Edit</button></td>
+        <td><button class="btn" style="padding:4px 8px; font-size:12px;" onclick='openPhotoViewer(${JSON.stringify(e.photo_urls)})'>View</button></td>
         <td><b>${e.so}</b></td><td>${e.customer}</td><td>${e.type}</td><td>${e.carrier || '—'}</td><td>${e.location}</td><td><small>${geoLink}</small></td><td><b>${e.weight || '—'}</b></td>
         <td>${new Date(e.shipped_at).toLocaleString()}</td><td>${e.shipped_by||'—'}</td>
         <td>${e.pmd_email ? e.pmd_email+' <span class="green-check">✓</span>' : '—'}</td>`;
@@ -157,9 +158,7 @@
     return { sk, bx, cr };
   }
 
-  function openEditor(id) {
-    const e = cache.find(x => x.id === id);
-    if (!e) return;
+  function openEditor(e) {
     currentEditRecord = e;
     document.querySelector('#e_so').value = e.so; document.querySelector('#e_cust').value = e.customer;
     document.querySelector('#e_loc').value = e.location || ''; document.querySelector('#e_coords').value = e.coords || '';
@@ -208,9 +207,8 @@
     document.querySelector('#editModal').style.display = 'none'; refresh();
   }
 
-  function openPhotoViewer(id) {
-    const e = cache.find(x => x.id === id);
-    const paths = e ? e.photo_urls : [];
+  // REVISION 2: RESTORED IMAGE VIEW MODAL MAPPING LOGIC FOR MATCHING SYMMETRIC POPUPS
+  function openPhotoViewer(paths) {
     const gallery = document.querySelector('#modalPhotoGallery'); gallery.innerHTML = '';
     if(!paths || paths.length === 0) {
       gallery.innerHTML = '<p style="grid-column: 1/-1; text-align:center; font-weight:700; color:#6b7280; padding:12px 0;">No photos attached to this order.</p>';
