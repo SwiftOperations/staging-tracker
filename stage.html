@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Staging Entries Expanded Log — v8.5</title>
+<title>Staging Entries Expanded Log — v8.6</title>
 <style>
   :root{--brand:#dd4d25;}
   body{margin:0;background:#fff;font:13px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Arial;color:#222;}
@@ -118,7 +118,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
   const SUPABASE_URL = 'https://gdrpdiwykmnybmkadlrv.supabase.co';
-  const supabaseClient = supabase.createClient(SUPABASE_URL, 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdkcnBkaXd5a21ueWJta2FkbHJ2Iiwicm9sZSI6ImFub24iLAJpYXQiOjE3ODA1MjMyMTIsImV4cCI6MjA5NjA5OTIxMn0.Z7ih_vQic1GtzCyZmTEV-RWJnmuaNZQDfOV2_Fvan5g');
+  const supabaseClient = supabase.createClient(SUPABASE_URL, 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdkcnBkaXd5a21ueWJta2FkbHJ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1MjMyMTIsImV4cCI6MjA5NjA5OTIxMn0.Z7ih_vQic1GtzCyZmTEV-RWJnmuaNZQDfOV2_Fvan5g');
   let cache = []; let currentEditId = null; let activeShipTargetItem = null; let selectedPhotoBlobs = [];
 
   function adjustEditCount(id, amt) {
@@ -202,6 +202,7 @@
     selectedPhotoBlobs.forEach((f, idx) => strip.insertAdjacentHTML('beforeend', `<span class="photo-badge">📎 Img-${idx+1}</span>`));
   }
 
+  // REVISIONS: ALIGNMENT SPACING UPDATED & VERIFICATION LINK APPENDED
   async function submitFreightDispatch() {
     const dispatcher = document.querySelector('#m_by').value.trim(); const pmEmail = document.querySelector('#m_pm_email').value.trim(); const pmChecked = document.querySelector('#m_pm_chk').checked;
     const carrierVal = document.querySelector('#m_carrier').value.trim() || 'Unassigned Carrier';
@@ -224,16 +225,19 @@
       await supabaseClient.from('staging').delete().eq('id', activeShipTargetItem.id);
       
       const cachedSubject = `CONFIRMATION OF SHIPOUT: ${activeShipTargetItem.customer} ${activeShipTargetItem.so} @ ${activeShipTargetItem.type} via ${carrierVal}`;
+      
+      // REVISION: Label updated to Weight (In lbs) and tracking platform linkage integrated
       const cachedBody = `Your order has now been shipped! Order details:\n\n` +
         `----------------------------------------------------------------------\n` +
-        `SO#                 | ${activeShipTargetItem.so}\n` +
-        `Customer            | ${activeShipTargetItem.customer}\n` +
-        `Container(s)        | ${activeShipTargetItem.type}\n` +
-        `Total Weight        | ${activeShipTargetItem.weight || '—'}\n` +
-        `Carrier             | ${carrierVal}\n` +
-        `Shipped At          | ${currentTimeStamp}\n` +
-        `Shipped By          | ${dispatcher}\n` +
-        `----------------------------------------------------------------------\n`;
+        `SO#                   | ${activeShipTargetItem.so}\n` +
+        `Customer              | ${activeShipTargetItem.customer}\n` +
+        `Container(s)          | ${activeShipTargetItem.type}\n` +
+        `Total Weight (In lbs) | ${activeShipTargetItem.weight || '—'}\n` +
+        `Carrier               | ${carrierVal}\n` +
+        `Shipped At            | ${currentTimeStamp}\n` +
+        `Shipped By            | ${dispatcher}\n` +
+        `----------------------------------------------------------------------\n\n` +
+        `For more shipment details, visit the following link: https://swiftoperations.github.io/staging-tracker/\n`;
 
       closeShipModal();
       if(pmChecked) { window.location.href = `mailto:${pmEmail}?subject=${encodeURIComponent(cachedSubject)}&body=${encodeURIComponent(cachedBody)}`; }
