@@ -5,10 +5,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Swift Staging Tracker — v8.7</title>
 
-<!-- PROGRESSIVE WEB APP (PWA) MANIFEST ORCHESTRATION -->
 <link rel="manifest" href="data:application/manifest+json;charset=utf-8,%7B%22short_name%22%3A%22StagingTracker%22%2C%22name%22%3A%22Swift%20Staging%20Tracker%20Hub%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22https%3A%2F%2Fcdn-icons-png.flaticon.com%2F512%2F3014%2F3014166.png%22%2C%22type%22%3A%22image%22%2C%22sizes%22%3A%22512x512%22%7D%5D%2C%22start_url%22%3A%22.%22%2C%22background_color%22%3A%22%23f6f7f9%22%2C%22theme_color%22%3A%22%23dd4d25%22%2C%22display%22%3A%22standalone%22%2C%22orientation%22%3A%22portrait%22%7D" id="pwa-manifest">
 
-<!-- Open-Source Leaflet Mapping Engine Stylesheets -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
@@ -108,7 +106,6 @@
     <div class="row">
       <input id="so" placeholder="SO number" />
       <input id="customer" placeholder="Customer" />
-      <!-- REVISION 1: Corp Pick (Not Consolidated) Dropdown Metric Integrated Safely -->
       <select id="status">
         <option>Partial</option><option>Ship Today</option><option>Ship Tomorrow</option><option>Ship On Future Date</option><option>Corp Pick (Not Consolidated)</option><option>Awaiting Shipping Instructions</option>
       </select>
@@ -157,7 +154,6 @@
   </div>
 </div>
 
-<!-- SHIPPING WORKFLOW MODAL -->
 <div id="shipModal" class="modal-overlay" onclick="if(event.target===this) closeShipModal()">
   <div class="modal-window">
     <button class="modal-close-x" onclick="closeShipModal()">×</button>
@@ -176,7 +172,7 @@
     <div class="modal-field"><label>Containers</label><input id="m_qty" readonly /></div>
     <div class="modal-field"><label>Carrier</label><input id="m_carrier" placeholder="e.g. Fedex, Manitoulin, Customer Pickup" /></div>
     <div class="modal-field"><label>Location</label><input id="m_loc" readonly /></div>
-    <div class="modal-field"><label>Total Weight (in lbs)</label><input id="m_weight" readonly /></div>
+    <div class="modal-field"><label>Total Weight (In lbs)</label><input id="m_weight" readonly /></div>
     <div class="modal-field"><label>Shipped By</label><input id="m_by" list="pastShippers" /></div>
     <div class="chk-row"><input type="checkbox" id="m_pm_chk" onchange="$('#m_pm_email').disabled=!this.checked"/><label>E-mail PM Verification</label></div>
     <div class="modal-field"><input id="m_pm_email" list="pastEmails" disabled /></div>
@@ -184,7 +180,6 @@
   </div>
 </div>
 
-<!-- UNIVERSAL ITEM EDIT MODAL -->
 <div id="editModal" class="modal-overlay" onclick="if(event.target===this) $('#editModal').style.display='none'">
   <div class="modal-window">
     <button class="modal-close-x" onclick="$('#editModal').style.display='none'">×</button>
@@ -342,7 +337,7 @@ async function loadCloudData() {
   renderTables(); syncMapPins();
 }
 
-// FIX: Bulletproof ID caching lookups to guarantee clicking works across all browsers cleanly
+// FIX: Pass individual clean text ID values from localized cache index points
 function triggerShipModal(id) {
   const item = appData.staging.find(x => x.id === id);
   if (!item) return;
@@ -378,7 +373,6 @@ function renderPhotoStrip(containerSel, blobArray) {
   });
 }
 
-// REVISION 2: ADALINE SYSTEM LOG DATA ALIGNMENT PIPELINE
 async function submitFreightDispatch() {
   const dispatcher = $('#m_by').value.trim(); const pmEmail = $('#m_pm_email').value.trim(); const pmChecked = $('#m_pm_chk').checked;
   const carrierVal = $('#m_carrier').value.trim() || 'Unassigned Carrier';
@@ -407,7 +401,7 @@ async function submitFreightDispatch() {
     
     const cachedSubject = `CONFIRMATION OF SHIPOUT: ${activeShipTargetItem.customer} ${activeShipTargetItem.so} @ ${activeShipTargetItem.type} via ${carrierVal}`;
     
-    // REVISION 2: Label updated to Total Weight (In lbs) and tracking platform linkage integrated
+    // REVISION 2: Adjusted Total Weight text label and cleanly appended the web tracker index hyperlink block 
     const cachedBody = `Your order has now been shipped! Order details:\n\n` +
       `----------------------------------------------------------------------\n` +
       `SO#                   | ${activeShipTargetItem.so}\n` +
@@ -434,7 +428,7 @@ function parseContainerString(typeStr) {
   return { sk, bx, cr };
 }
 
-// FIX: Absolute matching identifier text loop pattern to avoid string parsing bugs
+// FIX: Absolute matching ID lookup structure isolates variables and safely renders data on tables
 function openUniversalEditor(table, id) {
   const o = appData[table].find(x => x.id === id);
   if (!o) return;
@@ -487,6 +481,7 @@ async function executeShippedUndo() {
   } catch(e) { alert("Undo error."); }
 }
 
+// FIX: Clean identification parameters pass simple keys to completely bypass unescaped character crashes
 function openPhotoViewer(id) {
   const o = appData.shipped.find(x => x.id === id);
   const paths = o ? o.photo_urls : [];
