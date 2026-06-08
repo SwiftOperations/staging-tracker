@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Swift Staging Tracker — v8.3</title>
+<title>Swift Staging Tracker — v8.4</title>
 
 <link rel="manifest" href="data:application/manifest+json;charset=utf-8,%7B%22short_name%22%3A%22StagingTracker%22%2C%22name%22%3A%22Swift%20Staging%20Tracker%20Hub%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22https%3A%2F%2Fcdn-icons-png.flaticon.com%2F512%2F3014%2F3014166.png%22%2C%22type%22%3A%22image%22%2C%22sizes%22%3A%22512x512%22%7D%5D%2C%22start_url%22%3A%22.%22%2C%22background_color%22%3A%22%23f6f7f9%22%2C%22theme_color%22%3A%22%23dd4d25%22%2C%22display%22%3A%22standalone%22%2C%22orientation%22%3A%22portrait%22%7D" id="pwa-manifest">
 
@@ -42,7 +42,6 @@
   .modal-field label { font-size: 12px; font-weight: 700; color: #4b5563; margin-bottom: 2px; }
   .modal-field input, .modal-field select { height: 42px; border: 1px solid #cbd5e1; border-radius: 8px; padding: 0 12px; font-size: 14px; background: #fff; color: #222; width: 100%; }
   
-  /* CRITICAL INTERIOR MODAL MATRIX STRIP - KEEPS RECTANGULAR SYMMETRY INVARIANT ON ALL VISUAL LOGS */
   .modal-window .freight-block { flex: none; display: flex; flex-direction: column; gap: 12px; background: #fff; border: 1px solid #cbd5e1; padding: 12px; border-radius: 10px; width: 100%; }
   .modal-window .counter-box { display: flex; align-items: center; justify-content: space-between; width: 100%; border-bottom: 1px solid #f3f4f6; padding-bottom: 8px; }
   .modal-window .counter-box:last-child { border-bottom: 0; padding-bottom: 0; }
@@ -86,7 +85,7 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>Swift Staging Tracker — v8.3</h1>
+  <h1>Swift Staging Tracker — v8.4</h1>
   <div id="err" style="display:none; background:#fee2e2; color:#991b1b; padding:10px; border-radius:10px; margin-bottom:10px"></div>
 
   <div class="grid">
@@ -185,6 +184,7 @@
   <div class="modal-window">
     <button class="modal-close-x" onclick="$('#editModal').style.display='none'">×</button>
     <h3 id="editModalTitle">Edit Record</h3>
+    
     <div id="editShippedPhotoSection" style="display:none; flex-direction:column; gap:8px;">
       <label style="font-size:12px; font-weight:700; color:#4b5563;">Manage Freight Photos</label>
       <div class="photo-options-grid">
@@ -197,6 +197,7 @@
       </div>
       <div id="editPhotoPreviewStrip" class="photo-strip"></div>
     </div>
+    
     <div class="modal-field"><label>SO#</label><input id="e_so" /></div>
     <div class="modal-field"><label>Customer</label><input id="e_cust" /></div>
     
@@ -227,12 +228,20 @@
     </div>
 
     <div class="modal-actions" style="justify-content: space-between; width:100%; margin-top: 8px; display: flex; gap: 8px;">
-      <button id="editUndoBtn" class="btn" style="background:#4b5563; display:none; padding: 10px 16px; border-radius: 8px;" onclick="executeShippedUndo()">Undo Shipment Action</button>
+      <button id="editUndoBtn" class="btn" style="background:#4b5563; padding: 10px 16px; border-radius: 8px;" onclick="executeShippedUndo()">Undo Shipment Action</button>
       <span style="display:flex; gap:8px; margin-left:auto;">
         <button class="btn" style="background:#9ca3af; padding: 10px 16px; border-radius: 8px;" onclick="$('#editModal').style.display='none'">Cancel</button>
         <button class="btn" style="padding: 10px 16px; border-radius: 8px; background: #e04f26;" onclick="saveEditedRecord()">Save Changes</button>
       </span>
     </div>
+  </div>
+</div>
+
+<div id="viewModal" class="modal-overlay" onclick="if(event.target===this) $('#viewModal').style.display='none'">
+  <div class="modal-window" style="max-width: 500px;">
+    <button class="modal-close-x" onclick="$('#viewModal').style.display='none'">×</button>
+    <h3 style="margin:0 0 10px 0;">Staged Freight Photos</h3>
+    <div id="modalPhotoGallery" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:12px; padding: 4px 0;"></div>
   </div>
 </div>
 
@@ -312,13 +321,6 @@ function syncMapPins() {
   }
 }
 
-function openStaticMapPromptWindow(item) {
-  $('#v_so').value = item.so; $('#v_cust').value = item.customer; $('#v_date').value = new Date(item.entry_date).toLocaleString();
-  $('#v_type').value = item.type || '—'; $('#v_loc').value = item.location || '—'; $('#v_coords').value = item.coords || '—';
-  $('#v_weight').value = item.weight || '—'; $('#v_status').value = item.status || '—'; $('#v_staged_by').value = item.staged_by || '—';
-  $('#mapViewModal').style.display = 'flex';
-}
-
 async function loadCloudData() {
   const [st, sh] = await Promise.all([
     supabaseClient.from('staging').select('*').order('entry_date', { ascending: false }),
@@ -340,6 +342,17 @@ function addPhotoBlob(inputEl) {
   if(!inputEl.files || inputEl.files.length === 0) return;
   Array.from(inputEl.files).forEach(f => { if(selectedPhotoBlobs.length < 10) selectedPhotoBlobs.push(f); });
   renderPhotoStrip('#photoPreviewStrip', selectedPhotoBlobs);
+}
+
+// REVISION 1: ACTION SEED LOGIC TO APPEND IMAGES TO EXISTING SHIPPED MANIFESTS DURING EDIT
+function addEditPhotoBlob(inputEl) {
+  if(!inputEl.files || inputEl.files.length === 0) return;
+  Array.from(inputEl.files).forEach(async (file) => {
+    const cleanFileName = file.name.replace(/[^a-zA-Z0-9.]/g, '');
+    const path = `${editTargetRecord.so || 'edit'}-${Date.now()}-${cleanFileName}`;
+    const { error } = await supabaseClient.storage.from('freight-photos').upload(path, file);
+    if(!error) { editTargetRecord.photo_urls.push(path); renderEditPhotoStrip(); }
+  });
 }
 
 function renderPhotoStrip(containerSel, blobArray) {
@@ -410,14 +423,22 @@ function openUniversalEditor(table, o) {
   
   if (table === 'staging') {
     $('#editModalTitle').textContent = 'Edit Staging Entry'; $('#editStagingFields').style.display = 'block';
-    $('#editShippedFields').style.display = 'none'; $('#editUndoBtn').style.display = 'none';
+    $('#editShippedFields').style.display = 'none'; $('#editUndoBtn').style.display = 'none'; $('#editShippedPhotoSection').style.display = 'none';
     $('#e_status').value = o.status; $('#e_staged_by').value = o.staged_by || '';
   } else {
     $('#editModalTitle').textContent = 'Edit Shipped Entry Logs'; $('#editStagingFields').style.display = 'none';
-    $('#editShippedFields').style.display = 'block'; $('#editUndoBtn').style.display = 'block';
+    $('#editShippedFields').style.display = 'block'; $('#editUndoBtn').style.display = 'block'; $('#editShippedPhotoSection').style.display = 'flex';
     $('#e_carrier').value = o.carrier || ''; $('#e_shipped_by').value = o.shipped_by || ''; $('#e_pm').value = o.pmd_email || '';
+    renderEditPhotoStrip();
   }
   $('#editModal').style.display = 'flex';
+}
+
+function renderEditPhotoStrip() {
+  const strip = $('#editPhotoPreviewStrip'); strip.innerHTML = '';
+  editTargetRecord.photo_urls.forEach((url, index) => {
+    strip.insertAdjacentHTML('beforeend', `<span class="photo-badge">📎 Photo-${index+1} <span onclick="editTargetRecord.photo_urls.splice(${index},1); renderEditPhotoStrip()">×</span></span>`);
+  });
 }
 
 async function saveEditedRecord() {
@@ -429,7 +450,7 @@ async function saveEditedRecord() {
   if (editTargetRecord.table === 'staging') {
     await supabaseClient.from('staging').update({ ...basePayload, status: $('#e_status').value.trim(), staged_by: $('#e_staged_by').value.trim() }).eq('id', editTargetRecord.id);
   } else {
-    await supabaseClient.from('shipped').update({ ...basePayload, carrier: $('#e_carrier').value.trim(), shipped_by: $('#e_shipped_by').value.trim(), pmd_email: $('#e_pm').value.trim() || null }).eq('id', editTargetRecord.id);
+    await supabaseClient.from('shipped').update({ ...basePayload, carrier: $('#e_carrier').value.trim(), shipped_by: $('#e_shipped_by').value.trim(), pmd_email: $('#e_pm').value.trim() || null, photo_urls: editTargetRecord.photo_urls }).eq('id', editTargetRecord.id);
   }
   $('#editModal').style.display = 'none'; loadCloudData();
 }
@@ -442,6 +463,23 @@ async function executeShippedUndo() {
     await supabaseClient.from('shipped').delete().eq('id', editTargetRecord.id);
     $('#editModal').style.display = 'none'; loadCloudData();
   } catch(e) { alert("Undo error."); }
+}
+
+// REVISION 2: RESTORED dedicated PHOTO VIEWER MODAL FUNCTIONALITY OVER OVERLAY PROMPTS
+function openPhotoViewer(paths) {
+  const gallery = $('#modalPhotoGallery'); gallery.innerHTML = '';
+  if(!paths || paths.length === 0) {
+    gallery.innerHTML = '<p style="grid-column: 1/-1; text-align:center; font-weight:700; color:#6b7280; padding:12px 0;">No photos attached to this order.</p>';
+  } else {
+    paths.forEach(p => {
+      gallery.insertAdjacentHTML('beforeend', `
+        <a href="${SUPABASE_URL}/storage/v1/object/public/freight-photos/${p}" target="_blank" style="display:block; border-radius:10px; overflow:hidden; border:1px solid #cbd5e1; box-shadow:0 2px 6px rgba(0,0,0,0.05);">
+          <img src="${SUPABASE_URL}/storage/v1/object/public/freight-photos/${p}" style="width:100%; height:110px; object-fit:cover; display:block;" />
+        </a>
+      `);
+    });
+  }
+  $('#viewModal').style.display = 'flex';
 }
 
 function renderTables() {
@@ -463,7 +501,7 @@ function renderTables() {
     const geoLink = o.coords ? `<a class="coord-link" href="geo:0,0?q=${encodeURIComponent(o.coords)}">${o.coords}</a>` : '—';
     shBody.insertAdjacentHTML('beforeend', `<tr><td><button class="btn-del" onclick="deleteItem('shipped','${o.id}')">Delete</button></td>
       <td><button class="btn-edit" onclick='openUniversalEditor("shipped", ${JSON.stringify(o).replace(/"/g, '&quot;')})'>Edit</button></td>
-      <td><button class="btn" style="padding:4px 8px; font-size:11px;" onclick='window.open("${SUPABASE_URL}/storage/v1/object/public/freight-photos/" + ${JSON.stringify(o.photo_urls)}[0])'>View</button></td>
+      <td><button class="btn" style="padding:4px 8px; font-size:12px;" onclick='openPhotoViewer(${JSON.stringify(o.photo_urls)})'>View</button></td>
       <td><b>${o.so}</b></td><td>${o.customer}</td><td>${o.type}</td><td>${o.carrier || '—'}</td><td>${o.location}</td><td><small>${geoLink}</small></td><td>${o.weight || '—'}</td><td>${new Date(o.shipped_at).toLocaleString()}</td><td>${o.shipped_by || '—'}</td><td>${o.pmd_email ? o.pmd_email+'<span class="green-check"> ✓</span>' : '—'}</td></tr>`);
   });
 
