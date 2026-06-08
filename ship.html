@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Shipped Expanded Log — v8.3</title>
+<title>Shipped Expanded Log — v8.4</title>
 <style>
   :root{--brand:#dd4d25;}
   body{margin:0;background:#fff;font:13px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Arial;color:#222;}
@@ -34,6 +34,12 @@
   .modal-window .counter-box input { width: 48px; height: 32px; text-align: center; border-radius: 6px; font-weight: 700; border: 1px solid #cbd5e1; background: #fff; }
   .modal-window .counter-btn { width: 32px; height: 32px; background: #e5e7eb; border: 0; font-weight: 700; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #222; }
 
+  .photo-options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .photo-uploader { border: 2px dashed #cbd5e1; border-radius: 10px; padding: 10px; text-align: center; cursor: pointer; background: #f8fafc; font-size: 12px; font-weight: 700; }
+  .photo-strip { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+  .photo-badge { background: #e2e8f0; font-size: 11px; padding: 2px 6px; border-radius: 4px; display: flex; align-items: center; gap: 4px; }
+  .photo-badge span { color: #dc2626; cursor: pointer; font-weight: bold; }
+
   .coord-link { color: #0284c7; text-decoration: none; font-weight: bold; }
   .coord-link:hover { text-decoration: underline; }
 </style>
@@ -56,6 +62,20 @@
   <div class="modal-window">
     <button class="modal-close-x" onclick="document.querySelector('#editModal').style.display='none'">×</button>
     <h3>Edit Shipped Entry Logs</h3>
+    
+    <div id="editShippedPhotoSection" style="display:flex; flex-direction:column; gap:8px;">
+      <label style="font-size:12px; font-weight:700; color:#4b5563;">Manage Freight Photos</label>
+      <div class="photo-options-grid">
+        <div class="photo-uploader" onclick="document.querySelector('#e_cameraFile').click()">📷 Take Live Photo
+          <input type="file" id="e_cameraFile" accept="image/*" capture="environment" style="display:none" onchange="addEditPhotoBlob(this)" />
+        </div>
+        <div class="photo-uploader" onclick="document.querySelector('#e_uploadFile').click()">📁 File Upload
+          <input type="file" id="e_uploadFile" multiple accept="image/*" style="display:none" onchange="addEditPhotoBlob(this)" />
+        </div>
+      </div>
+      <div id="editPhotoPreviewStrip" class="photo-strip"></div>
+    </div>
+    
     <div class="modal-field"><label>SO#</label><input id="e_so" /></div>
     <div class="modal-field"><label>Customer</label><input id="e_cust" /></div>
     
@@ -80,6 +100,14 @@
         <button style="background:#e04f26; padding: 10px 16px; border-radius: 8px; border: 0; color: #fff; font-weight: 700; cursor: pointer;" onclick="saveEdit()">Save Changes</button>
       </span>
     </div>
+  </div>
+</div>
+
+<div id="viewModal" class="modal-overlay" onclick="if(event.target===this) document.querySelector('#viewModal').style.display='none'">
+  <div class="modal-window" style="max-width: 500px;">
+    <button class="modal-close-x" onclick="document.querySelector('#viewModal').style.display='none'">×</button>
+    <h3 style="margin:0 0 10px 0;">Staged Freight Photos</h3>
+    <div id="modalPhotoGallery" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:12px; padding: 4px 0;"></div>
   </div>
 </div>
 
@@ -114,7 +142,7 @@
       const escapedJson = JSON.stringify(e).replace(/'/g, "\\'").replace(/"/g, '&quot;');
       row.innerHTML = `<td><button class="btn-del" onclick="deleteItem('${e.id}')">Delete</button></td>
         <td><button class="btn-edit" onclick='openEditor(${escapedJson})'>Edit</button></td>
-        <td><button class="btn" style="padding:4px 8px; font-size:11px;" onclick='window.open("${SUPABASE_URL}/storage/v1/object/public/freight-photos/" + ${JSON.stringify(e.photo_urls)}[0])'>View</button></td>
+        <td><button class="btn" style="padding:4px 8px; font-size:12px;" onclick='openPhotoViewer(${JSON.stringify(e.photo_urls)})'>View</button></td>
         <td><b>${e.so}</b></td><td>${e.customer}</td><td>${e.type}</td><td>${e.carrier || '—'}</td><td>${e.location}</td><td><small>${geoLink}</small></td><td><b>${e.weight || '—'}</b></td>
         <td>${new Date(e.shipped_at).toLocaleString()}</td><td>${e.shipped_by||'—'}</td>
         <td>${e.pmd_email ? e.pmd_email+' <span class="green-check">✓</span>' : '—'}</td>`;
@@ -138,7 +166,31 @@
     document.querySelector('#e_shipped_by').value = e.shipped_by || ''; document.querySelector('#e_pm').value = e.pmd_email || '';
     const counts = parseContainerString(e.type);
     document.querySelector('#e_skid').value = counts.sk; document.querySelector('#e_box').value = counts.bx; document.querySelector('#e_crate').value = counts.cr;
+    renderEditPhotoStrip();
     document.querySelector('#editModal').style.display = 'flex';
+  }
+
+  function renderEditPhotoStrip() {
+    const strip = document.querySelector('#editPhotoPreviewStrip'); strip.innerHTML = '';
+    if (currentEditRecord && currentEditRecord.photo_urls) {
+      currentEditRecord.photo_urls.forEach((url, index) => {
+        strip.insertAdjacentHTML('beforeend', `<span class="photo-badge">📎 Photo-${index+1} <span onclick="currentEditRecord.photo_urls.splice(${index},1); renderEditPhotoStrip()">×</span></span>`);
+      });
+    }
+  }
+
+  function addEditPhotoBlob(inputEl) {
+    if(!inputEl.files || inputEl.files.length === 0) return;
+    Array.from(inputEl.files).forEach(async (file) => {
+      const cleanFileName = file.name.replace(/[^a-zA-Z0-9.]/g, '');
+      const path = `${currentEditRecord.so || 'edit'}-${Date.now()}-${cleanFileName}`;
+      const { error } = await supabaseClient.storage.from('freight-photos').upload(path, file);
+      if(!error) { 
+        if(!currentEditRecord.photo_urls) currentEditRecord.photo_urls = [];
+        currentEditRecord.photo_urls.push(path); 
+        renderEditPhotoStrip(); 
+      }
+    });
   }
 
   async function saveEdit() {
@@ -150,9 +202,26 @@
       so: document.querySelector('#e_so').value.trim(), customer: document.querySelector('#e_cust').value.trim(),
       location: document.querySelector('#e_loc').value.trim(), coords: document.querySelector('#e_coords').value.trim(), weight: document.querySelector('#e_weight').value.trim(),
       carrier: document.querySelector('#e_carrier').value.trim(), shipped_by: document.querySelector('#e_shipped_by').value.trim(), pmd_email: document.querySelector('#e_pm').value.trim() || null,
-      type: dynamicType, qty: sk+bx+cr
+      type: dynamicType, qty: sk+bx+cr, photo_urls: currentEditRecord.photo_urls
     }).eq('id', currentEditRecord.id);
     document.querySelector('#editModal').style.display = 'none'; refresh();
+  }
+
+  // REVISION 2: RESTORED IMAGE VIEW MODAL MAPPING LOGIC FOR MATCHING SYMMETRIC POPUPS
+  function openPhotoViewer(paths) {
+    const gallery = document.querySelector('#modalPhotoGallery'); gallery.innerHTML = '';
+    if(!paths || paths.length === 0) {
+      gallery.innerHTML = '<p style="grid-column: 1/-1; text-align:center; font-weight:700; color:#6b7280; padding:12px 0;">No photos attached to this order.</p>';
+    } else {
+      paths.forEach(p => {
+        gallery.insertAdjacentHTML('beforeend', `
+          <a href="${SUPABASE_URL}/storage/v1/object/public/freight-photos/${p}" target="_blank" style="display:block; border-radius:10px; overflow:hidden; border:1px solid #cbd5e1; box-shadow:0 2px 6px rgba(0,0,0,0.05);">
+            <img src="${SUPABASE_URL}/storage/v1/object/public/freight-photos/${p}" style="width:100%; height:110px; object-fit:cover; display:block;" />
+          </a>
+        `);
+      });
+    }
+    document.querySelector('#viewModal').style.display = 'flex';
   }
 
   async function executeUndo() {
