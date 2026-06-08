@@ -143,12 +143,11 @@
     cache.filter(e => e.so.toLowerCase().includes(q) || e.customer.toLowerCase().includes(q)).forEach(e => {
       const row = document.createElement('tr');
       const geoLink = e.coords ? `<a class="coord-link" href="geo:0,0?q=${encodeURIComponent(e.coords)}" target="_blank">${e.coords}</a>` : '—';
-      const escapedJson = JSON.stringify(e).replace(/'/g, "\\'").replace(/"/g, '&quot;');
       
       row.innerHTML = `<td><button class="btn-del" onclick="deleteItem('${e.id}')">Delete</button></td>
-        <td><button class="btn-edit" onclick="openEditPrompt(${escapedJson})">Edit</button></td>
+        <td><button class="btn-edit" onclick="openEditPrompt('${e.id}')">Edit</button></td>
         <td><b>${e.so}</b></td><td>${e.customer}</td><td>${new Date(e.entry_date).toLocaleString()}</td><td>${e.type}</td><td>${e.location}</td><td><small>${geoLink}</small></td><td><b>${e.weight || '—'}</b></td><td>${e.status}</td><td>${e.staged_by||'—'}</td>
-        <td style="position:sticky;right:0;text-align:center;"><input type="checkbox" onchange="if(this.checked) { openShipPrompt(${escapedJson}); this.checked = false; }"></td>`;
+        <td style="position:sticky;right:0;text-align:center;"><input type="checkbox" onchange="if(this.checked) { openShipPrompt('${e.id}'); this.checked = false; }"></td>`;
       body.appendChild(row);
     });
   }
@@ -161,7 +160,9 @@
     return { sk, bx, cr };
   }
 
-  function openEditPrompt(e) {
+  function openEditPrompt(id) {
+    const e = cache.find(x => x.id === id);
+    if (!e) return;
     currentEditId = e.id;
     document.querySelector('#e_so').value = e.so; document.querySelector('#e_cust').value = e.customer;
     document.querySelector('#e_loc').value = e.location || ''; document.querySelector('#e_coords').value = e.coords || '';
@@ -186,7 +187,9 @@
     document.querySelector('#editModal').style.display = 'none'; refresh();
   }
 
-  function openShipPrompt(item) {
+  function openShipPrompt(id) {
+    const item = cache.find(x => x.id === id);
+    if (!item) return;
     activeShipTargetItem = item; selectedPhotoBlobs = []; document.querySelector('#photoPreviewStrip').innerHTML = '';
     document.querySelector('#m_so').value = item.so; document.querySelector('#m_cust').value = item.customer;
     document.querySelector('#m_qty').value = item.type; document.querySelector('#m_carrier').value = '';
@@ -202,7 +205,6 @@
     selectedPhotoBlobs.forEach((f, idx) => strip.insertAdjacentHTML('beforeend', `<span class="photo-badge">📎 Img-${idx+1}</span>`));
   }
 
-  // REVISIONS: ALIGNMENT SPACING UPDATED & VERIFICATION LINK APPENDED
   async function submitFreightDispatch() {
     const dispatcher = document.querySelector('#m_by').value.trim(); const pmEmail = document.querySelector('#m_pm_email').value.trim(); const pmChecked = document.querySelector('#m_pm_chk').checked;
     const carrierVal = document.querySelector('#m_carrier').value.trim() || 'Unassigned Carrier';
@@ -225,8 +227,6 @@
       await supabaseClient.from('staging').delete().eq('id', activeShipTargetItem.id);
       
       const cachedSubject = `CONFIRMATION OF SHIPOUT: ${activeShipTargetItem.customer} ${activeShipTargetItem.so} @ ${activeShipTargetItem.type} via ${carrierVal}`;
-      
-      // REVISION: Label updated to Weight (In lbs) and tracking platform linkage integrated
       const cachedBody = `Your order has now been shipped! Order details:\n\n` +
         `----------------------------------------------------------------------\n` +
         `SO#                   | ${activeShipTargetItem.so}\n` +
