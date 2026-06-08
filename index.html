@@ -172,7 +172,7 @@
     <div class="modal-field"><label>Containers</label><input id="m_qty" readonly /></div>
     <div class="modal-field"><label>Carrier</label><input id="m_carrier" placeholder="e.g. Fedex, Manitoulin, Customer Pickup" /></div>
     <div class="modal-field"><label>Location</label><input id="m_loc" readonly /></div>
-    <div class="modal-field"><label>Total Weight (in lbs)</label><input id="m_weight" readonly /></div>
+    <div class="modal-field"><label>Total Weight (In lbs)</label><input id="m_weight" readonly /></div>
     <div class="modal-field"><label>Shipped By</label><input id="m_by" list="pastShippers" /></div>
     <div class="chk-row"><input type="checkbox" id="m_pm_chk" onchange="$('#m_pm_email').disabled=!this.checked"/><label>E-mail PM Verification</label></div>
     <div class="modal-field"><input id="m_pm_email" list="pastEmails" disabled /></div>
@@ -337,7 +337,7 @@ async function loadCloudData() {
   renderTables(); syncMapPins();
 }
 
-// FIX: Clean item selection mapping from global application array
+// FIX: Safe array caching selector logic mapping directly via distinct id text bounds
 function triggerShipModal(id) {
   const item = appData.staging.find(x => x.id === id);
   if (!item) return;
@@ -373,7 +373,7 @@ function renderPhotoStrip(containerSel, blobArray) {
   });
 }
 
-// REVISION 2: EMAIL FORMAT REVISION (WEIGHT IN LBS AND FOOTER WEB INTERFACE PLATFORM LINK)
+// REVISION 2: ADALINE SPACE ALLOCATION GENERATING PERFECT EMAIL TEXT STRINGS
 async function submitFreightDispatch() {
   const dispatcher = $('#m_by').value.trim(); const pmEmail = $('#m_pm_email').value.trim(); const pmChecked = $('#m_pm_chk').checked;
   const carrierVal = $('#m_carrier').value.trim() || 'Unassigned Carrier';
@@ -402,7 +402,7 @@ async function submitFreightDispatch() {
     
     const cachedSubject = `CONFIRMATION OF SHIPOUT: ${activeShipTargetItem.customer} ${activeShipTargetItem.so} @ ${activeShipTargetItem.type} via ${carrierVal}`;
     
-    // REVISION 2: Adjusted Total Weight text label and cleanly appended the web tracker index hyperlink block 
+    // REVISION 2: Spacing blocks aligned accurately to state Weight (In lbs) and landing links
     const cachedBody = `Your order has now been shipped! Order details:\n\n` +
       `----------------------------------------------------------------------\n` +
       `SO#                   | ${activeShipTargetItem.so}\n` +
@@ -421,15 +421,6 @@ async function submitFreightDispatch() {
   } catch(e) { alert("Data dispatch error."); } finally { $('#modalConfirmBtn').disabled = false; }
 }
 
-function parseContainerString(typeStr) {
-  let sk = 0, bx = 0, cr = 0; if(!typeStr) return { sk, bx, cr };
-  const matchSk = typeStr.match(/(\d+)\s*Skid/); if(matchSk) sk = parseInt(matchSk[1]);
-  const matchBx = typeStr.match(/(\d+)\s*Box/);  if(matchBx) bx = parseInt(matchBx[1]);
-  const matchCr = typeStr.match(/(\d+)\s*Crate/);if(matchCr) cr = parseInt(matchCr[1]);
-  return { sk, bx, cr };
-}
-
-// FIX: Bulletproof ID matching rule configuration pattern that never encounters quote parsing bugs
 function openUniversalEditor(table, id) {
   const o = appData[table].find(x => x.id === id);
   if (!o) return;
@@ -482,7 +473,6 @@ async function executeShippedUndo() {
   } catch(e) { alert("Undo error."); }
 }
 
-// FIX: Clean image parser configuration to pull from state layers directly by id string string
 function openPhotoViewer(id) {
   const o = appData.shipped.find(x => x.id === id);
   const paths = o ? o.photo_urls : [];
@@ -509,7 +499,6 @@ function renderTables() {
   const sBody = $('#tblStaging tbody'); sBody.innerHTML = '';
   fStaging.slice(0, 20).forEach(o => {
     const geoLink = o.coords ? `<a class="coord-link" href="geo:0,0?q=${encodeURIComponent(o.coords)}">${o.coords}</a>` : '—';
-    // FIX: Passing standard ID parameters directly prevents unescaped inner string conflicts
     sBody.insertAdjacentHTML('beforeend', `<tr><td><button class="btn-del" onclick="deleteItem('staging','${o.id}')">Delete</button></td>
       <td><button class="btn-edit" onclick="openUniversalEditor('staging', '${o.id}')">Edit</button></td>
       <td><b>${o.so}</b></td><td>${o.customer}</td><td>${new Date(o.entry_date).toLocaleString()}</td><td>${o.type}</td><td>${o.location}</td><td><small>${geoLink}</small></td><td>${o.weight || '—'}</td><td>${o.status}</td><td>${o.staged_by||'—'}</td>
