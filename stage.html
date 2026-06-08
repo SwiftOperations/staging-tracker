@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Staging Entries Expanded Log — v8.7</title>
+<title>Staging Entries Expanded Log — v8.8</title>
 <style>
   :root{--brand:#dd4d25;}
   body{margin:0;background:#fff;font:13px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Arial;color:#222;}
@@ -140,11 +140,10 @@
   function filter() {
     const q = document.querySelector('#f').value.toLowerCase();
     const body = document.querySelector('#tbl tbody'); body.innerHTML = '';
-    cache.filter(e => e.so.toLowerCase().includes(q) || e.customer.toLowerCase().includes(q)).forEach(e => {
+    cache.filter(e => (e.so || '').toLowerCase().includes(q) || (e.customer || '').toLowerCase().includes(q)).forEach(e => {
       const row = document.createElement('tr');
       const geoLink = e.coords ? `<a class="coord-link" href="geo:0,0?q=${encodeURIComponent(e.coords)}" target="_blank">${e.coords}</a>` : '—';
       
-      // FIX: Clean identification parameters pass simple key tokens to isolate layout bugs
       row.innerHTML = `<td><button class="btn-del" onclick="deleteItem('${e.id}')">Delete</button></td>
         <td><button class="btn-edit" onclick="openEditPrompt('${e.id}')">Edit</button></td>
         <td><b>${e.so}</b></td><td>${e.customer}</td><td>${new Date(e.entry_date).toLocaleString()}</td><td>${e.type}</td><td>${e.location}</td><td><small>${geoLink}</small></td><td><b>${e.weight || '—'}</b></td><td>${e.status}</td><td>${e.staged_by||'—'}</td>
@@ -238,7 +237,8 @@
         `Shipped At            | ${currentTimeStamp}\n` +
         `Shipped By            | ${dispatcher}\n` +
         `----------------------------------------------------------------------\n\n` +
-        `For more shipment details, visit the following link: https://swiftoperations.github.io/staging-tracker/\n`;
+        `For more shipment details, visit the following link: https://swiftoperations.github.io/staging-tracker/\n\n` +
+        `Thanks\n`;
 
       closeShipModal();
       if(pmChecked) { window.location.href = `mailto:${pmEmail}?subject=${encodeURIComponent(cachedSubject)}&body=${encodeURIComponent(cachedBody)}`; }
