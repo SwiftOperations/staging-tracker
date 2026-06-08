@@ -33,6 +33,11 @@
   .modal-window .counter-box .counter-controls { display: flex; align-items: center; gap: 6px; }
   .modal-window .counter-box input { width: 48px; height: 32px; text-align: center; border-radius: 6px; font-weight: 700; border: 1px solid #cbd5e1; background: #fff; }
   .modal-window .counter-btn { width: 32px; height: 32px; background: #e5e7eb; border: 0; font-weight: 700; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #222; }
+  .photo-options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .photo-uploader { border: 2px dashed #cbd5e1; border-radius: 10px; padding: 10px; text-align: center; cursor: pointer; background: #f8fafc; font-size: 12px; font-weight: 700; }
+  .photo-strip { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+  .photo-badge { background: #e2e8f0; font-size: 11px; padding: 2px 6px; border-radius: 4px; display: flex; align-items: center; gap: 4px; }
+  .chk-row { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; }
 
   .coord-link { color: #0284c7; text-decoration: none; font-weight: bold; }
   .coord-link:hover { text-decoration: underline; }
@@ -52,7 +57,6 @@
   </table></div>
 </div>
 
-<!-- LOCAL STAGING EDIT MODAL PROMPT WINDOW -->
 <div id="editModal" class="modal-overlay" onclick="if(event.target===this) document.querySelector('#editModal').style.display='none'">
   <div class="modal-window">
     <button class="modal-close-x" onclick="document.querySelector('#editModal').style.display='none'">×</button>
@@ -71,7 +75,6 @@
     <div class="modal-field"><label>Coords</label><input id="e_coords" readonly onclick="fetchBrowserGPS('e_coords')" style="background:#fafafa; cursor:pointer;" /></div>
     <div class="modal-field"><label>Total Weight (in lbs)</label><input id="e_weight" /></div>
     <div class="modal-field"><label>Shipping Status</label>
-      <!-- REVISION 1: Corp Pick Option Sync Replicated and Confirmed for Expanded Canvas -->
       <select id="e_status">
         <option>Partial</option><option>Ship Today</option><option>Ship Tomorrow</option><option>Ship On Future Date</option><option>Corp Pick (Not Consolidated)</option><option>Awaiting Shipping Instructions</option>
       </select>
@@ -84,7 +87,6 @@
   </div>
 </div>
 
-<!-- LOCAL FREIGHT CONFIRMATION WORKFLOW MODAL PROMPT WINDOW -->
 <div id="shipModal" class="modal-overlay" onclick="if(event.target===this) closeShipModal()">
   <div class="modal-window">
     <button class="modal-close-x" onclick="closeShipModal()">×</button>
@@ -204,7 +206,6 @@
     selectedPhotoBlobs.forEach((f, idx) => strip.insertAdjacentHTML('beforeend', `<span class="photo-badge">📎 Img-${idx+1}</span>`));
   }
 
-  // REVISION 2: EMAILING BLOCK CONSTRAINTS SYNC FOR REVISED WEIGHT LABELS & PLATFORM LINKAGE
   async function submitFreightDispatch() {
     const dispatcher = document.querySelector('#m_by').value.trim(); const pmEmail = document.querySelector('#m_pm_email').value.trim(); const pmChecked = document.querySelector('#m_pm_chk').checked;
     const carrierVal = document.querySelector('#m_carrier').value.trim() || 'Unassigned Carrier';
@@ -237,8 +238,7 @@
         `Shipped At            | ${currentTimeStamp}\n` +
         `Shipped By            | ${dispatcher}\n` +
         `----------------------------------------------------------------------\n\n` +
-        `For more shipment details, visit the following link: https://swiftoperations.github.io/staging-tracker/\n\n` +
-        `Thanks\n`;
+        `For more shipment details, visit the following link: https://swiftoperations.github.io/staging-tracker/\n`;
 
       closeShipModal();
       if(pmChecked) { window.location.href = `mailto:${pmEmail}?subject=${encodeURIComponent(cachedSubject)}&body=${encodeURIComponent(cachedBody)}`; }
