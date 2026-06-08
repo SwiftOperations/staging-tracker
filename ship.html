@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Shipped Expanded Log — v8.4</title>
+<title>Shipped Expanded Log — v8.7</title>
 <style>
   :root{--brand:#dd4d25;}
   body{margin:0;background:#fff;font:13px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Arial;color:#222;}
@@ -33,7 +33,6 @@
   .modal-window .counter-box .counter-controls { display: flex; align-items: center; gap: 6px; }
   .modal-window .counter-box input { width: 48px; height: 32px; text-align: center; border-radius: 6px; font-weight: 700; border: 1px solid #cbd5e1; background: #fff; }
   .modal-window .counter-btn { width: 32px; height: 32px; background: #e5e7eb; border: 0; font-weight: 700; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #222; }
-
   .photo-options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
   .photo-uploader { border: 2px dashed #cbd5e1; border-radius: 10px; padding: 10px; text-align: center; cursor: pointer; background: #f8fafc; font-size: 12px; font-weight: 700; }
   .photo-strip { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
@@ -50,7 +49,7 @@
   <div class="actions">
     <button onclick="window.print()">Print Manifest Log</button>
     <button onclick="window.close()">Close Window</button>
-    <input id="f" placeholder="Quick filter contents..." oninput="filter()"/>
+    <input id="f" placeholder="Quick search..." oninput="filter()"/>
   </div>
   <div class="table-wrap"><table id="tbl">
     <thead><tr><th>Delete</th><th>Edit</th><th>Photo(s)</th><th>SO</th><th>Customer</th><th>Containers</th><th>Carrier</th><th>Location</th><th>Coords</th><th>Total Weight (in lbs)</th><th>Shipped At</th><th>Shipped By</th><th>PM'd Email</th></tr></thead>
@@ -114,7 +113,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
   const SUPABASE_URL = 'https://gdrpdiwykmnybmkadlrv.supabase.co';
-  const supabaseClient = supabase.createClient(SUPABASE_URL, 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdkcnBkaXd5a21ueWJta2FkbHJ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1MjMyMTIsImV4cCI6MjA5NjA5OTIxMn0.Z7ih_vQic1GtzCyZmTEV-RWJnmuaNZQDfOV2_Fvan5g');
+  const supabaseClient = supabase.createClient(SUPABASE_URL, 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdkcnBkaXd5a21ueWJta2FkbHJ2Iiwicm9sZSI6ImFub24iLAJpYXQiOjE3ODA1MjMyMTIsImV4cCI6MjA5NjA5OTIxMn0.Z7ih_vQic1GtzCyZmTEV-RWJnmuaNZQDfOV2_Fvan5g');
   let cache = []; let currentEditRecord = null;
 
   function adjustEditCount(id, amt) {
@@ -139,10 +138,11 @@
     cache.filter(e => e.so.toLowerCase().includes(q) || e.customer.toLowerCase().includes(q)).forEach(e => {
       const row = document.createElement('tr');
       const geoLink = e.coords ? `<a class="coord-link" href="geo:0,0?q=${encodeURIComponent(e.coords)}" target="_blank">${e.coords}</a>` : '—';
-      const escapedJson = JSON.stringify(e).replace(/'/g, "\\'").replace(/"/g, '&quot;');
+      
+      // FIX: Absolute matching ID lookup structure isolates variables and safely renders data on expand logs
       row.innerHTML = `<td><button class="btn-del" onclick="deleteItem('${e.id}')">Delete</button></td>
-        <td><button class="btn-edit" onclick='openEditor(${escapedJson})'>Edit</button></td>
-        <td><button class="btn" style="padding:4px 8px; font-size:12px;" onclick='openPhotoViewer(${JSON.stringify(e.photo_urls)})'>View</button></td>
+        <td><button class="btn-edit" onclick="openEditor('${e.id}')">Edit</button></td>
+        <td><button class="btn" style="padding:4px 8px; font-size:12px;" onclick="openPhotoViewer('${e.id}')">View</button></td>
         <td><b>${e.so}</b></td><td>${e.customer}</td><td>${e.type}</td><td>${e.carrier || '—'}</td><td>${e.location}</td><td><small>${geoLink}</small></td><td><b>${e.weight || '—'}</b></td>
         <td>${new Date(e.shipped_at).toLocaleString()}</td><td>${e.shipped_by||'—'}</td>
         <td>${e.pmd_email ? e.pmd_email+' <span class="green-check">✓</span>' : '—'}</td>`;
@@ -158,7 +158,9 @@
     return { sk, bx, cr };
   }
 
-  function openEditor(e) {
+  function openEditor(id) {
+    const e = cache.find(x => x.id === id);
+    if (!e) return;
     currentEditRecord = e;
     document.querySelector('#e_so').value = e.so; document.querySelector('#e_cust').value = e.customer;
     document.querySelector('#e_loc').value = e.location || ''; document.querySelector('#e_coords').value = e.coords || '';
@@ -207,8 +209,9 @@
     document.querySelector('#editModal').style.display = 'none'; refresh();
   }
 
-  // REVISION 2: RESTORED IMAGE VIEW MODAL MAPPING LOGIC FOR MATCHING SYMMETRIC POPUPS
-  function openPhotoViewer(paths) {
+  function openPhotoViewer(id) {
+    const e = cache.find(x => x.id === id);
+    const paths = e ? e.photo_urls : [];
     const gallery = document.querySelector('#modalPhotoGallery'); gallery.innerHTML = '';
     if(!paths || paths.length === 0) {
       gallery.innerHTML = '<p style="grid-column: 1/-1; text-align:center; font-weight:700; color:#6b7280; padding:12px 0;">No photos attached to this order.</p>';
