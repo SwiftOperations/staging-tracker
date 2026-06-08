@@ -5,10 +5,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Swift Staging Tracker — v8.6</title>
 
-<!-- PROGRESSIVE WEB APP (PWA) MANIFEST ORCHESTRATION -->
 <link rel="manifest" href="data:application/manifest+json;charset=utf-8,%7B%22short_name%22%3A%22StagingTracker%22%2C%22name%22%3A%22Swift%20Staging%20Tracker%20Hub%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22https%3A%2F%2Fcdn-icons-png.flaticon.com%2F512%2F3014%2F3014166.png%22%2C%22type%22%3A%22image%22%2C%22sizes%22%3A%22512x512%22%7D%5D%2C%22start_url%22%3A%22.%22%2C%22background_color%22%3A%22%23f6f7f9%22%2C%22theme_color%22%3A%22%23dd4d25%22%2C%22display%22%3A%22standalone%22%2C%22orientation%22%3A%22portrait%22%7D" id="pwa-manifest">
 
-<!-- Open-Source Leaflet Mapping Engine Stylesheets -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
@@ -74,6 +72,14 @@
   
   .coord-link { color: #0284c7; text-decoration: none; font-weight: bold; }
   .coord-link:hover { text-decoration: underline; }
+
+  @media (max-width: 600px) {
+    .grid{grid-template-columns:repeat(2,1fr)}
+    table { min-width: 950px; } 
+    .freight-block { flex-direction: column; align-items: stretch; gap: 12px; flex: 1 1 100%; }
+    .counter-box { justify-content: space-between; border-bottom: 1px solid #f3f4f6; padding-bottom: 6px; }
+    .counter-box:last-child { border: 0; padding: 0; }
+  }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -100,7 +106,6 @@
     <div class="row">
       <input id="so" placeholder="SO number" />
       <input id="customer" placeholder="Customer" />
-      <!-- REVISION: Corp Pick added to Status options -->
       <select id="status">
         <option>Partial</option><option>Ship Today</option><option>Ship Tomorrow</option><option>Ship On Future Date</option><option>Corp Pick (Not Consolidated)</option><option>Awaiting Shipping Instructions</option>
       </select>
@@ -149,7 +154,6 @@
   </div>
 </div>
 
-<!-- SHIPPING WORKFLOW MODAL -->
 <div id="shipModal" class="modal-overlay" onclick="if(event.target===this) closeShipModal()">
   <div class="modal-window">
     <button class="modal-close-x" onclick="closeShipModal()">×</button>
@@ -176,7 +180,6 @@
   </div>
 </div>
 
-<!-- UNIVERSAL ITEM EDIT MODAL -->
 <div id="editModal" class="modal-overlay" onclick="if(event.target===this) $('#editModal').style.display='none'">
   <div class="modal-window">
     <button class="modal-close-x" onclick="$('#editModal').style.display='none'">×</button>
@@ -334,7 +337,9 @@ async function loadCloudData() {
   renderTables(); syncMapPins();
 }
 
-function triggerShipModal(item) {
+function triggerShipModal(id) {
+  const item = appData.staging.find(x => x.id === id);
+  if (!item) return;
   activeShipTargetItem = item; $('#photoPreviewStrip').innerHTML = ''; selectedPhotoBlobs = [];
   $('#m_so').value = item.so; $('#m_cust').value = item.customer; $('#m_qty').value = item.type;
   $('#m_carrier').value = ''; $('#m_loc').value = item.location; $('#m_weight').value = item.weight || '—'; $('#m_by').value = '';
@@ -367,7 +372,6 @@ function renderPhotoStrip(containerSel, blobArray) {
   });
 }
 
-// REVISIONS: EMAIL REFORMATTING ENGINE WITH STANDARDIZED LABELS & REDIRECT CHANNELS
 async function submitFreightDispatch() {
   const dispatcher = $('#m_by').value.trim(); const pmEmail = $('#m_pm_email').value.trim(); const pmChecked = $('#m_pm_chk').checked;
   const carrierVal = $('#m_carrier').value.trim() || 'Unassigned Carrier';
@@ -396,7 +400,7 @@ async function submitFreightDispatch() {
     
     const cachedSubject = `CONFIRMATION OF SHIPOUT: ${activeShipTargetItem.customer} ${activeShipTargetItem.so} @ ${activeShipTargetItem.type} via ${carrierVal}`;
     
-    // REVISION: Label text updated to Weight (In lbs) and tracking platform linkage integrated
+    // REVISION: Formatted column block data alignment logic rules
     const cachedBody = `Your order has now been shipped! Order details:\n\n` +
       `----------------------------------------------------------------------\n` +
       `SO#                   | ${activeShipTargetItem.so}\n` +
@@ -407,22 +411,17 @@ async function submitFreightDispatch() {
       `Shipped At            | ${currentTimeStamp}\n` +
       `Shipped By            | ${dispatcher}\n` +
       `----------------------------------------------------------------------\n\n` +
-      `For more shipment details, visit the following link: https://swiftoperations.github.io/staging-tracker/\n`;
+      `For more shipment details, visit the following link: https://swiftoperations.github.io/staging-tracker/\n\n` +
+      `Thanks\n`;
 
     closeShipModal();
     if(pmChecked) { window.location.href = `mailto:${pmEmail}?subject=${encodeURIComponent(cachedSubject)}&body=${encodeURIComponent(cachedBody)}`; }
   } catch(e) { alert("Data dispatch error."); } finally { $('#modalConfirmBtn').disabled = false; }
 }
 
-function parseContainerString(typeStr) {
-  let sk = 0, bx = 0, cr = 0; if(!typeStr) return { sk, bx, cr };
-  const matchSk = typeStr.match(/(\d+)\s*Skid/); if(matchSk) sk = parseInt(matchSk[1]);
-  const matchBx = typeStr.match(/(\d+)\s*Box/);  if(matchBx) bx = parseInt(matchBx[1]);
-  const matchCr = typeStr.match(/(\d+)\s*Crate/);if(matchCr) cr = parseInt(matchCr[1]);
-  return { sk, bx, cr };
-}
-
-function openUniversalEditor(table, o) {
+function openUniversalEditor(table, id) {
+  const o = appData[table].find(x => x.id === id);
+  if (!o) return;
   editTargetRecord = { table: table, id: o.id, so: o.so, photo_urls: o.photo_urls || [] };
   $('#e_so').value = o.so; $('#e_cust').value = o.customer; $('#e_loc').value = o.location; $('#e_coords').value = o.coords || ''; $('#e_weight').value = o.weight || '';
   const counts = parseContainerString(o.type);
@@ -472,7 +471,9 @@ async function executeShippedUndo() {
   } catch(e) { alert("Undo error."); }
 }
 
-function openPhotoViewer(paths) {
+function openPhotoViewer(id) {
+  const o = appData.shipped.find(x => x.id === id);
+  const paths = o ? o.photo_urls : [];
   const gallery = $('#modalPhotoGallery'); gallery.innerHTML = '';
   if(!paths || paths.length === 0) {
     gallery.innerHTML = '<p style="grid-column: 1/-1; text-align:center; font-weight:700; color:#6b7280; padding:12px 0;">No photos attached to this order.</p>';
@@ -497,17 +498,17 @@ function renderTables() {
   fStaging.slice(0, 20).forEach(o => {
     const geoLink = o.coords ? `<a class="coord-link" href="geo:0,0?q=${encodeURIComponent(o.coords)}">${o.coords}</a>` : '—';
     sBody.insertAdjacentHTML('beforeend', `<tr><td><button class="btn-del" onclick="deleteItem('staging','${o.id}')">Delete</button></td>
-      <td><button class="btn-edit" onclick='openUniversalEditor("staging", ${JSON.stringify(o).replace(/"/g, '&quot;')})'>Edit</button></td>
+      <td><button class="btn-edit" onclick="openUniversalEditor('staging', '${o.id}')">Edit</button></td>
       <td><b>${o.so}</b></td><td>${o.customer}</td><td>${new Date(o.entry_date).toLocaleString()}</td><td>${o.type}</td><td>${o.location}</td><td><small>${geoLink}</small></td><td>${o.weight || '—'}</td><td>${o.status}</td><td>${o.staged_by||'—'}</td>
-      <td style="position:sticky;right:0;text-align:center;"><input type="checkbox" onchange="if(this.checked)triggerShipModal(${JSON.stringify(o).replace(/"/g, '&quot;')})"></td></tr>`);
+      <td style="position:sticky;right:0;text-align:center;"><input type="checkbox" onchange="if(this.checked)triggerShipModal('${o.id}')"></td></tr>`);
   });
 
   const shBody = $('#tblShipped tbody'); shBody.innerHTML = '';
   fShipped.slice(0, 20).forEach(o => {
     const geoLink = o.coords ? `<a class="coord-link" href="geo:0,0?q=${encodeURIComponent(o.coords)}">${o.coords}</a>` : '—';
     shBody.insertAdjacentHTML('beforeend', `<tr><td><button class="btn-del" onclick="deleteItem('shipped','${o.id}')">Delete</button></td>
-      <td><button class="btn-edit" onclick='openUniversalEditor("shipped", ${JSON.stringify(o).replace(/"/g, '&quot;')})'>Edit</button></td>
-      <td><button class="btn" style="padding:4px 8px; font-size:12px;" onclick='openPhotoViewer(${JSON.stringify(o.photo_urls)})'>View</button></td>
+      <td><button class="btn-edit" onclick="openUniversalEditor('shipped', '${o.id}')">Edit</button></td>
+      <td><button class="btn" style="padding:4px 8px; font-size:12px;" onclick="openPhotoViewer('${o.id}')">View</button></td>
       <td><b>${o.so}</b></td><td>${o.customer}</td><td>${o.type}</td><td>${o.carrier || '—'}</td><td>${o.location}</td><td><small>${geoLink}</small></td><td>${o.weight || '—'}</td><td>${new Date(o.shipped_at).toLocaleString()}</td><td>${o.shipped_by || '—'}</td><td>${o.pmd_email ? o.pmd_email+'<span class="green-check"> ✓</span>' : '—'}</td></tr>`);
   });
 
