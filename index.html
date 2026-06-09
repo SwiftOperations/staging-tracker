@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Swift Staging Tracker — v9.2</title>
+<title>Swift Staging Tracker — v9.3</title>
 
 <!-- PROGRESSIVE WEB APP (PWA) MANIFEST ORCHESTRATION -->
 <link rel="manifest" href="data:application/manifest+json;charset=utf-8,%7B%22short_name%22%3A%22StagingTracker%22%2C%22name%22%3A%22Swift%20Staging%20Tracker%20Hub%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22https%3A%2F%2Fcdn-icons-png.flaticon.com%2F512%2F3014%2F3014166.png%22%2C%22type%22%3A%22image%22%2C%22sizes%22%3A%22512x512%22%7D%5D%2C%22start_url%22%3A%22.%22%2C%22background_color%22%3A%22%23f6f7f9%22%2C%22theme_color%22%3A%22%23dd4d25%22%2C%22display%22%3A%22standalone%22%2C%22orientation%22%3A%22portrait%22%7D" id="pwa-manifest">
@@ -92,7 +92,7 @@
 <datalist id="dl_pastEmails"></datalist>
 
 <div class="wrap">
-  <h1>Swift Staging Tracker — v9.2</h1>
+  <h1>Swift Staging Tracker — v9.3</h1>
   <div id="err" style="display:none; background:#fee2e2; color:#991b1b; padding:10px; border-radius:10px; margin-bottom:10px"></div>
 
   <div class="grid">
@@ -113,7 +113,6 @@
   <div class="card">
     <div class="split"><h3>Enter Staging Information</h3></div>
     <div class="row">
-      <!-- REVISION: SO Input forced to numbers only. Memory lists added to text fields. Customer Pick-Up added -->
       <input id="so" placeholder="SO number" oninput="this.value=this.value.replace(/[^0-9]/g,'')" />
       <input id="customer" placeholder="Customer" list="dl_customers" />
       <select id="status">
@@ -202,9 +201,10 @@
     <p style="font-size:13px; color:#4b5563; margin-top:0; margin-bottom:8px;">Are you sure you want to return this order to stock?</p>
     <div class="modal-field"><label>Picked By</label><input id="r_picked_by" list="dl_stagers" placeholder="Shortname" /></div>
     <div class="modal-field"><label>Returned By</label><input id="r_returned_by" list="dl_stagers" placeholder="Shortname" /></div>
+    <div class="modal-field"><label>Reason for Return to Stock</label><input id="r_reason" placeholder="Enter reason..." /></div>
     <div class="chk-row" style="margin-top:4px;"><input type="checkbox" id="r_pm_chk" onchange="$('#r_pm_email').disabled=!this.checked"/><label>Confirm return to PM via e-mail</label></div>
     <div class="modal-field"><input id="r_pm_email" list="dl_pastEmails" placeholder="PM E-mail" disabled /></div>
-    <div class="modal-actions" style="margin-top:8px;"><button class="btn" style="background:#dc2626; width:100%;" onclick="submitReturnToStock()">Confirm Return</button></div>
+    <div class="modal-actions" style="margin-top:8px;"><button class="btn" style="background:#dc2626; width:100%; border:0; padding:10px 16px; border-radius:8px; color:#fff; font-weight:bold; cursor:pointer;" onclick="submitReturnToStock()">Confirm Return</button></div>
   </div>
 </div>
 
@@ -403,7 +403,6 @@ async function loadCloudData() {
   ]);
   appData.staging = st.data || []; appData.shipped = sh.data || [];
   
-  // REVISION: Auto-populate memory datalists for text entries 
   const allData = [...appData.staging, ...appData.shipped];
   $('#dl_customers').innerHTML = [...new Set(allData.map(x=>x.customer).filter(Boolean))].map(c=>`<option value="${c}">`).join('');
   $('#dl_locations').innerHTML = [...new Set(allData.map(x=>x.location).filter(Boolean))].map(l=>`<option value="${l}">`).join('');
@@ -489,7 +488,6 @@ async function submitFreightDispatch() {
       `Thanks\n`;
 
     closeShipModal();
-    // REVISION: Added Warehouse CC requirement natively
     if(pmChecked) { window.location.href = `mailto:${pmEmail}?cc=warehouse1@swiftsupply.ca&subject=${encodeURIComponent(cachedSubject)}&body=${encodeURIComponent(cachedBody)}`; }
   } catch(e) { alert("Data dispatch error."); } finally { $('#modalConfirmBtn').disabled = false; }
 }
@@ -549,16 +547,16 @@ function openUniversalEditor(table, id) {
 
 function triggerReturnModal() {
   $('#returnModal').style.display = 'flex'; $('#editModal').style.display = 'none';
-  $('#r_picked_by').value = ''; $('#r_returned_by').value = ''; 
+  $('#r_picked_by').value = ''; $('#r_returned_by').value = ''; $('#r_reason').value = ''; 
   $('#r_pm_chk').checked = false; $('#r_pm_email').value = ''; $('#r_pm_email').disabled = true;
 }
 
-// REVISION: Execution block for Return to Stock
 async function submitReturnToStock() {
   const pickedBy = $('#r_picked_by').value.trim(); const returnedBy = $('#r_returned_by').value.trim();
+  const reason = $('#r_reason').value.trim();
   const pmEmail = $('#r_pm_email').value.trim(); const pmChecked = $('#r_pm_chk').checked;
 
-  if(!pickedBy || !returnedBy || (pmChecked && !pmEmail)) return alert("Missing required inputs.");
+  if(!pickedBy || !returnedBy || !reason || (pmChecked && !pmEmail)) return alert("Missing required inputs.");
   
   try {
     const currentTimeStamp = new Date().toLocaleString();
@@ -574,6 +572,7 @@ async function submitReturnToStock() {
 
     const cachedSubject = `RETURN TO STOCK: ${editTargetRecord.so} for ${$('#e_cust').value.trim()}`;
     const cachedBody = `Your order/pick has now been Return to Stock. Return details:\n\n` +
+      `Reason for Return to Stock: ${reason}\n\n` +
       `----------------------------------------------------------------------\n` +
       `SO#                   | ${editTargetRecord.so}\n` +
       `Customer              | ${$('#e_cust').value.trim()}\n` +
@@ -663,7 +662,6 @@ function renderTables() {
     const isRet = (o.carrier === 'RETURNED TO STOCK');
     const rowClass = isRet ? 'style="color:#9ca3af; text-decoration:line-through;"' : '';
     
-    // REVISION: Applied visual line-through indicator for native returned rows
     shBody.insertAdjacentHTML('beforeend', `<tr ${rowClass}><td><button class="btn-del" onclick="deleteItem('shipped','${o.id}')">Delete</button></td>
       <td><button class="btn-edit" onclick="openUniversalEditor('shipped', '${o.id}')">Edit</button></td>
       <td><button class="btn" style="padding:4px 8px; font-size:12px;" onclick="openPhotoViewer('${o.id}')">View</button></td>
