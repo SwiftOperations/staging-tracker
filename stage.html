@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Staging Entries Expanded Log — v9.2</title>
+<title>Staging Entries Expanded Log — v9.3</title>
 <style>
   :root{--brand:#dd4d25;}
   body{margin:0;background:#fff;font:13px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Arial;color:#222;}
@@ -20,6 +20,9 @@
   th{position:sticky; top:0; background:#fafafa; z-index: 1;}
   th[style*="position:sticky"], td[style*="position:sticky"] { background: #fff !important; position: sticky !important; right: 0 !important; z-index: 3; box-shadow: -2px 0 5px rgba(0,0,0,0.04); }
   
+  /* REVISION: Matched Checkbox scale from main dashboard exactly */
+  input[type="checkbox"] { width: 13px; height: 13px; cursor: pointer; transform: scale(1); margin: 0; }
+
   /* PERFECT MASTER SYMMETRICAL MODAL BLUEPRINT REPLICATED EXACTLY FROM THE DASHBOARD MASTER RESOURCE */
   .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; padding: 12px; }
   .modal-window { background: #fff; border-radius: 16px; max-width: 500px; width: 100%; max-height: 90vh; padding: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); display: flex; flex-direction: column; gap: 12px; overflow-y: auto; position: relative; font-family: system-ui, -apple-system, sans-serif; color: #222; }
@@ -28,7 +31,6 @@
   .modal-field label { font-size: 12px; font-weight: 700; color: #4b5563; margin-bottom: 2px; }
   .modal-field input, .modal-field select { height: 42px; border: 1px solid #cbd5e1; border-radius: 8px; padding: 0 12px; font-size: 14px; background: #fff; color: #222; width: 100%; }
   
-  /* REVISION: Modal block converted to a clean 2-column grid. Stops stretching entirely. */
   .modal-window .freight-block { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px; background: #f9fafb; border: 1px solid #cbd5e1; padding: 12px; border-radius: 8px; flex: none; }
   .modal-window .counter-box { display: flex; justify-content: space-between; width: 100%; padding-bottom: 4px; border-bottom: 1px solid #e5e7eb; }
   .modal-window .counter-box:nth-last-child(-n+2) { border-bottom: none; padding-bottom: 0; }
@@ -75,6 +77,8 @@
     <p style="font-size:13px; color:#4b5563; margin-top:0; margin-bottom:8px;">Are you sure you want to return this order to stock?</p>
     <div class="modal-field"><label>Picked By</label><input id="r_picked_by" list="dl_stagers" placeholder="Shortname" /></div>
     <div class="modal-field"><label>Returned By</label><input id="r_returned_by" list="dl_stagers" placeholder="Shortname" /></div>
+    <!-- REVISION: Added Reason for Return to Stock entry field -->
+    <div class="modal-field"><label>Reason for Return to Stock</label><input id="r_reason" placeholder="Enter reason..." /></div>
     <div class="chk-row" style="margin-top:4px;"><input type="checkbox" id="r_pm_chk" onchange="document.querySelector('#r_pm_email').disabled=!this.checked"/><label>Confirm return to PM via e-mail</label></div>
     <div class="modal-field"><input id="r_pm_email" list="dl_pastEmails" placeholder="PM E-mail" disabled /></div>
     <div class="modal-actions" style="margin-top:8px;"><button class="btn" style="background:#dc2626; width:100%; border:0; padding:10px 16px; border-radius:8px; color:#fff; font-weight:bold; cursor:pointer;" onclick="submitReturnToStock()">Confirm Return</button></div>
@@ -152,7 +156,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
   const SUPABASE_URL = 'https://gdrpdiwykmnybmkadlrv.supabase.co';
-  const supabaseClient = supabase.createClient(SUPABASE_URL, 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdkcnBkaXd5a21ueWJta2FkbHJ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1MjMyMTIsImV4cCI6MjA5NjA5OTIxMn0.Z7ih_vQic1GtzCyZmTEV-RWJnmuaNZQDfOV2_Fvan5g');
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdkcnBkaXd5a21ueWJta2FkbHJ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1MjMyMTIsImV4cCI6MjA5NjA5OTIxMn0.Z7ih_vQic1GtzCyZmTEV-RWJnmuaNZQDfOV2_Fvan5g';
+  const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   let cache = []; let cacheShipped = []; let currentEditId = null; let activeShipTargetItem = null; let selectedPhotoBlobs = [];
 
   function adjustEditCount(id, amt) {
@@ -234,15 +239,16 @@
 
   function triggerReturnModal() {
     document.querySelector('#returnModal').style.display = 'flex'; document.querySelector('#editModal').style.display = 'none';
-    document.querySelector('#r_picked_by').value = ''; document.querySelector('#r_returned_by').value = ''; 
+    document.querySelector('#r_picked_by').value = ''; document.querySelector('#r_returned_by').value = ''; document.querySelector('#r_reason').value = ''; 
     document.querySelector('#r_pm_chk').checked = false; document.querySelector('#r_pm_email').value = ''; document.querySelector('#r_pm_email').disabled = true;
   }
 
   async function submitReturnToStock() {
     const pickedBy = document.querySelector('#r_picked_by').value.trim(); const returnedBy = document.querySelector('#r_returned_by').value.trim();
+    const reason = document.querySelector('#r_reason').value.trim();
     const pmEmail = document.querySelector('#r_pm_email').value.trim(); const pmChecked = document.querySelector('#r_pm_chk').checked;
 
-    if(!pickedBy || !returnedBy || (pmChecked && !pmEmail)) return alert("Missing required inputs.");
+    if(!pickedBy || !returnedBy || !reason || (pmChecked && !pmEmail)) return alert("Missing required inputs.");
     
     try {
       const e = cache.find(x => x.id === currentEditId);
@@ -258,7 +264,10 @@
       await supabaseClient.from('staging').delete().eq('id', currentEditId);
 
       const cachedSubject = `RETURN TO STOCK: ${e.so} for ${document.querySelector('#e_cust').value.trim()}`;
+      
+      // REVISION: Added formatted Reason field above SO block for Return to Stock emails 
       const cachedBody = `Your order/pick has now been Return to Stock. Return details:\n\n` +
+        `Reason for Return to Stock: ${reason}\n\n` +
         `----------------------------------------------------------------------\n` +
         `SO#                   | ${e.so}\n` +
         `Customer              | ${document.querySelector('#e_cust').value.trim()}\n` +
