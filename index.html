@@ -571,7 +571,7 @@ async function submitReturnToStock() {
     await supabaseClient.from('staging').delete().eq('id', editTargetRecord.id);
 
     const cachedSubject = `RETURN TO STOCK: ${editTargetRecord.so} for ${$('#e_cust').value.trim()}`;
-    const cachedBody = `Your order/pick has now been Return to Stock. Return details:\n\n` +
+    const cachedBody = `Your order/pick has now been Returned to Stock. Return details:\n\n` +
       `Reason for Return to Stock: ${reason}\n\n` +
       `----------------------------------------------------------------------\n` +
       `SO#                   | ${editTargetRecord.so}\n` +
