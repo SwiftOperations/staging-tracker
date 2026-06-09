@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Staging Entries Expanded Log — v8.9</title>
+<title>Staging Entries Expanded Log — v9.2</title>
 <style>
   :root{--brand:#dd4d25;}
   body{margin:0;background:#fff;font:13px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Arial;color:#222;}
@@ -12,6 +12,8 @@
   .btn-del{background:#dc2626;color:#fff;border:0;border-radius:6px;padding:4px 8px;font-size:12px;font-weight:700;cursor:pointer}
   .btn-edit{background:#0284c7;color:#fff;border:0;border-radius:6px;padding:4px 8px;font-size:12px;font-weight:700;cursor:pointer}
   input { height: 34px; padding: 0 10px; border: 1px solid #cbd5e1; border-radius: 8px; width: 100%; max-width:300px; font-size:13px; }
+  input:disabled { background: #f3f4f6; color: #9ca3af; cursor: not-allowed; }
+  select:disabled { background: #f3f4f6; color: #9ca3af; cursor: not-allowed; }
   .table-wrap{ overflow-x: auto; border:1px solid #e5e7eb; border-radius:10px }
   table{width:100%; border-collapse:collapse; min-width:1150px}
   th,td{border-top:1px solid #e5e7eb; padding:8px; white-space:nowrap; text-align:left}
@@ -46,6 +48,12 @@
 </style>
 </head>
 <body>
+<!-- MEMORY DATALISTS -->
+<datalist id="dl_customers"></datalist>
+<datalist id="dl_locations"></datalist>
+<datalist id="dl_stagers"></datalist>
+<datalist id="dl_pastEmails"></datalist>
+
 <div class="wrap">
   <h2>Staging Entries Expanded Log</h2>
   <div class="actions">
@@ -59,12 +67,27 @@
   </table></div>
 </div>
 
+<!-- RETURN TO STOCK SUB-MODAL -->
+<div id="returnModal" class="modal-overlay" onclick="if(event.target===this) document.querySelector('#returnModal').style.display='none'">
+  <div class="modal-window">
+    <button class="modal-close-x" onclick="document.querySelector('#returnModal').style.display='none'">×</button>
+    <h3>Return to Stock</h3>
+    <p style="font-size:13px; color:#4b5563; margin-top:0; margin-bottom:8px;">Are you sure you want to return this order to stock?</p>
+    <div class="modal-field"><label>Picked By</label><input id="r_picked_by" list="dl_stagers" placeholder="Shortname" /></div>
+    <div class="modal-field"><label>Returned By</label><input id="r_returned_by" list="dl_stagers" placeholder="Shortname" /></div>
+    <div class="chk-row" style="margin-top:4px;"><input type="checkbox" id="r_pm_chk" onchange="document.querySelector('#r_pm_email').disabled=!this.checked"/><label>Confirm return to PM via e-mail</label></div>
+    <div class="modal-field"><input id="r_pm_email" list="dl_pastEmails" placeholder="PM E-mail" disabled /></div>
+    <div class="modal-actions" style="margin-top:8px;"><button class="btn" style="background:#dc2626; width:100%; border:0; padding:10px 16px; border-radius:8px; color:#fff; font-weight:bold; cursor:pointer;" onclick="submitReturnToStock()">Confirm Return</button></div>
+  </div>
+</div>
+
+<!-- LOCAL STAGING EDIT MODAL PROMPT WINDOW -->
 <div id="editModal" class="modal-overlay" onclick="if(event.target===this) document.querySelector('#editModal').style.display='none'">
   <div class="modal-window">
     <button class="modal-close-x" onclick="document.querySelector('#editModal').style.display='none'">×</button>
     <h3>Edit Staging Entry</h3>
-    <div class="modal-field"><label>SO#</label><input id="e_so" /></div>
-    <div class="modal-field"><label>Customer</label><input id="e_cust" /></div>
+    <div class="modal-field"><label>SO#</label><input id="e_so" oninput="this.value=this.value.replace(/[^0-9]/g,'')" /></div>
+    <div class="modal-field"><label>Customer</label><input id="e_cust" list="dl_customers" /></div>
     
     <label style="font-size:12px; font-weight:700; color:#4b5563; margin-bottom:-4px; text-align: left;">Container Quantities</label>
     <div class="freight-block">
@@ -75,22 +98,29 @@
       <div class="counter-box"><label>Other</label><div class="counter-controls"><button class="counter-btn" onclick="adjustEditCount('e_other',-1)">-</button><input id="e_other" value="0" readonly/><button class="counter-btn" onclick="adjustEditCount('e_other',1)">+</button></div></div>
     </div>
 
-    <div class="modal-field"><label>Location</label><input id="e_loc" /></div>
+    <div class="modal-field"><label>Location</label><input id="e_loc" list="dl_locations" /></div>
     <div class="modal-field"><label>Coords</label><input id="e_coords" readonly onclick="fetchBrowserGPS('e_coords')" style="background:#fafafa; cursor:pointer;" /></div>
     <div class="modal-field"><label>Total Weight (in lbs)</label><input id="e_weight" /></div>
     <div class="modal-field"><label>Shipping Status</label>
       <select id="e_status">
-        <option>Partial</option><option>Ship Today</option><option>Ship Tomorrow</option><option>Ship On Future Date</option><option>Corp Pick (Not Consolidated)</option><option>Awaiting Shipping Instructions</option>
+        <option>Partial</option><option>Ship Today</option><option>Ship Tomorrow</option><option>Ship On Future Date</option><option>Corp Pick (Not Consolidated)</option><option>Customer Pick-Up</option><option>Awaiting Shipping Instructions</option>
       </select>
     </div>
-    <div class="modal-field"><label>Staged By</label><input id="e_staged_by" /></div>
-    <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:8px;">
-      <button style="background:#9ca3af; border-radius: 8px; padding: 10px 16px; border: 0; color:#fff; font-weight:700; cursor:pointer;" onclick="document.querySelector('#editModal').style.display='none'">Cancel</button>
-      <button style="background:#e04f26; border-radius: 8px; padding: 10px 16px; border: 0; color:#fff; font-weight:700; cursor:pointer;" onclick="saveEditedRecord()">Save Changes</button>
+    <div class="modal-field"><label>Staged By</label><input id="e_staged_by" list="dl_stagers" /></div>
+    
+    <div style="display:flex; justify-content:space-between; width:100%; margin-top:8px; gap:8px;">
+      <span style="display:flex; gap:8px;">
+        <button id="editReturnBtn" style="background:#eab308; color:#222; border-radius: 8px; padding: 10px 16px; border: 0; font-weight:700; cursor:pointer;" onclick="triggerReturnModal()">Return to Stock</button>
+      </span>
+      <span style="display:flex; gap:8px; margin-left:auto;">
+        <button style="background:#9ca3af; border-radius: 8px; padding: 10px 16px; border: 0; color:#fff; font-weight:700; cursor:pointer;" onclick="document.querySelector('#editModal').style.display='none'">Cancel</button>
+        <button style="background:#e04f26; border-radius: 8px; padding: 10px 16px; border: 0; color:#fff; font-weight:700; cursor:pointer;" onclick="saveEditedRecord()">Save Changes</button>
+      </span>
     </div>
   </div>
 </div>
 
+<!-- LOCAL FREIGHT CONFIRMATION WORKFLOW MODAL PROMPT WINDOW -->
 <div id="shipModal" class="modal-overlay" onclick="if(event.target===this) closeShipModal()">
   <div class="modal-window">
     <button class="modal-close-x" onclick="closeShipModal()">×</button>
@@ -104,15 +134,15 @@
       </div>
     </div>
     <div id="photoPreviewStrip" class="photo-strip"></div>
-    <div class="modal-field"><label>SO#</label><input id="m_so" readonly /></div>
+    <div class="modal-field"><label>SO#</label><input id="m_so" readonly oninput="this.value=this.value.replace(/[^0-9]/g,'')"/></div>
     <div class="modal-field"><label>Customer</label><input id="m_cust" readonly /></div>
     <div class="modal-field"><label>Containers</label><input id="m_qty" readonly /></div>
     <div class="modal-field"><label>Carrier</label><input id="m_carrier" placeholder="e.g. Fedex, Manitoulin, Customer Pickup" /></div>
     <div class="modal-field"><label>Location</label><input id="m_loc" readonly /></div>
     <div class="modal-field"><label>Total Weight (in lbs)</label><input id="m_weight" readonly /></div>
-    <div class="modal-field"><label>Shipped By</label><input id="m_by" /></div>
+    <div class="modal-field"><label>Shipped By</label><input id="m_by" list="dl_stagers" /></div>
     <div class="chk-row"><input type="checkbox" id="m_pm_chk" onchange="document.querySelector('#m_pm_email').disabled=!this.checked"/><label>E-mail PM Verification</label></div>
-    <div class="modal-field"><input id="m_pm_email" disabled /></div>
+    <div class="modal-field"><input id="m_pm_email" list="dl_pastEmails" disabled /></div>
     <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:8px;">
       <button id="modalConfirmBtn" style="background:#dd4d25; color:#fff; font-weight:700; border:0; padding:10px 16px; border-radius:8px; cursor:pointer;" onclick="submitFreightDispatch()">Confirm Dispatch</button>
     </div>
@@ -123,7 +153,7 @@
 <script>
   const SUPABASE_URL = 'https://gdrpdiwykmnybmkadlrv.supabase.co';
   const supabaseClient = supabase.createClient(SUPABASE_URL, 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdkcnBkaXd5a21ueWJta2FkbHJ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1MjMyMTIsImV4cCI6MjA5NjA5OTIxMn0.Z7ih_vQic1GtzCyZmTEV-RWJnmuaNZQDfOV2_Fvan5g');
-  let cache = []; let currentEditId = null; let activeShipTargetItem = null; let selectedPhotoBlobs = [];
+  let cache = []; let cacheShipped = []; let currentEditId = null; let activeShipTargetItem = null; let selectedPhotoBlobs = [];
 
   function adjustEditCount(id, amt) {
     const el = document.querySelector(`#${id}`); el.value = Math.max(0, (parseInt(el.value)||0) + amt);
@@ -137,8 +167,19 @@
   }
 
   async function refresh() {
-    const res = await supabaseClient.from('staging').select('*').order('entry_date', { ascending: false });
-    cache = res.data || []; filter();
+    const [st, sh] = await Promise.all([
+      supabaseClient.from('staging').select('*').order('entry_date', { ascending: false }),
+      supabaseClient.from('shipped').select('*').order('shipped_at', { ascending: false })
+    ]);
+    cache = st.data || []; cacheShipped = sh.data || [];
+    
+    const allData = [...cache, ...cacheShipped];
+    document.querySelector('#dl_customers').innerHTML = [...new Set(allData.map(x=>x.customer).filter(Boolean))].map(c=>`<option value="${c}">`).join('');
+    document.querySelector('#dl_locations').innerHTML = [...new Set(allData.map(x=>x.location).filter(Boolean))].map(l=>`<option value="${l}">`).join('');
+    document.querySelector('#dl_stagers').innerHTML = [...new Set(allData.map(x=>(x.staged_by || x.shipped_by)).filter(Boolean))].map(s=>`<option value="${s}">`).join('');
+    document.querySelector('#dl_pastEmails').innerHTML = [...new Set(cacheShipped.map(x=>x.pmd_email).filter(Boolean))].map(em=>`<option value="${em}@swiftsupply.ca">`).join('');
+    
+    filter();
   }
 
   function filter() {
@@ -148,7 +189,6 @@
       const row = document.createElement('tr');
       const geoLink = e.coords ? `<a class="coord-link" href="geo:0,0?q=${encodeURIComponent(e.coords)}" target="_blank">${e.coords}</a>` : '—';
       
-      // FIX: Clean ID lookup prevents attribute crashing 
       row.innerHTML = `<td><button class="btn-del" onclick="deleteItem('${e.id}')">Delete</button></td>
         <td><button class="btn-edit" onclick="openEditPrompt('${e.id}')">Edit</button></td>
         <td><b>${e.so}</b></td><td>${e.customer}</td><td>${new Date(e.entry_date).toLocaleString()}</td><td>${e.type}</td><td>${e.location}</td><td><small>${geoLink}</small></td><td><b>${e.weight || '—'}</b></td><td>${e.status}</td><td>${e.staged_by||'—'}</td>
@@ -166,6 +206,17 @@
     const matchOt = typeStr.match(/(\d+)\s*Other/);if(matchOt) ot = parseInt(matchOt[1]);
     return { sk, bx, cr, pi, ot };
   }
+  
+  function getDynamicType() {
+    const sk = parseInt(document.querySelector('#e_skid').value)||0, bx = parseInt(document.querySelector('#e_box').value)||0, cr = parseInt(document.querySelector('#e_crate').value)||0, pi = parseInt(document.querySelector('#e_pipe').value)||0, ot = parseInt(document.querySelector('#e_other').value)||0;
+    let typeParts = []; 
+    if(sk) typeParts.push(sk+' Skid'); if(bx) typeParts.push(bx+' Box'); if(cr) typeParts.push(cr+' Crate');
+    if(pi) typeParts.push(pi+' Pipe/Rod'); if(ot) typeParts.push(ot+' Other');
+    return typeParts.join(', ') || '1 Skid';
+  }
+  function getDynamicQty() {
+    return (parseInt(document.querySelector('#e_skid').value)||0)+(parseInt(document.querySelector('#e_box').value)||0)+(parseInt(document.querySelector('#e_crate').value)||0)+(parseInt(document.querySelector('#e_pipe').value)||0)+(parseInt(document.querySelector('#e_other').value)||0);
+  }
 
   function openEditPrompt(id) {
     const e = cache.find(x => x.id === id);
@@ -181,18 +232,57 @@
     document.querySelector('#editModal').style.display = 'flex';
   }
 
+  function triggerReturnModal() {
+    document.querySelector('#returnModal').style.display = 'flex'; document.querySelector('#editModal').style.display = 'none';
+    document.querySelector('#r_picked_by').value = ''; document.querySelector('#r_returned_by').value = ''; 
+    document.querySelector('#r_pm_chk').checked = false; document.querySelector('#r_pm_email').value = ''; document.querySelector('#r_pm_email').disabled = true;
+  }
+
+  async function submitReturnToStock() {
+    const pickedBy = document.querySelector('#r_picked_by').value.trim(); const returnedBy = document.querySelector('#r_returned_by').value.trim();
+    const pmEmail = document.querySelector('#r_pm_email').value.trim(); const pmChecked = document.querySelector('#r_pm_chk').checked;
+
+    if(!pickedBy || !returnedBy || (pmChecked && !pmEmail)) return alert("Missing required inputs.");
+    
+    try {
+      const e = cache.find(x => x.id === currentEditId);
+      const currentTimeStamp = new Date().toLocaleString();
+      let pmName = pmEmail ? pmEmail.split('@')[0].split('.')[0] : null;
+      if(pmName) pmName = pmName.charAt(0).toUpperCase() + pmName.slice(1);
+      
+      await supabaseClient.from('shipped').insert([{
+        so: e.so, customer: document.querySelector('#e_cust').value.trim(), type: getDynamicType(), qty: getDynamicQty(),
+        carrier: 'RETURNED TO STOCK', location: document.querySelector('#e_loc').value.trim(), coords: document.querySelector('#e_coords').value.trim(),
+        weight: document.querySelector('#e_weight').value.trim(), shipped_by: returnedBy, pmd_email: pickedBy, photo_urls: []
+      }]); 
+      await supabaseClient.from('staging').delete().eq('id', currentEditId);
+
+      const cachedSubject = `RETURN TO STOCK: ${e.so} for ${document.querySelector('#e_cust').value.trim()}`;
+      const cachedBody = `Your order/pick has now been Return to Stock. Return details:\n\n` +
+        `----------------------------------------------------------------------\n` +
+        `SO#                   | ${e.so}\n` +
+        `Customer              | ${document.querySelector('#e_cust').value.trim()}\n` +
+        `Container(s)          | ${getDynamicType()}\n` +
+        `Total Weight (In lbs) | ${document.querySelector('#e_weight').value.trim() || '—'}\n` +
+        `Picked by             | ${pickedBy}\n` +
+        `Returned At           | ${currentTimeStamp}\n` +
+        `Returned By           | ${returnedBy}\n` +
+        `----------------------------------------------------------------------\n\n` +
+        `For more shipment details, visit the following link: https://swiftoperations.github.io/staging-tracker/\n\n` +
+        `Thanks\n`;
+
+      document.querySelector('#returnModal').style.display='none';
+      refresh();
+      if(pmChecked) { window.location.href = `mailto:${pmEmail}?cc=warehouse1@swiftsupply.ca&subject=${encodeURIComponent(cachedSubject)}&body=${encodeURIComponent(cachedBody)}`; }
+    } catch(err) { alert("Return to Stock error."); }
+  }
+
   async function saveEditedRecord() {
-    const sk = parseInt(document.querySelector('#e_skid').value)||0, bx = parseInt(document.querySelector('#e_box').value)||0, cr = parseInt(document.querySelector('#e_crate').value)||0, pi = parseInt(document.querySelector('#e_pipe').value)||0, ot = parseInt(document.querySelector('#e_other').value)||0;
-    let typeParts = []; 
-    if(sk) typeParts.push(sk+' Skid'); if(bx) typeParts.push(bx+' Box'); if(cr) typeParts.push(cr+' Crate');
-    if(pi) typeParts.push(pi+' Pipe/Rod'); if(ot) typeParts.push(ot+' Other');
-    const dynamicType = typeParts.join(', ') || '1 Skid';
+    const dynamicType = getDynamicType();
+    const basePayload = { so: document.querySelector('#e_so').value.trim(), customer: document.querySelector('#e_cust').value.trim(), location: document.querySelector('#e_loc').value.trim(), coords: document.querySelector('#e_coords').value.trim(), weight: document.querySelector('#e_weight').value.trim(), type: dynamicType, qty: getDynamicQty() };
 
     await supabaseClient.from('staging').update({
-      so: document.querySelector('#e_so').value.trim(), customer: document.querySelector('#e_cust').value.trim(),
-      location: document.querySelector('#e_loc').value.trim(), coords: document.querySelector('#e_coords').value.trim(), weight: document.querySelector('#e_weight').value.trim(),
-      status: document.querySelector('#e_status').value.trim(), staged_by: document.querySelector('#e_staged_by').value.trim(),
-      type: dynamicType, qty: sk+bx+cr+pi+ot
+      ...basePayload, status: document.querySelector('#e_status').value.trim(), staged_by: document.querySelector('#e_staged_by').value.trim()
     }).eq('id', currentEditId);
     document.querySelector('#editModal').style.display = 'none'; refresh();
   }
@@ -251,7 +341,7 @@
         `Thanks\n`;
 
       closeShipModal();
-      if(pmChecked) { window.location.href = `mailto:${pmEmail}?subject=${encodeURIComponent(cachedSubject)}&body=${encodeURIComponent(cachedBody)}`; }
+      if(pmChecked) { window.location.href = `mailto:${pmEmail}?cc=warehouse1@swiftsupply.ca&subject=${encodeURIComponent(cachedSubject)}&body=${encodeURIComponent(cachedBody)}`; }
     } catch(e) { alert("Dispatch error."); } finally { document.querySelector('#modalConfirmBtn').disabled = false; }
   }
 
