@@ -3,10 +3,12 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Swift Staging Tracker — v8.9</title>
+<title>Swift Staging Tracker — v9.2</title>
 
+<!-- PROGRESSIVE WEB APP (PWA) MANIFEST ORCHESTRATION -->
 <link rel="manifest" href="data:application/manifest+json;charset=utf-8,%7B%22short_name%22%3A%22StagingTracker%22%2C%22name%22%3A%22Swift%20Staging%20Tracker%20Hub%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22https%3A%2F%2Fcdn-icons-png.flaticon.com%2F512%2F3014%2F3014166.png%22%2C%22type%22%3A%22image%22%2C%22sizes%22%3A%22512x512%22%7D%5D%2C%22start_url%22%3A%22.%22%2C%22background_color%22%3A%22%23f6f7f9%22%2C%22theme_color%22%3A%22%23dd4d25%22%2C%22display%22%3A%22standalone%22%2C%22orientation%22%3A%22portrait%22%7D" id="pwa-manifest">
 
+<!-- Open-Source Leaflet Mapping Engine Stylesheets -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
@@ -17,7 +19,6 @@
   .wrap{max-width:1100px;margin:24px auto;padding:0 16px}
   h1{font-weight:700;margin:0 0 18px}
   
-  /* REVISION: 4x2 Grid. Pipe/Rod and Other placed strictly before Shipped to group containers */
   .grid{display:grid;gap:10px;grid-template-columns:repeat(4,minmax(0,1fr))}
   .tile{background:#fff;border:1px solid #e6e7eb;border-radius:10px;padding:12px}
   .tile h4{margin:0 0 8px;color:#6b7280;font-size:13px}
@@ -26,12 +27,13 @@
   .card{background:#fff;border:1px solid #e6e7eb;border-radius:12px;padding:14px;margin:14px 0}
   .row{display:flex;gap:8px;flex-wrap:wrap}
   input,select{height:42px;padding:0 12px;border:1px solid #cbd5e1;border-radius:10px;background:#fff;width:100%;color:#222;font-size:14px;}
+  input:disabled { background: #f3f4f6; color: #9ca3af; cursor: not-allowed; }
+  select:disabled { background: #f3f4f6; color: #9ca3af; cursor: not-allowed; }
   .row > *{flex:1 1 150px}
   .btn{background:var(--brand);color:#fff;border:0;border-radius:12px;padding:12px 20px;font-weight:700;cursor:pointer}
   .btn-del{background:#dc2626;color:#fff;border:0;border-radius:6px;padding:4px 8px;font-size:12px;font-weight:700;cursor:pointer}
   .btn-edit{background:#0284c7;color:#fff;border:0;border-radius:6px;padding:4px 8px;font-size:12px;font-weight:700;cursor:pointer}
   
-  /* REVISION: Sleek, stackable dashboard entry freight block */
   .freight-block { display: flex; flex-wrap: wrap; gap: 8px; background: #fff; border: 1px solid #d1d5db; padding: 6px 12px; border-radius: 10px; align-items: center; justify-content: space-around; flex: 2 1 100%; }
   .counter-box { display: flex; align-items: center; gap: 6px; }
   .counter-box label { font-size: 12px; font-weight: 700; color: #4b5563; }
@@ -47,7 +49,6 @@
   .modal-field label { font-size: 12px; font-weight: 700; color: #4b5563; margin-bottom: 2px; }
   .modal-field input, .modal-field select { height: 42px; border: 1px solid #cbd5e1; border-radius: 8px; padding: 0 12px; font-size: 14px; background: #fff; color: #222; width: 100%; }
   
-  /* REVISION: Modal block converted to a clean 2-column grid. Stops stretching entirely. */
   .modal-window .freight-block { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px; background: #f9fafb; border: 1px solid #cbd5e1; padding: 12px; border-radius: 8px; flex: none; }
   .modal-window .counter-box { display: flex; justify-content: space-between; width: 100%; padding-bottom: 4px; border-bottom: 1px solid #e5e7eb; }
   .modal-window .counter-box:nth-last-child(-n+2) { border-bottom: none; padding-bottom: 0; }
@@ -84,8 +85,14 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
+<!-- MEMORY DATALISTS -->
+<datalist id="dl_customers"></datalist>
+<datalist id="dl_locations"></datalist>
+<datalist id="dl_stagers"></datalist>
+<datalist id="dl_pastEmails"></datalist>
+
 <div class="wrap">
-  <h1>Swift Staging Tracker — v8.9</h1>
+  <h1>Swift Staging Tracker — v9.2</h1>
   <div id="err" style="display:none; background:#fee2e2; color:#991b1b; padding:10px; border-radius:10px; margin-bottom:10px"></div>
 
   <div class="grid">
@@ -106,10 +113,11 @@
   <div class="card">
     <div class="split"><h3>Enter Staging Information</h3></div>
     <div class="row">
-      <input id="so" placeholder="SO number" />
-      <input id="customer" placeholder="Customer" />
+      <!-- REVISION: SO Input forced to numbers only. Memory lists added to text fields. Customer Pick-Up added -->
+      <input id="so" placeholder="SO number" oninput="this.value=this.value.replace(/[^0-9]/g,'')" />
+      <input id="customer" placeholder="Customer" list="dl_customers" />
       <select id="status">
-        <option>Partial</option><option>Ship Today</option><option>Ship Tomorrow</option><option>Ship On Future Date</option><option>Corp Pick (Not Consolidated)</option><option>Awaiting Shipping Instructions</option>
+        <option>Partial</option><option>Ship Today</option><option>Ship Tomorrow</option><option>Ship On Future Date</option><option>Corp Pick (Not Consolidated)</option><option>Customer Pick-Up</option><option>Awaiting Shipping Instructions</option>
       </select>
       
       <div class="freight-block">
@@ -119,10 +127,10 @@
         <div class="counter-box"><label>Pipe/Rod</label><div class="counter-controls"><button onclick="adjustCount('c_pipe',-1)" class="counter-btn">-</button><input id="c_pipe" value="0" readonly/><button onclick="adjustCount('c_pipe',1)" class="counter-btn">+</button></div></div>
         <div class="counter-box"><label>Other</label><div class="counter-controls"><button onclick="adjustCount('c_other',-1)" class="counter-btn">-</button><input id="c_other" value="0" readonly/><button onclick="adjustCount('c_other',1)" class="counter-btn">+</button></div></div>
       </div>
-      <input id="loc" placeholder="Location" />
+      <input id="loc" placeholder="Location" list="dl_locations" />
       <input id="coords" placeholder="Tap for GPS Coords (Optional)" readonly onclick="fetchBrowserGPS('coords')" style="background:#fafafa; cursor:pointer;" />
       <input id="weight" placeholder="Total Weight" />
-      <input id="staged_by" placeholder="Staged By" />
+      <input id="staged_by" placeholder="Staged By" list="dl_stagers" />
       <button id="add" class="btn">Add</button>
     </div>
   </div>
@@ -159,6 +167,7 @@
   </div>
 </div>
 
+<!-- SHIPPING WORKFLOW MODAL -->
 <div id="shipModal" class="modal-overlay" onclick="if(event.target===this) closeShipModal()">
   <div class="modal-window">
     <button class="modal-close-x" onclick="closeShipModal()">×</button>
@@ -172,19 +181,34 @@
       </div>
     </div>
     <div id="photoPreviewStrip" class="photo-strip"></div>
-    <div class="modal-field"><label>SO#</label><input id="m_so" readonly /></div>
+    <div class="modal-field"><label>SO#</label><input id="m_so" readonly oninput="this.value=this.value.replace(/[^0-9]/g,'')"/></div>
     <div class="modal-field"><label>Customer</label><input id="m_cust" readonly /></div>
     <div class="modal-field"><label>Containers</label><input id="m_qty" readonly /></div>
     <div class="modal-field"><label>Carrier</label><input id="m_carrier" placeholder="e.g. Fedex, Manitoulin, Customer Pickup" /></div>
     <div class="modal-field"><label>Location</label><input id="m_loc" readonly /></div>
     <div class="modal-field"><label>Total Weight (in lbs)</label><input id="m_weight" readonly /></div>
-    <div class="modal-field"><label>Shipped By</label><input id="m_by" list="pastShippers" /></div>
+    <div class="modal-field"><label>Shipped By</label><input id="m_by" list="dl_stagers" /></div>
     <div class="chk-row"><input type="checkbox" id="m_pm_chk" onchange="$('#m_pm_email').disabled=!this.checked"/><label>E-mail PM Verification</label></div>
-    <div class="modal-field"><input id="m_pm_email" list="pastEmails" disabled /></div>
+    <div class="modal-field"><input id="m_pm_email" list="dl_pastEmails" disabled /></div>
     <div class="modal-actions"><button id="modalConfirmBtn" class="btn" onclick="submitFreightDispatch()">Confirm Dispatch</button></div>
   </div>
 </div>
 
+<!-- RETURN TO STOCK SUB-MODAL -->
+<div id="returnModal" class="modal-overlay" onclick="if(event.target===this) $('#returnModal').style.display='none'">
+  <div class="modal-window">
+    <button class="modal-close-x" onclick="$('#returnModal').style.display='none'">×</button>
+    <h3>Return to Stock</h3>
+    <p style="font-size:13px; color:#4b5563; margin-top:0; margin-bottom:8px;">Are you sure you want to return this order to stock?</p>
+    <div class="modal-field"><label>Picked By</label><input id="r_picked_by" list="dl_stagers" placeholder="Shortname" /></div>
+    <div class="modal-field"><label>Returned By</label><input id="r_returned_by" list="dl_stagers" placeholder="Shortname" /></div>
+    <div class="chk-row" style="margin-top:4px;"><input type="checkbox" id="r_pm_chk" onchange="$('#r_pm_email').disabled=!this.checked"/><label>Confirm return to PM via e-mail</label></div>
+    <div class="modal-field"><input id="r_pm_email" list="dl_pastEmails" placeholder="PM E-mail" disabled /></div>
+    <div class="modal-actions" style="margin-top:8px;"><button class="btn" style="background:#dc2626; width:100%;" onclick="submitReturnToStock()">Confirm Return</button></div>
+  </div>
+</div>
+
+<!-- UNIVERSAL ITEM EDIT MODAL -->
 <div id="editModal" class="modal-overlay" onclick="if(event.target===this) $('#editModal').style.display='none'">
   <div class="modal-window">
     <button class="modal-close-x" onclick="$('#editModal').style.display='none'">×</button>
@@ -203,8 +227,8 @@
       <div id="editPhotoPreviewStrip" class="photo-strip"></div>
     </div>
     
-    <div class="modal-field"><label>SO#</label><input id="e_so" /></div>
-    <div class="modal-field"><label>Customer</label><input id="e_cust" /></div>
+    <div class="modal-field"><label>SO#</label><input id="e_so" oninput="this.value=this.value.replace(/[^0-9]/g,'')" /></div>
+    <div class="modal-field"><label>Customer</label><input id="e_cust" list="dl_customers" /></div>
     
     <label style="font-size:12px; font-weight:700; color:#4b5563; margin-bottom:-4px;">Container Quantities</label>
     <div class="freight-block">
@@ -215,35 +239,39 @@
       <div class="counter-box"><label>Other</label><div class="counter-controls"><button class="counter-btn" onclick="adjustEditCount('e_other',-1)">-</button><input id="e_other" value="0" readonly/><button class="counter-btn" onclick="adjustEditCount('e_other',1)">+</button></div></div>
     </div>
 
-    <div class="modal-field"><label>Location</label><input id="e_loc" /></div>
+    <div class="modal-field"><label>Location</label><input id="e_loc" list="dl_locations" /></div>
     <div class="modal-field"><label>Coords</label><input id="e_coords" readonly onclick="fetchBrowserGPS('e_coords')" style="background:#fafafa; cursor:pointer;" placeholder="Tap to update coordinates" /></div>
     <div class="modal-field"><label>Total Weight (in lbs)</label><input id="e_weight" /></div>
     
     <div id="editStagingFields">
       <div class="modal-field"><label>Shipping Status</label>
         <select id="e_status">
-          <option>Partial</option><option>Ship Today</option><option>Ship Tomorrow</option><option>Ship On Future Date</option><option>Corp Pick (Not Consolidated)</option><option>Awaiting Shipping Instructions</option>
+          <option>Partial</option><option>Ship Today</option><option>Ship Tomorrow</option><option>Ship On Future Date</option><option>Corp Pick (Not Consolidated)</option><option>Customer Pick-Up</option><option>Awaiting Shipping Instructions</option>
         </select>
       </div>
-      <div class="modal-field"><label>Staged By</label><input id="e_staged_by" /></div>
+      <div class="modal-field"><label>Staged By</label><input id="e_staged_by" list="dl_stagers" /></div>
     </div>
     
     <div id="editShippedFields" style="display:none;">
       <div class="modal-field"><label>Carrier</label><input id="e_carrier" /></div>
-      <div class="modal-field"><label>Shipped By</label><input id="e_shipped_by" /></div>
+      <div class="modal-field"><label>Shipped By</label><input id="e_shipped_by" list="dl_stagers" /></div>
       <div class="modal-field"><label>PM Verified Shortname</label><input id="e_pm" /></div>
     </div>
 
     <div class="modal-actions" style="justify-content: space-between; width:100%; margin-top: 8px; display: flex; gap: 8px;">
-      <button id="editUndoBtn" class="btn" style="background:#4b5563; padding: 10px 16px; border-radius: 8px;" onclick="executeShippedUndo()">Undo Shipment Action</button>
+      <span style="display:flex; gap:8px;">
+        <button id="editUndoBtn" class="btn" style="background:#4b5563; padding: 10px 16px; border-radius: 8px;" onclick="executeShippedUndo()">Undo Shipment Action</button>
+        <button id="editReturnBtn" class="btn" style="background:#eab308; color:#222; padding: 10px 16px; border-radius: 8px;" onclick="triggerReturnModal()">Return to Stock</button>
+      </span>
       <span style="display:flex; gap:8px; margin-left:auto;">
         <button class="btn" style="background:#9ca3af; padding: 10px 16px; border-radius: 8px;" onclick="$('#editModal').style.display='none'">Cancel</button>
-        <button class="btn" style="padding: 10px 16px; border-radius: 8px; background: #e04f26;" onclick="saveEditedRecord()">Save Changes</button>
+        <button id="editSaveBtn" class="btn" style="padding: 10px 16px; border-radius: 8px; background: #e04f26;" onclick="saveEditedRecord()">Save Changes</button>
       </span>
     </div>
   </div>
 </div>
 
+<!-- MAP PIN STATIC VIEW MODAL OVERLAY -->
 <div id="mapViewModal" class="modal-overlay" onclick="if(event.target===this) $('#mapViewModal').style.display='none'">
   <div class="modal-window">
     <button class="modal-close-x" onclick="$('#mapViewModal').style.display='none'">×</button>
@@ -374,6 +402,14 @@ async function loadCloudData() {
     supabaseClient.from('shipped').select('*').order('shipped_at', { ascending: false })
   ]);
   appData.staging = st.data || []; appData.shipped = sh.data || [];
+  
+  // REVISION: Auto-populate memory datalists for text entries 
+  const allData = [...appData.staging, ...appData.shipped];
+  $('#dl_customers').innerHTML = [...new Set(allData.map(x=>x.customer).filter(Boolean))].map(c=>`<option value="${c}">`).join('');
+  $('#dl_locations').innerHTML = [...new Set(allData.map(x=>x.location).filter(Boolean))].map(l=>`<option value="${l}">`).join('');
+  $('#dl_stagers').innerHTML = [...new Set(allData.map(x=>(x.staged_by || x.shipped_by)).filter(Boolean))].map(s=>`<option value="${s}">`).join('');
+  $('#dl_pastEmails').innerHTML = [...new Set(appData.shipped.map(x=>x.pmd_email).filter(Boolean))].map(em=>`<option value="${em}@swiftsupply.ca">`).join('');
+  
   renderTables(); syncMapPins();
 }
 
@@ -453,7 +489,8 @@ async function submitFreightDispatch() {
       `Thanks\n`;
 
     closeShipModal();
-    if(pmChecked) { window.location.href = `mailto:${pmEmail}?subject=${encodeURIComponent(cachedSubject)}&body=${encodeURIComponent(cachedBody)}`; }
+    // REVISION: Added Warehouse CC requirement natively
+    if(pmChecked) { window.location.href = `mailto:${pmEmail}?cc=warehouse1@swiftsupply.ca&subject=${encodeURIComponent(cachedSubject)}&body=${encodeURIComponent(cachedBody)}`; }
   } catch(e) { alert("Data dispatch error."); } finally { $('#modalConfirmBtn').disabled = false; }
 }
 
@@ -467,26 +504,92 @@ function parseContainerString(typeStr) {
   return { sk, bx, cr, pi, ot };
 }
 
+function getDynamicType() {
+  const sk = parseInt($('#e_skid').value)||0, bx = parseInt($('#e_box').value)||0, cr = parseInt($('#e_crate').value)||0, pi = parseInt($('#e_pipe').value)||0, ot = parseInt($('#e_other').value)||0;
+  let typeParts = []; 
+  if(sk) typeParts.push(sk+' Skid'); if(bx) typeParts.push(bx+' Box'); if(cr) typeParts.push(cr+' Crate');
+  if(pi) typeParts.push(pi+' Pipe/Rod'); if(ot) typeParts.push(ot+' Other');
+  return typeParts.join(', ') || '1 Skid';
+}
+function getDynamicQty() {
+  return (parseInt($('#e_skid').value)||0)+(parseInt($('#e_box').value)||0)+(parseInt($('#e_crate').value)||0)+(parseInt($('#e_pipe').value)||0)+(parseInt($('#e_other').value)||0);
+}
+
 function openUniversalEditor(table, id) {
   const o = appData[table].find(x => x.id === id);
   if (!o) return;
   editTargetRecord = { table: table, id: o.id, so: o.so, photo_urls: o.photo_urls || [] };
+  
+  const isReturned = (table === 'shipped' && o.carrier === 'RETURNED TO STOCK');
+  
   $('#e_so').value = o.so; $('#e_cust').value = o.customer; $('#e_loc').value = o.location; $('#e_coords').value = o.coords || ''; $('#e_weight').value = o.weight || '';
   const counts = parseContainerString(o.type);
   $('#e_skid').value = counts.sk; $('#e_box').value = counts.bx; $('#e_crate').value = counts.cr;
   $('#e_pipe').value = counts.pi; $('#e_other').value = counts.ot;
   
+  const inputsToLock = ['e_so','e_cust','e_loc','e_weight','e_status','e_staged_by','e_carrier','e_shipped_by','e_pm'];
+  inputsToLock.forEach(i => { if($(`#${i}`)) $(`#${i}`).disabled = isReturned; });
+  document.querySelectorAll('#editModal .counter-btn').forEach(b => b.disabled = isReturned);
+  
   if (table === 'staging') {
     $('#editModalTitle').textContent = 'Edit Staging Entry'; $('#editStagingFields').style.display = 'block';
     $('#editShippedFields').style.display = 'none'; $('#editUndoBtn').style.display = 'none'; $('#editShippedPhotoSection').style.display = 'none';
     $('#e_status').value = o.status; $('#e_staged_by').value = o.staged_by || '';
+    $('#editReturnBtn').style.display = 'block'; $('#editSaveBtn').style.display = 'block';
   } else {
-    $('#editModalTitle').textContent = 'Edit Shipped Entry Logs'; $('#editStagingFields').style.display = 'none';
-    $('#editShippedFields').style.display = 'block'; $('#editUndoBtn').style.display = 'block'; $('#editShippedPhotoSection').style.display = 'flex';
+    $('#editModalTitle').textContent = isReturned ? 'View Returned Record' : 'Edit Shipped Entry Logs'; 
+    $('#editStagingFields').style.display = 'none'; $('#editShippedFields').style.display = 'block'; 
+    $('#editUndoBtn').style.display = 'block'; $('#editShippedPhotoSection').style.display = 'flex';
     $('#e_carrier').value = o.carrier || ''; $('#e_shipped_by').value = o.shipped_by || ''; $('#e_pm').value = o.pmd_email || '';
+    $('#editReturnBtn').style.display = 'none'; $('#editSaveBtn').style.display = isReturned ? 'none' : 'block';
     renderEditPhotoStrip();
   }
   $('#editModal').style.display = 'flex';
+}
+
+function triggerReturnModal() {
+  $('#returnModal').style.display = 'flex'; $('#editModal').style.display = 'none';
+  $('#r_picked_by').value = ''; $('#r_returned_by').value = ''; 
+  $('#r_pm_chk').checked = false; $('#r_pm_email').value = ''; $('#r_pm_email').disabled = true;
+}
+
+// REVISION: Execution block for Return to Stock
+async function submitReturnToStock() {
+  const pickedBy = $('#r_picked_by').value.trim(); const returnedBy = $('#r_returned_by').value.trim();
+  const pmEmail = $('#r_pm_email').value.trim(); const pmChecked = $('#r_pm_chk').checked;
+
+  if(!pickedBy || !returnedBy || (pmChecked && !pmEmail)) return alert("Missing required inputs.");
+  
+  try {
+    const currentTimeStamp = new Date().toLocaleString();
+    let pmName = pmEmail ? pmEmail.split('@')[0].split('.')[0] : null;
+    if(pmName) pmName = pmName.charAt(0).toUpperCase() + pmName.slice(1);
+    
+    await supabaseClient.from('shipped').insert([{
+      so: editTargetRecord.so, customer: $('#e_cust').value.trim(), type: getDynamicType(), qty: getDynamicQty(),
+      carrier: 'RETURNED TO STOCK', location: $('#e_loc').value.trim(), coords: $('#e_coords').value.trim(),
+      weight: $('#e_weight').value.trim(), shipped_by: returnedBy, pmd_email: pickedBy, photo_urls: editTargetRecord.photo_urls
+    }]); 
+    await supabaseClient.from('staging').delete().eq('id', editTargetRecord.id);
+
+    const cachedSubject = `RETURN TO STOCK: ${editTargetRecord.so} for ${$('#e_cust').value.trim()}`;
+    const cachedBody = `Your order/pick has now been Return to Stock. Return details:\n\n` +
+      `----------------------------------------------------------------------\n` +
+      `SO#                   | ${editTargetRecord.so}\n` +
+      `Customer              | ${$('#e_cust').value.trim()}\n` +
+      `Container(s)          | ${getDynamicType()}\n` +
+      `Total Weight (In lbs) | ${$('#e_weight').value.trim() || '—'}\n` +
+      `Picked by             | ${pickedBy}\n` +
+      `Returned At           | ${currentTimeStamp}\n` +
+      `Returned By           | ${returnedBy}\n` +
+      `----------------------------------------------------------------------\n\n` +
+      `For more shipment details, visit the following link: https://swiftoperations.github.io/staging-tracker/\n\n` +
+      `Thanks\n`;
+
+    $('#returnModal').style.display='none';
+    loadCloudData();
+    if(pmChecked) { window.location.href = `mailto:${pmEmail}?cc=warehouse1@swiftsupply.ca&subject=${encodeURIComponent(cachedSubject)}&body=${encodeURIComponent(cachedBody)}`; }
+  } catch(e) { alert("Return to Stock error."); }
 }
 
 function renderEditPhotoStrip() {
@@ -557,17 +660,21 @@ function renderTables() {
   const shBody = $('#tblShipped tbody'); shBody.innerHTML = '';
   fShipped.slice(0, 20).forEach(o => {
     const geoLink = o.coords ? `<a class="coord-link" href="geo:0,0?q=${encodeURIComponent(o.coords)}">${o.coords}</a>` : '—';
-    shBody.insertAdjacentHTML('beforeend', `<tr><td><button class="btn-del" onclick="deleteItem('shipped','${o.id}')">Delete</button></td>
+    const isRet = (o.carrier === 'RETURNED TO STOCK');
+    const rowClass = isRet ? 'style="color:#9ca3af; text-decoration:line-through;"' : '';
+    
+    // REVISION: Applied visual line-through indicator for native returned rows
+    shBody.insertAdjacentHTML('beforeend', `<tr ${rowClass}><td><button class="btn-del" onclick="deleteItem('shipped','${o.id}')">Delete</button></td>
       <td><button class="btn-edit" onclick="openUniversalEditor('shipped', '${o.id}')">Edit</button></td>
       <td><button class="btn" style="padding:4px 8px; font-size:12px;" onclick="openPhotoViewer('${o.id}')">View</button></td>
-      <td><b>${o.so}</b></td><td>${o.customer}</td><td>${o.type}</td><td>${o.carrier || '—'}</td><td>${o.location}</td><td><small>${geoLink}</small></td><td>${o.weight || '—'}</td><td>${new Date(o.shipped_at).toLocaleString()}</td><td>${o.shipped_by || '—'}</td><td>${o.pmd_email ? o.pmd_email+'<span class="green-check"> ✓</span>' : '—'}</td></tr>`);
+      <td><b>${o.so}</b></td><td>${o.customer}</td><td>${o.type}</td><td>${o.carrier || '—'}</td><td>${o.location}</td><td><small>${geoLink}</small></td><td>${o.weight || '—'}</td><td>${new Date(o.shipped_at).toLocaleString()}</td><td>${o.shipped_by || '—'}</td><td>${o.pmd_email ? o.pmd_email+(isRet?'':'<span class="green-check"> ✓</span>') : '—'}</td></tr>`);
   });
 
   const sumByType = t => appData.staging.reduce((acc, c) => c.type?.includes(t) ? acc + (parseInt(c.type.match(new RegExp(`(\\d+)\\s*${t}`))) || 0) : acc, 0);
   $('#kOrders').textContent = appData.staging.length; $('#kContainers').textContent = appData.staging.reduce((acc, c) => acc + (parseInt(c.qty) || 0), 0);
   $('#kSkids').textContent = sumByType('Skid'); $('#kBoxes').textContent = sumByType('Box'); $('#kCrates').textContent = sumByType('Crate'); 
   $('#kPipe').textContent = sumByType('Pipe/Rod'); $('#kOther').textContent = sumByType('Other');
-  $('#kShipped').textContent = appData.shipped.length;
+  $('#kShipped').textContent = appData.shipped.filter(x => x.carrier !== 'RETURNED TO STOCK').length;
 }
 
 async function deleteItem(table, id) { if(confirm("Permanently delete record?")) { await supabaseClient.from(table).delete().eq('id', id); loadCloudData(); } }
