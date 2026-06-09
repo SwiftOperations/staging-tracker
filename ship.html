@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Shipped Expanded Log — v9.2</title>
+<title>Shipped Expanded Log — v9.3</title>
 <style>
   :root{--brand:#dd4d25;}
   body{margin:0;background:#fff;font:13px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Arial;color:#222;}
@@ -19,6 +19,9 @@
   th,td{border-top:1px solid #e5e7eb; padding:8px; white-space:nowrap; text-align:left}
   th{position:sticky; top:0; background:#fafafa; z-index: 1;}
   .green-check { color: #16a34a; font-weight: bold; }
+  
+  /* REVISION: Checkbox uniform styling synced for any tables or modals displaying inputs */
+  input[type="checkbox"] { width: 13px; height: 13px; cursor: pointer; transform: scale(1); margin: 0; }
   
   /* PERFECT MASTER SYMMETRICAL MODAL BLUEPRINT REPLICATED EXACTLY FROM THE DASHBOARD MASTER RESOURCE */
   .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; padding: 12px; }
@@ -160,7 +163,6 @@
       const isRet = (e.carrier === 'RETURNED TO STOCK');
       const rowClass = isRet ? 'style="color:#9ca3af; text-decoration:line-through;"' : '';
 
-      // REVISION: Applied visual line-through indicator for native returned rows
       row.innerHTML = `<tr ${rowClass}><td><button class="btn-del" onclick="deleteItem('${e.id}')">Delete</button></td>
         <td><button class="btn-edit" onclick="openEditor('${e.id}')">Edit</button></td>
         <td><button class="btn" style="padding:4px 8px; font-size:12px;" onclick="openPhotoViewer('${e.id}')">View</button></td>
