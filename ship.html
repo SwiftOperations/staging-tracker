@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Shipped Expanded Log — v9.6</title>
+<title>Shipped Expanded Log — v9.3</title>
 <style>
   :root{--brand:#dd4d25;}
   body{margin:0;background:#fff;font:13px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Arial;color:#222;}
@@ -20,6 +20,7 @@
   th{position:sticky; top:0; background:#fafafa; z-index: 1;}
   .green-check { color: #16a34a; font-weight: bold; }
   
+  /* REVISION: Checkbox uniform styling synced for any tables or modals displaying inputs */
   input[type="checkbox"] { width: 13px; height: 13px; cursor: pointer; transform: scale(1); margin: 0; }
   
   /* PERFECT MASTER SYMMETRICAL MODAL BLUEPRINT REPLICATED EXACTLY FROM THE DASHBOARD MASTER RESOURCE */
@@ -49,6 +50,7 @@
 </style>
 </head>
 <body>
+<!-- MEMORY DATALISTS -->
 <datalist id="dl_customers"></datalist>
 <datalist id="dl_locations"></datalist>
 <datalist id="dl_stagers"></datalist>
@@ -66,12 +68,13 @@
   </table></div>
 </div>
 
+<!-- LOCAL SHIPPED EDIT MODAL PROMPT WINDOW WITH RESTORED PHOTO WORKSPACES -->
 <div id="editModal" class="modal-overlay" onclick="if(event.target===this) document.querySelector('#editModal').style.display='none'">
   <div class="modal-window">
     <button class="modal-close-x" onclick="document.querySelector('#editModal').style.display='none'">×</button>
     <h3 id="editModalTitle">Edit Shipped Entry Logs</h3>
     
-    <div id="editPhotoSection" style="display:flex; flex-direction:column; gap:8px;">
+    <div id="editShippedPhotoSection" style="display:flex; flex-direction:column; gap:8px;">
       <label style="font-size:12px; font-weight:700; color:#4b5563;">Manage Freight Photos</label>
       <div class="photo-options-grid">
         <div class="photo-uploader" onclick="document.querySelector('#e_cameraFile').click()">📷 Take Live Photo
@@ -97,32 +100,17 @@
     </div>
 
     <div class="modal-field"><label>Location</label><input id="e_loc" list="dl_locations" /></div>
-    <div class="modal-field"><label>Coords</label><input id="e_coords" readonly onclick="fetchBrowserGPS('e_coords')" style="background:#fafafa; cursor:pointer;" placeholder="Tap to update coordinates" /></div>
+    <div class="modal-field"><label>Coords</label><input id="e_coords" readonly onclick="fetchBrowserGPS('e_coords')" style="background:#fafafa; cursor:pointer;" /></div>
     <div class="modal-field"><label>Total Weight (in lbs)</label><input id="e_weight" /></div>
+    <div class="modal-field"><label>Carrier</label><input id="e_carrier" /></div>
+    <div class="modal-field"><label>Shipped By</label><input id="e_shipped_by" list="dl_stagers" /></div>
+    <div class="modal-field"><label>PM Verified Shortname</label><input id="e_pm" /></div>
     
-    <div id="editStagingFields">
-      <div class="modal-field"><label>Shipping Status</label>
-        <select id="e_status">
-          <option>Partial</option><option>Ship Today</option><option>Ship Tomorrow</option><option>Ship On Future Date</option><option>Corp Pick (Not Consolidated)</option><option>Customer Pick-Up</option><option>Awaiting Shipping Instructions</option>
-        </select>
-      </div>
-      <div class="modal-field"><label>Staged By</label><input id="e_staged_by" list="dl_stagers" /></div>
-    </div>
-    
-    <div id="editShippedFields" style="display:none;">
-      <div class="modal-field"><label>Carrier</label><input id="e_carrier" /></div>
-      <div class="modal-field"><label>Shipped By</label><input id="e_shipped_by" list="dl_stagers" /></div>
-      <div class="modal-field"><label>PM Verified Shortname</label><input id="e_pm" /></div>
-    </div>
-
-    <div class="modal-actions" style="justify-content: space-between; width:100%; margin-top: 8px; display: flex; gap: 8px;">
-      <span style="display:flex; gap:8px;">
-        <button id="editUndoBtn" class="btn" style="background:#4b5563; padding: 10px 16px; border-radius: 8px; border: 0; color: #fff; font-weight: 700; cursor: pointer;" onclick="executeShippedUndo()">Undo Shipment Action</button>
-        <button id="editReturnBtn" class="btn" style="background:#eab308; color:#222; border-radius: 8px; padding: 10px 16px; border: 0; font-weight:700; cursor:pointer;" onclick="triggerReturnModal()">Return to Stock</button>
-      </span>
-      <span style="display:flex; gap:8px; margin-left:auto;">
-        <button class="btn" style="background:#9ca3af; border-radius: 8px; padding: 10px 16px; border: 0; color:#fff; font-weight:700; cursor:pointer;" onclick="document.querySelector('#editModal').style.display='none'">Cancel</button>
-        <button id="editSaveBtn" class="btn" style="background:#e04f26; border-radius: 8px; padding: 10px 16px; border: 0; color:#fff; font-weight:700; cursor:pointer;" onclick="saveEditedRecord()">Save Changes</button>
+    <div style="display:flex; justify-content:space-between; width:100%; margin-top: 8px; gap: 8px;">
+      <button id="editUndoBtn" style="background:#4b5563; padding: 10px 16px; border-radius: 8px; border: 0; color: #fff; font-weight: 700; cursor: pointer;" onclick="executeUndo()">Undo Shipment Action</button>
+      <span style="display:flex; gap:8px; margin-left: auto;">
+        <button style="background:#9ca3af; padding: 10px 16px; border-radius: 8px; border: 0; color: #fff; font-weight: 700; cursor: pointer;" onclick="document.querySelector('#editModal').style.display='none'">Cancel</button>
+        <button id="editSaveBtn" style="background:#e04f26; padding: 10px 16px; border-radius: 8px; border: 0; color: #fff; font-weight: 700; cursor: pointer;" onclick="saveEdit()">Save Changes</button>
       </span>
     </div>
   </div>
@@ -141,24 +129,11 @@
   const SUPABASE_URL = 'https://gdrpdiwykmnybmkadlrv.supabase.co';
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdkcnBkaXd5a21ueWJta2FkbHJ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1MjMyMTIsImV4cCI6MjA5NjA5OTIxMn0.Z7ih_vQic1GtzCyZmTEV-RWJnmuaNZQDfOV2_Fvan5g';
   const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-  const $ = sel => document.querySelector(sel);
-  
-  let appData = { staging: [], shipped: [] };
-  let currentEditId = null; 
-  let editTargetRecord = { table: null, id: null, photo_urls: [] };
+  let cache = []; let currentEditRecord = null;
 
   function adjustEditCount(id, amt) {
     const el = document.querySelector(`#${id}`); el.value = Math.max(0, (parseInt(el.value)||0) + amt);
   }
-
-  function formatContainer(count, type) {
-    if(count === 0) return '';
-    if(count === 1) return `1 ${type}`;
-    if(type === 'Box') return `${count} Boxes`;
-    if(type === 'Pipe/Rod' || type === 'Other') return `${count} ${type}`;
-    return `${count} ${type}s`;
-  }
-
   function fetchBrowserGPS(targetInputId) {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -168,35 +143,30 @@
   }
 
   async function refresh() {
-    const [st, sh] = await Promise.all([
-      supabaseClient.from('staging').select('*').order('entry_date', { ascending: false }),
-      supabaseClient.from('shipped').select('*').order('shipped_at', { ascending: false })
-    ]);
-    appData.staging = st.data || []; 
-    appData.shipped = sh.data || [];
+    const res = await supabaseClient.from('shipped').select('*').order('shipped_at', { ascending: false });
+    cache = res.data || [];
     
-    const allData = [...appData.staging, ...appData.shipped];
-    document.querySelector('#dl_customers').innerHTML = [...new Set(allData.map(x=>x.customer).filter(Boolean))].map(c=>`<option value="${c}">`).join('');
-    document.querySelector('#dl_locations').innerHTML = [...new Set(allData.map(x=>x.location).filter(Boolean))].map(l=>`<option value="${l}">`).join('');
-    document.querySelector('#dl_stagers').innerHTML = [...new Set(allData.map(x=>(x.staged_by || x.shipped_by)).filter(Boolean))].map(s=>`<option value="${s}">`).join('');
-    
+    document.querySelector('#dl_customers').innerHTML = [...new Set(cache.map(x=>x.customer).filter(Boolean))].map(c=>`<option value="${c}">`).join('');
+    document.querySelector('#dl_locations').innerHTML = [...new Set(cache.map(x=>x.location).filter(Boolean))].map(l=>`<option value="${l}">`).join('');
+    document.querySelector('#dl_stagers').innerHTML = [...new Set(cache.map(x=>x.shipped_by).filter(Boolean))].map(s=>`<option value="${s}">`).join('');
+
     filter();
   }
 
   function filter() {
     const q = document.querySelector('#f').value.toLowerCase();
     const body = document.querySelector('#tbl tbody'); body.innerHTML = '';
-    appData.shipped.filter(e => (e.so || '').toLowerCase().includes(q) || (e.customer || '').toLowerCase().includes(q)).forEach(e => {
+    cache.filter(e => (e.so || '').toLowerCase().includes(q) || (e.customer || '').toLowerCase().includes(q)).forEach(e => {
       const row = document.createElement('tr');
       const geoLink = e.coords ? `<a class="coord-link" href="geo:0,0?q=${encodeURIComponent(e.coords)}" target="_blank">${e.coords}</a>` : '—';
+      
       const isRet = (e.carrier === 'RETURNED TO STOCK');
       const rowClass = isRet ? 'style="color:#9ca3af; text-decoration:line-through;"' : '';
-      const picBtn = (e.photo_urls && e.photo_urls.length > 0) ? `<button class="btn" style="padding:4px 8px; font-size:12px; margin-right:4px;" onclick="openPhotoViewer('${e.id}')">View</button>` : '';
-      
+
       row.innerHTML = `<tr ${rowClass}><td><button class="btn-del" onclick="deleteItem('${e.id}')">Delete</button></td>
         <td><button class="btn-edit" onclick="openEditor('${e.id}')">Edit</button></td>
-        <td>${picBtn}</td>
-        <td><b>${e.so}</b></td><td>${e.customer}</td><td>${e.type}</td><td>${e.carrier || '—'}</td><td>${e.location}</td><td><small>${geoLink}</small></td><td>${e.weight || '—'}</td>
+        <td><button class="btn" style="padding:4px 8px; font-size:12px;" onclick="openPhotoViewer('${e.id}')">View</button></td>
+        <td><b>${e.so}</b></td><td>${e.customer}</td><td>${e.type}</td><td>${e.carrier || '—'}</td><td>${e.location}</td><td><small>${geoLink}</small></td><td><b>${e.weight || '—'}</b></td>
         <td>${new Date(e.shipped_at).toLocaleString()}</td><td>${e.shipped_by||'—'}</td>
         <td>${e.pmd_email ? e.pmd_email+(isRet?'':' <span class="green-check">✓</span>') : '—'}</td></tr>`;
       body.appendChild(row);
@@ -212,50 +182,28 @@
     const matchOt = typeStr.match(/(\d+)\s*Other/);if(matchOt) ot = parseInt(matchOt[1]);
     return { sk, bx, cr, pi, ot };
   }
-  
-  function getDynamicType() {
-    const sk = parseInt(document.querySelector('#e_skid').value)||0, bx = parseInt(document.querySelector('#e_box').value)||0, cr = parseInt(document.querySelector('#e_crate').value)||0, pi = parseInt(document.querySelector('#e_pipe').value)||0, ot = parseInt(document.querySelector('#e_other').value)||0;
-    let typeParts = []; 
-    if(sk) typeParts.push(formatContainer(sk, 'Skid'));
-    if(bx) typeParts.push(formatContainer(bx, 'Box'));
-    if(cr) typeParts.push(formatContainer(cr, 'Crate'));
-    if(pi) typeParts.push(formatContainer(pi, 'Pipe/Rod'));
-    if(ot) typeParts.push(formatContainer(ot, 'Other'));
-    return typeParts.join(', ') || '1 Skid';
-  }
-  function getDynamicQty() {
-    return (parseInt(document.querySelector('#e_skid').value)||0)+(parseInt(document.querySelector('#e_box').value)||0)+(parseInt(document.querySelector('#e_crate').value)||0)+(parseInt(document.querySelector('#e_pipe').value)||0)+(parseInt(document.querySelector('#e_other').value)||0);
-  }
 
   function openEditor(id) {
-    const o = appData.shipped.find(x => x.id === id);
-    if (!o) return;
-    currentEditId = o.id;
-    editTargetRecord = { table: 'shipped', id: o.id, so: o.so, photo_urls: o.photo_urls || [] };
+    const e = cache.find(x => x.id === id);
+    if (!e) return;
+    currentEditRecord = e;
     
-    const isReturned = (o.carrier === 'RETURNED TO STOCK');
+    const isReturned = (e.carrier === 'RETURNED TO STOCK');
     
-    document.querySelector('#e_so').value = o.so; document.querySelector('#e_cust').value = o.customer;
-    document.querySelector('#e_loc').value = o.location || ''; document.querySelector('#e_coords').value = o.coords || '';
-    document.querySelector('#e_weight').value = o.weight || ''; 
-    const counts = parseContainerString(o.type);
+    document.querySelector('#e_so').value = e.so; document.querySelector('#e_cust').value = e.customer;
+    document.querySelector('#e_loc').value = e.location || ''; document.querySelector('#e_coords').value = e.coords || '';
+    document.querySelector('#e_weight').value = e.weight || ''; document.querySelector('#e_carrier').value = e.carrier || '';
+    document.querySelector('#e_shipped_by').value = e.shipped_by || ''; document.querySelector('#e_pm').value = e.pmd_email || '';
+    const counts = parseContainerString(e.type);
     document.querySelector('#e_skid').value = counts.sk; document.querySelector('#e_box').value = counts.bx; document.querySelector('#e_crate').value = counts.cr;
     document.querySelector('#e_pipe').value = counts.pi; document.querySelector('#e_other').value = counts.ot;
     
-    const inputsToLock = ['e_so','e_cust','e_loc','e_weight','e_status','e_staged_by','e_carrier','e_shipped_by','e_pm'];
+    const inputsToLock = ['e_so','e_cust','e_loc','e_weight','e_carrier','e_shipped_by','e_pm'];
     inputsToLock.forEach(i => { if(document.querySelector(`#${i}`)) document.querySelector(`#${i}`).disabled = isReturned; });
     document.querySelectorAll('#editModal .counter-btn').forEach(b => b.disabled = isReturned);
     
-    document.querySelector('#editPhotoSection').style.display = 'flex';
-    document.querySelector('#editModalTitle').textContent = isReturned ? 'View Returned Record' : 'Edit Shipped Entry Logs'; 
-    document.querySelector('#editStagingFields').style.display = 'none'; 
-    document.querySelector('#editShippedFields').style.display = 'block'; 
-    document.querySelector('#editUndoBtn').style.display = 'block'; 
-    document.querySelector('#editReturnBtn').style.display = 'none'; 
+    document.querySelector('#editModalTitle').textContent = isReturned ? 'View Returned Record' : 'Edit Shipped Entry Logs';
     document.querySelector('#editSaveBtn').style.display = isReturned ? 'none' : 'block';
-    document.querySelector('#e_carrier').value = o.carrier || ''; 
-    document.querySelector('#e_shipped_by').value = o.shipped_by || ''; 
-    document.querySelector('#e_pm').value = o.pmd_email || '';
     
     renderEditPhotoStrip();
     document.querySelector('#editModal').style.display = 'flex';
@@ -263,9 +211,9 @@
 
   function renderEditPhotoStrip() {
     const strip = document.querySelector('#editPhotoPreviewStrip'); strip.innerHTML = '';
-    if (editTargetRecord && editTargetRecord.photo_urls) {
-      editTargetRecord.photo_urls.forEach((url, index) => {
-        strip.insertAdjacentHTML('beforeend', `<span class="photo-badge">📎 Photo-${index+1} <span onclick="editTargetRecord.photo_urls.splice(${index},1); renderEditPhotoStrip()">×</span></span>`);
+    if (currentEditRecord && currentEditRecord.photo_urls) {
+      currentEditRecord.photo_urls.forEach((url, index) => {
+        strip.insertAdjacentHTML('beforeend', `<span class="photo-badge">📎 Photo-${index+1} <span onclick="currentEditRecord.photo_urls.splice(${index},1); renderEditPhotoStrip()">×</span></span>`);
       });
     }
   }
@@ -274,28 +222,34 @@
     if(!inputEl.files || inputEl.files.length === 0) return;
     Array.from(inputEl.files).forEach(async (file) => {
       const cleanFileName = file.name.replace(/[^a-zA-Z0-9.]/g, '');
-      const path = `${editTargetRecord.so || 'edit'}-${Date.now()}-${cleanFileName}`;
+      const path = `${currentEditRecord.so || 'edit'}-${Date.now()}-${cleanFileName}`;
       const { error } = await supabaseClient.storage.from('freight-photos').upload(path, file);
       if(!error) { 
-        if(!editTargetRecord.photo_urls) editTargetRecord.photo_urls = [];
-        editTargetRecord.photo_urls.push(path); 
+        if(!currentEditRecord.photo_urls) currentEditRecord.photo_urls = [];
+        currentEditRecord.photo_urls.push(path); 
         renderEditPhotoStrip(); 
       }
     });
   }
 
-  async function saveEditedRecord() {
-    const dynamicType = getDynamicType();
-    const basePayload = { so: document.querySelector('#e_so').value.trim(), customer: document.querySelector('#e_cust').value.trim(), location: document.querySelector('#e_loc').value.trim(), coords: document.querySelector('#e_coords').value.trim(), weight: document.querySelector('#e_weight').value.trim(), type: dynamicType, qty: getDynamicQty() };
+  async function saveEdit() {
+    const sk = parseInt(document.querySelector('#e_skid').value)||0, bx = parseInt(document.querySelector('#e_box').value)||0, cr = parseInt(document.querySelector('#e_crate').value)||0, pi = parseInt(document.querySelector('#e_pipe').value)||0, ot = parseInt(document.querySelector('#e_other').value)||0;
+    let typeParts = []; 
+    if(sk) typeParts.push(sk+' Skid'); if(bx) typeParts.push(bx+' Box'); if(cr) typeParts.push(cr+' Crate');
+    if(pi) typeParts.push(pi+' Pipe/Rod'); if(ot) typeParts.push(ot+' Other');
+    const dynamicType = typeParts.join(', ') || '1 Skid';
 
-    const { error } = await supabaseClient.from('shipped').update({ ...basePayload, carrier: document.querySelector('#e_carrier').value.trim(), shipped_by: document.querySelector('#e_shipped_by').value.trim(), pmd_email: document.querySelector('#e_pm').value.trim() || null, photo_urls: editTargetRecord.photo_urls }).eq('id', currentEditId);
-    if(error) { alert("Database Error: " + error.message); return; }
-    
+    await supabaseClient.from('shipped').update({
+      so: document.querySelector('#e_so').value.trim(), customer: document.querySelector('#e_cust').value.trim(),
+      location: document.querySelector('#e_loc').value.trim(), coords: document.querySelector('#e_coords').value.trim(), weight: document.querySelector('#e_weight').value.trim(),
+      carrier: document.querySelector('#e_carrier').value.trim(), shipped_by: document.querySelector('#e_shipped_by').value.trim(), pmd_email: document.querySelector('#e_pm').value.trim() || null,
+      type: dynamicType, qty: sk+bx+cr+pi+ot, photo_urls: currentEditRecord.photo_urls
+    }).eq('id', currentEditRecord.id);
     document.querySelector('#editModal').style.display = 'none'; refresh();
   }
 
   function openPhotoViewer(id) {
-    const e = appData.shipped.find(x => x.id === id) || appData.staging.find(x => x.id === id);
+    const e = cache.find(x => x.id === id);
     const paths = e ? e.photo_urls : [];
     const gallery = document.querySelector('#modalPhotoGallery'); gallery.innerHTML = '';
     if(!paths || paths.length === 0) {
@@ -312,16 +266,11 @@
     document.querySelector('#viewModal').style.display = 'flex';
   }
 
-  async function executeShippedUndo() {
-    if(!confirm("Are you sure you want to undo this action and return it to Staging?")) return;
-    try {
-      const { data: currentRecord } = await supabaseClient.from('shipped').select('*').eq('id', currentEditId).single();
-      const { error } = await supabaseClient.from('staging').insert([{ so: currentRecord.so, customer: currentRecord.customer, type: currentRecord.type, qty: currentRecord.qty, location: currentRecord.location, coords: currentRecord.coords, weight: currentRecord.weight, status: 'Partial', photo_urls: currentRecord.photo_urls }]);
-      if (error) { alert("Undo Database Error: " + error.message); return; }
-      
-      await supabaseClient.from('shipped').delete().eq('id', currentEditId);
-      document.querySelector('#editModal').style.display = 'none'; refresh();
-    } catch(e) { alert("Undo error."); }
+  async function executeUndo() {
+    if(!confirm("Undo shipment action?")) return;
+    await supabaseClient.from('staging').insert([{ so: currentEditRecord.so, customer: currentEditRecord.customer, type: currentEditRecord.type, qty: currentEditRecord.qty, location: currentEditRecord.location, coords: currentEditRecord.coords, weight: currentEditRecord.weight, status: 'Partial' }]);
+    await supabaseClient.from('shipped').delete().eq('id', currentEditRecord.id);
+    document.querySelector('#editModal').style.display = 'none'; refresh();
   }
 
   async function deleteItem(id) { if(confirm("Permanently delete record?")) { await supabaseClient.from('shipped').delete().eq('id', id); refresh(); } }
