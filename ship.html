@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Shipped Expanded Log — v9.3</title>
+<title>Shipped Expanded Log — v9.4</title>
 <style>
   :root{--brand:#dd4d25;}
   body{margin:0;background:#fff;font:13px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Arial;color:#222;}
@@ -68,13 +68,14 @@
   </table></div>
 </div>
 
-<!-- LOCAL SHIPPED EDIT MODAL PROMPT WINDOW WITH RESTORED PHOTO WORKSPACES -->
+<!-- UNIVERSAL ITEM EDIT MODAL -->
 <div id="editModal" class="modal-overlay" onclick="if(event.target===this) document.querySelector('#editModal').style.display='none'">
   <div class="modal-window">
     <button class="modal-close-x" onclick="document.querySelector('#editModal').style.display='none'">×</button>
     <h3 id="editModalTitle">Edit Shipped Entry Logs</h3>
     
-    <div id="editShippedPhotoSection" style="display:flex; flex-direction:column; gap:8px;">
+    <!-- REVISION: Photo workspace is universally enabled across all instances -->
+    <div id="editPhotoSection" style="display:flex; flex-direction:column; gap:8px;">
       <label style="font-size:12px; font-weight:700; color:#4b5563;">Manage Freight Photos</label>
       <div class="photo-options-grid">
         <div class="photo-uploader" onclick="document.querySelector('#e_cameraFile').click()">📷 Take Live Photo
@@ -134,6 +135,15 @@
   function adjustEditCount(id, amt) {
     const el = document.querySelector(`#${id}`); el.value = Math.max(0, (parseInt(el.value)||0) + amt);
   }
+  
+  function formatContainer(count, type) {
+    if(count === 0) return '';
+    if(count === 1) return `1 ${type}`;
+    if(type === 'Box') return `${count} Boxes`;
+    if(type === 'Pipe/Rod' || type === 'Other') return `${count} ${type}`;
+    return `${count} ${type}s`;
+  }
+
   function fetchBrowserGPS(targetInputId) {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -182,6 +192,20 @@
     const matchOt = typeStr.match(/(\d+)\s*Other/);if(matchOt) ot = parseInt(matchOt[1]);
     return { sk, bx, cr, pi, ot };
   }
+  
+  function getDynamicType() {
+    const sk = parseInt(document.querySelector('#e_skid').value)||0, bx = parseInt(document.querySelector('#e_box').value)||0, cr = parseInt(document.querySelector('#e_crate').value)||0, pi = parseInt(document.querySelector('#e_pipe').value)||0, ot = parseInt(document.querySelector('#e_other').value)||0;
+    let typeParts = []; 
+    if(sk) typeParts.push(formatContainer(sk, 'Skid'));
+    if(bx) typeParts.push(formatContainer(bx, 'Box'));
+    if(cr) typeParts.push(formatContainer(cr, 'Crate'));
+    if(pi) typeParts.push(formatContainer(pi, 'Pipe/Rod'));
+    if(ot) typeParts.push(formatContainer(ot, 'Other'));
+    return typeParts.join(', ') || '1 Skid';
+  }
+  function getDynamicQty() {
+    return (parseInt(document.querySelector('#e_skid').value)||0)+(parseInt(document.querySelector('#e_box').value)||0)+(parseInt(document.querySelector('#e_crate').value)||0)+(parseInt(document.querySelector('#e_pipe').value)||0)+(parseInt(document.querySelector('#e_other').value)||0);
+  }
 
   function openEditor(id) {
     const e = cache.find(x => x.id === id);
@@ -202,6 +226,7 @@
     inputsToLock.forEach(i => { if(document.querySelector(`#${i}`)) document.querySelector(`#${i}`).disabled = isReturned; });
     document.querySelectorAll('#editModal .counter-btn').forEach(b => b.disabled = isReturned);
     
+    document.querySelector('#editPhotoSection').style.display = 'flex';
     document.querySelector('#editModalTitle').textContent = isReturned ? 'View Returned Record' : 'Edit Shipped Entry Logs';
     document.querySelector('#editSaveBtn').style.display = isReturned ? 'none' : 'block';
     
@@ -233,17 +258,11 @@
   }
 
   async function saveEdit() {
-    const sk = parseInt(document.querySelector('#e_skid').value)||0, bx = parseInt(document.querySelector('#e_box').value)||0, cr = parseInt(document.querySelector('#e_crate').value)||0, pi = parseInt(document.querySelector('#e_pipe').value)||0, ot = parseInt(document.querySelector('#e_other').value)||0;
-    let typeParts = []; 
-    if(sk) typeParts.push(sk+' Skid'); if(bx) typeParts.push(bx+' Box'); if(cr) typeParts.push(cr+' Crate');
-    if(pi) typeParts.push(pi+' Pipe/Rod'); if(ot) typeParts.push(ot+' Other');
-    const dynamicType = typeParts.join(', ') || '1 Skid';
+    const dynamicType = getDynamicType();
+    const basePayload = { so: document.querySelector('#e_so').value.trim(), customer: document.querySelector('#e_cust').value.trim(), location: document.querySelector('#e_loc').value.trim(), coords: document.querySelector('#e_coords').value.trim(), weight: document.querySelector('#e_weight').value.trim(), type: dynamicType, qty: getDynamicQty() };
 
     await supabaseClient.from('shipped').update({
-      so: document.querySelector('#e_so').value.trim(), customer: document.querySelector('#e_cust').value.trim(),
-      location: document.querySelector('#e_loc').value.trim(), coords: document.querySelector('#e_coords').value.trim(), weight: document.querySelector('#e_weight').value.trim(),
-      carrier: document.querySelector('#e_carrier').value.trim(), shipped_by: document.querySelector('#e_shipped_by').value.trim(), pmd_email: document.querySelector('#e_pm').value.trim() || null,
-      type: dynamicType, qty: sk+bx+cr+pi+ot, photo_urls: currentEditRecord.photo_urls
+      ...basePayload, carrier: document.querySelector('#e_carrier').value.trim(), shipped_by: document.querySelector('#e_shipped_by').value.trim(), pmd_email: document.querySelector('#e_pm').value.trim() || null, photo_urls: currentEditRecord.photo_urls
     }).eq('id', currentEditRecord.id);
     document.querySelector('#editModal').style.display = 'none'; refresh();
   }
@@ -268,7 +287,7 @@
 
   async function executeUndo() {
     if(!confirm("Undo shipment action?")) return;
-    await supabaseClient.from('staging').insert([{ so: currentEditRecord.so, customer: currentEditRecord.customer, type: currentEditRecord.type, qty: currentEditRecord.qty, location: currentEditRecord.location, coords: currentEditRecord.coords, weight: currentEditRecord.weight, status: 'Partial' }]);
+    await supabaseClient.from('staging').insert([{ so: currentEditRecord.so, customer: currentEditRecord.customer, type: currentEditRecord.type, qty: currentEditRecord.qty, location: currentEditRecord.location, coords: currentEditRecord.coords, weight: currentEditRecord.weight, status: 'Partial', photo_urls: currentEditRecord.photo_urls }]);
     await supabaseClient.from('shipped').delete().eq('id', currentEditRecord.id);
     document.querySelector('#editModal').style.display = 'none'; refresh();
   }
