@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Staging Entries Expanded Log — v9.3</title>
+<title>Staging Entries Expanded Log — v9.4</title>
 <style>
   :root{--brand:#dd4d25;}
   body{margin:0;background:#fff;font:13px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Arial;color:#222;}
@@ -64,7 +64,7 @@
     <input id="f" placeholder="Quick filter contents..." oninput="filter()"/>
   </div>
   <div class="table-wrap"><table id="tbl">
-    <thead><tr><th>Delete</th><th>Edit</th><th>SO</th><th>Customer</th><th>Entry Date</th><th>Containers</th><th>Location</th><th>Coords</th><th>Total Weight (in lbs)</th><th>Status</th><th>Staged By</th><th style="position:sticky;right:0;width:70px;text-align:center;">Shipped</th></tr></thead>
+    <thead><tr><th>Delete</th><th>Edit</th><th>Photo(s)</th><th>SO</th><th>Customer</th><th>Entry Date</th><th>Containers</th><th>Location</th><th>Coords</th><th>Total Weight (in lbs)</th><th>Status</th><th>Staged By</th><th style="position:sticky;right:0;width:70px;text-align:center;">Shipped</th></tr></thead>
     <tbody></tbody>
   </table></div>
 </div>
@@ -85,11 +85,26 @@
   </div>
 </div>
 
-<!-- LOCAL STAGING EDIT MODAL PROMPT WINDOW -->
+<!-- UNIVERSAL ITEM EDIT MODAL -->
 <div id="editModal" class="modal-overlay" onclick="if(event.target===this) document.querySelector('#editModal').style.display='none'">
   <div class="modal-window">
     <button class="modal-close-x" onclick="document.querySelector('#editModal').style.display='none'">×</button>
-    <h3>Edit Staging Entry</h3>
+    <h3 id="editModalTitle">Edit Record</h3>
+    
+    <!-- REVISION: Photo workspace is universally enabled for both staging and shipped -->
+    <div id="editPhotoSection" style="display:flex; flex-direction:column; gap:8px;">
+      <label style="font-size:12px; font-weight:700; color:#4b5563;">Manage Freight Photos</label>
+      <div class="photo-options-grid">
+        <div class="photo-uploader" onclick="document.querySelector('#e_cameraFile').click()">📷 Take Live Photo
+          <input type="file" id="e_cameraFile" accept="image/*" capture="environment" style="display:none" onchange="addEditPhotoBlob(this)" />
+        </div>
+        <div class="photo-uploader" onclick="document.querySelector('#e_uploadFile').click()">📁 File Upload
+          <input type="file" id="e_uploadFile" multiple accept="image/*" style="display:none" onchange="addEditPhotoBlob(this)" />
+        </div>
+      </div>
+      <div id="editPhotoPreviewStrip" class="photo-strip"></div>
+    </div>
+    
     <div class="modal-field"><label>SO#</label><input id="e_so" oninput="this.value=this.value.replace(/[^0-9]/g,'')" /></div>
     <div class="modal-field"><label>Customer</label><input id="e_cust" list="dl_customers" /></div>
     
@@ -105,20 +120,30 @@
     <div class="modal-field"><label>Location</label><input id="e_loc" list="dl_locations" /></div>
     <div class="modal-field"><label>Coords</label><input id="e_coords" readonly onclick="fetchBrowserGPS('e_coords')" style="background:#fafafa; cursor:pointer;" /></div>
     <div class="modal-field"><label>Total Weight (in lbs)</label><input id="e_weight" /></div>
-    <div class="modal-field"><label>Shipping Status</label>
-      <select id="e_status">
-        <option>Partial</option><option>Ship Today</option><option>Ship Tomorrow</option><option>Ship On Future Date</option><option>Corp Pick (Not Consolidated)</option><option>Customer Pick-Up</option><option>Awaiting Shipping Instructions</option>
-      </select>
-    </div>
-    <div class="modal-field"><label>Staged By</label><input id="e_staged_by" list="dl_stagers" /></div>
     
-    <div style="display:flex; justify-content:space-between; width:100%; margin-top:8px; gap:8px;">
+    <div id="editStagingFields">
+      <div class="modal-field"><label>Shipping Status</label>
+        <select id="e_status">
+          <option>Partial</option><option>Ship Today</option><option>Ship Tomorrow</option><option>Ship On Future Date</option><option>Corp Pick (Not Consolidated)</option><option>Customer Pick-Up</option><option>Awaiting Shipping Instructions</option>
+        </select>
+      </div>
+      <div class="modal-field"><label>Staged By</label><input id="e_staged_by" list="dl_stagers" /></div>
+    </div>
+    
+    <div id="editShippedFields" style="display:none;">
+      <div class="modal-field"><label>Carrier</label><input id="e_carrier" /></div>
+      <div class="modal-field"><label>Shipped By</label><input id="e_shipped_by" list="dl_stagers" /></div>
+      <div class="modal-field"><label>PM Verified Shortname</label><input id="e_pm" /></div>
+    </div>
+
+    <div class="modal-actions" style="justify-content: space-between; width:100%; margin-top:8px; display:flex; gap:8px;">
       <span style="display:flex; gap:8px;">
+        <button id="editUndoBtn" style="background:#4b5563; padding: 10px 16px; border-radius: 8px; border: 0; color: #fff; font-weight: 700; cursor: pointer;" onclick="executeShippedUndo()">Undo Shipment Action</button>
         <button id="editReturnBtn" style="background:#eab308; color:#222; border-radius: 8px; padding: 10px 16px; border: 0; font-weight:700; cursor:pointer;" onclick="triggerReturnModal()">Return to Stock</button>
       </span>
       <span style="display:flex; gap:8px; margin-left:auto;">
         <button style="background:#9ca3af; border-radius: 8px; padding: 10px 16px; border: 0; color:#fff; font-weight:700; cursor:pointer;" onclick="document.querySelector('#editModal').style.display='none'">Cancel</button>
-        <button style="background:#e04f26; border-radius: 8px; padding: 10px 16px; border: 0; color:#fff; font-weight:700; cursor:pointer;" onclick="saveEditedRecord()">Save Changes</button>
+        <button id="editSaveBtn" style="background:#e04f26; border-radius: 8px; padding: 10px 16px; border: 0; color:#fff; font-weight:700; cursor:pointer;" onclick="saveEditedRecord()">Save Changes</button>
       </span>
     </div>
   </div>
@@ -153,6 +178,14 @@
   </div>
 </div>
 
+<div id="viewModal" class="modal-overlay" onclick="if(event.target===this) document.querySelector('#viewModal').style.display='none'">
+  <div class="modal-window" style="max-width: 500px;">
+    <button class="modal-close-x" onclick="document.querySelector('#viewModal').style.display='none'">×</button>
+    <h3 style="margin:0 0 10px 0;">Staged Freight Photos</h3>
+    <div id="modalPhotoGallery" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:12px; padding: 4px 0;"></div>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
   const SUPABASE_URL = 'https://gdrpdiwykmnybmkadlrv.supabase.co';
@@ -163,6 +196,15 @@
   function adjustEditCount(id, amt) {
     const el = document.querySelector(`#${id}`); el.value = Math.max(0, (parseInt(el.value)||0) + amt);
   }
+  
+  function formatContainer(count, type) {
+    if(count === 0) return '';
+    if(count === 1) return `1 ${type}`;
+    if(type === 'Box') return `${count} Boxes`;
+    if(type === 'Pipe/Rod' || type === 'Other') return `${count} ${type}`;
+    return `${count} ${type}s`;
+  }
+
   function fetchBrowserGPS(targetInputId) {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -193,10 +235,11 @@
     cache.filter(e => (e.so || '').toLowerCase().includes(q) || (e.customer || '').toLowerCase().includes(q)).forEach(e => {
       const row = document.createElement('tr');
       const geoLink = e.coords ? `<a class="coord-link" href="geo:0,0?q=${encodeURIComponent(e.coords)}" target="_blank">${e.coords}</a>` : '—';
+      const picBtn = (e.photo_urls && e.photo_urls.length > 0) ? `<button class="btn" style="padding:4px 8px; font-size:12px; margin-right:4px;" onclick="openPhotoViewer('${e.id}')">View</button>` : '';
       
       row.innerHTML = `<td><button class="btn-del" onclick="deleteItem('${e.id}')">Delete</button></td>
         <td><button class="btn-edit" onclick="openEditPrompt('${e.id}')">Edit</button></td>
-        <td><b>${e.so}</b></td><td>${e.customer}</td><td>${new Date(e.entry_date).toLocaleString()}</td><td>${e.type}</td><td>${e.location}</td><td><small>${geoLink}</small></td><td><b>${e.weight || '—'}</b></td><td>${e.status}</td><td>${e.staged_by||'—'}</td>
+        <td>${picBtn}<b>${e.so}</b></td><td>${e.customer}</td><td>${new Date(e.entry_date).toLocaleString()}</td><td>${e.type}</td><td>${e.location}</td><td><small>${geoLink}</small></td><td><b>${e.weight || '—'}</b></td><td>${e.status}</td><td>${e.staged_by||'—'}</td>
         <td style="position:sticky;right:0;text-align:center;"><input type="checkbox" onchange="if(this.checked) { openShipPrompt('${e.id}'); this.checked = false; }"></td>`;
       body.appendChild(row);
     });
@@ -215,8 +258,11 @@
   function getDynamicType() {
     const sk = parseInt(document.querySelector('#e_skid').value)||0, bx = parseInt(document.querySelector('#e_box').value)||0, cr = parseInt(document.querySelector('#e_crate').value)||0, pi = parseInt(document.querySelector('#e_pipe').value)||0, ot = parseInt(document.querySelector('#e_other').value)||0;
     let typeParts = []; 
-    if(sk) typeParts.push(sk+' Skid'); if(bx) typeParts.push(bx+' Box'); if(cr) typeParts.push(cr+' Crate');
-    if(pi) typeParts.push(pi+' Pipe/Rod'); if(ot) typeParts.push(ot+' Other');
+    if(sk) typeParts.push(formatContainer(sk, 'Skid'));
+    if(bx) typeParts.push(formatContainer(bx, 'Box'));
+    if(cr) typeParts.push(formatContainer(cr, 'Crate'));
+    if(pi) typeParts.push(formatContainer(pi, 'Pipe/Rod'));
+    if(ot) typeParts.push(formatContainer(ot, 'Other'));
     return typeParts.join(', ') || '1 Skid';
   }
   function getDynamicQty() {
@@ -227,6 +273,8 @@
     const e = cache.find(x => x.id === id);
     if (!e) return;
     currentEditId = e.id;
+    editTargetRecord = { id: e.id, so: e.so, photo_urls: e.photo_urls || [] };
+    
     document.querySelector('#e_so').value = e.so; document.querySelector('#e_cust').value = e.customer;
     document.querySelector('#e_loc').value = e.location || ''; document.querySelector('#e_coords').value = e.coords || '';
     document.querySelector('#e_weight').value = e.weight || ''; document.querySelector('#e_status').value = e.status || '';
@@ -234,6 +282,10 @@
     const counts = parseContainerString(e.type);
     document.querySelector('#e_skid').value = counts.sk; document.querySelector('#e_box').value = counts.bx; document.querySelector('#e_crate').value = counts.cr;
     document.querySelector('#e_pipe').value = counts.pi; document.querySelector('#e_other').value = counts.ot;
+    
+    document.querySelector('#editPhotoSection').style.display = 'flex';
+    renderEditPhotoStrip();
+    
     document.querySelector('#editModal').style.display = 'flex';
   }
 
@@ -259,13 +311,13 @@
       await supabaseClient.from('shipped').insert([{
         so: e.so, customer: document.querySelector('#e_cust').value.trim(), type: getDynamicType(), qty: getDynamicQty(),
         carrier: 'RETURNED TO STOCK', location: document.querySelector('#e_loc').value.trim(), coords: document.querySelector('#e_coords').value.trim(),
-        weight: document.querySelector('#e_weight').value.trim(), shipped_by: returnedBy, pmd_email: pickedBy, photo_urls: []
+        weight: document.querySelector('#e_weight').value.trim(), shipped_by: returnedBy, pmd_email: pickedBy, photo_urls: editTargetRecord.photo_urls
       }]); 
       await supabaseClient.from('staging').delete().eq('id', currentEditId);
 
+      const photoLinks = editTargetRecord.photo_urls.length > 0 ? `\nAttached Photos:\n${editTargetRecord.photo_urls.map((p,i)=> `Image ${i+1}: ${SUPABASE_URL}/storage/v1/object/public/freight-photos/${p}`).join('\n')}\n` : '';
+
       const cachedSubject = `RETURN TO STOCK: ${e.so} for ${document.querySelector('#e_cust').value.trim()}`;
-      
-      // REVISION: Added formatted Reason field above SO block for Return to Stock emails 
       const cachedBody = `Your order/pick has now been Return to Stock. Return details:\n\n` +
         `Reason for Return to Stock: ${reason}\n\n` +
         `----------------------------------------------------------------------\n` +
@@ -276,8 +328,9 @@
         `Picked by             | ${pickedBy}\n` +
         `Returned At           | ${currentTimeStamp}\n` +
         `Returned By           | ${returnedBy}\n` +
-        `----------------------------------------------------------------------\n\n` +
-        `For more shipment details, visit the following link: https://swiftoperations.github.io/staging-tracker/\n\n` +
+        `----------------------------------------------------------------------\n` +
+        photoLinks +
+        `\nFor more shipment details, visit the following link: https://swiftoperations.github.io/staging-tracker/\n\n` +
         `Thanks\n`;
 
       document.querySelector('#returnModal').style.display='none';
@@ -286,12 +339,35 @@
     } catch(err) { alert("Return to Stock error."); }
   }
 
+  function renderEditPhotoStrip() {
+    const strip = document.querySelector('#editPhotoPreviewStrip'); strip.innerHTML = '';
+    if (editTargetRecord && editTargetRecord.photo_urls) {
+      editTargetRecord.photo_urls.forEach((url, index) => {
+        strip.insertAdjacentHTML('beforeend', `<span class="photo-badge">📎 Photo-${index+1} <span onclick="editTargetRecord.photo_urls.splice(${index},1); renderEditPhotoStrip()">×</span></span>`);
+      });
+    }
+  }
+
+  function addEditPhotoBlob(inputEl) {
+    if(!inputEl.files || inputEl.files.length === 0) return;
+    Array.from(inputEl.files).forEach(async (file) => {
+      const cleanFileName = file.name.replace(/[^a-zA-Z0-9.]/g, '');
+      const path = `${editTargetRecord.so || 'edit'}-${Date.now()}-${cleanFileName}`;
+      const { error } = await supabaseClient.storage.from('freight-photos').upload(path, file);
+      if(!error) { 
+        if(!editTargetRecord.photo_urls) editTargetRecord.photo_urls = [];
+        editTargetRecord.photo_urls.push(path); 
+        renderEditPhotoStrip(); 
+      }
+    });
+  }
+
   async function saveEditedRecord() {
     const dynamicType = getDynamicType();
     const basePayload = { so: document.querySelector('#e_so').value.trim(), customer: document.querySelector('#e_cust').value.trim(), location: document.querySelector('#e_loc').value.trim(), coords: document.querySelector('#e_coords').value.trim(), weight: document.querySelector('#e_weight').value.trim(), type: dynamicType, qty: getDynamicQty() };
 
     await supabaseClient.from('staging').update({
-      ...basePayload, status: document.querySelector('#e_status').value.trim(), staged_by: document.querySelector('#e_staged_by').value.trim()
+      ...basePayload, status: document.querySelector('#e_status').value.trim(), staged_by: document.querySelector('#e_staged_by').value.trim(), photo_urls: editTargetRecord.photo_urls
     }).eq('id', currentEditId);
     document.querySelector('#editModal').style.display = 'none'; refresh();
   }
@@ -335,6 +411,8 @@
       await supabaseClient.from('shipped').insert([{ so: activeShipTargetItem.so, customer: activeShipTargetItem.customer, type: activeShipTargetItem.type, qty: activeShipTargetItem.qty, carrier: carrierVal, location: activeShipTargetItem.location, coords: activeShipTargetItem.coords, weight: activeShipTargetItem.weight, shipped_by: dispatcher, pmd_email: pmName, photo_urls: photoUrls }]);
       await supabaseClient.from('staging').delete().eq('id', activeShipTargetItem.id);
       
+      const photoLinks = photoUrls.length > 0 ? `\nAttached Photos:\n${photoUrls.map((p,i)=> `Image ${i+1}: ${SUPABASE_URL}/storage/v1/object/public/freight-photos/${p}`).join('\n')}\n` : '';
+
       const cachedSubject = `CONFIRMATION OF SHIPOUT: ${activeShipTargetItem.customer} ${activeShipTargetItem.so} @ ${activeShipTargetItem.type} via ${carrierVal}`;
       const cachedBody = `Your order has now been shipped! Order details:\n\n` +
         `----------------------------------------------------------------------\n` +
@@ -345,13 +423,32 @@
         `Carrier               | ${carrierVal}\n` +
         `Shipped At            | ${currentTimeStamp}\n` +
         `Shipped By            | ${dispatcher}\n` +
-        `----------------------------------------------------------------------\n\n` +
-        `For more shipment details, visit the following link: https://swiftoperations.github.io/staging-tracker/\n\n` +
+        `----------------------------------------------------------------------\n` +
+        photoLinks +
+        `\nFor more shipment details, visit the following link: https://swiftoperations.github.io/staging-tracker/\n\n` +
         `Thanks\n`;
 
       closeShipModal();
       if(pmChecked) { window.location.href = `mailto:${pmEmail}?cc=warehouse1@swiftsupply.ca&subject=${encodeURIComponent(cachedSubject)}&body=${encodeURIComponent(cachedBody)}`; }
     } catch(e) { alert("Dispatch error."); } finally { document.querySelector('#modalConfirmBtn').disabled = false; }
+  }
+
+  function openPhotoViewer(id) {
+    const e = cache.find(x => x.id === id);
+    const paths = e ? e.photo_urls : [];
+    const gallery = document.querySelector('#modalPhotoGallery'); gallery.innerHTML = '';
+    if(!paths || paths.length === 0) {
+      gallery.innerHTML = '<p style="grid-column: 1/-1; text-align:center; font-weight:700; color:#6b7280; padding:12px 0;">No photos attached to this order.</p>';
+    } else {
+      paths.forEach(p => {
+        gallery.insertAdjacentHTML('beforeend', `
+          <a href="${SUPABASE_URL}/storage/v1/object/public/freight-photos/${p}" target="_blank" style="display:block; border-radius:10px; overflow:hidden; border:1px solid #cbd5e1; box-shadow:0 2px 6px rgba(0,0,0,0.05);">
+            <img src="${SUPABASE_URL}/storage/v1/object/public/freight-photos/${p}" style="width:100%; height:110px; object-fit:cover; display:block;" />
+          </a>
+        `);
+      });
+    }
+    document.querySelector('#viewModal').style.display = 'flex';
   }
 
   async function deleteItem(id) { if(confirm("Permanently delete item?")) { await supabaseClient.from('staging').delete().eq('id', id); refresh(); } }
