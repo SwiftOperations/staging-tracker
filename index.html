@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Swift Staging Tracker — v9.5</title>
+<title>Swift Staging Tracker — v9.6</title>
 
 <link rel="manifest" href="data:application/manifest+json;charset=utf-8,%7B%22short_name%22%3A%22StagingTracker%22%2C%22name%22%3A%22Swift%20Staging%20Tracker%20Hub%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22https%3A%2F%2Fcdn-icons-png.flaticon.com%2F512%2F3014%2F3014166.png%22%2C%22type%22%3A%22image%22%2C%22sizes%22%3A%22512x512%22%7D%5D%2C%22start_url%22%3A%22.%22%2C%22background_color%22%3A%22%23f6f7f9%22%2C%22theme_color%22%3A%22%23dd4d25%22%2C%22display%22%3A%22standalone%22%2C%22orientation%22%3A%22portrait%22%7D" id="pwa-manifest">
 
@@ -89,7 +89,7 @@
 <datalist id="dl_pastEmails"></datalist>
 
 <div class="wrap">
-  <h1>Swift Staging Tracker — v9.5</h1>
+  <h1>Swift Staging Tracker — v9.6</h1>
   <div id="err" style="display:none; background:#fee2e2; color:#991b1b; padding:10px; border-radius:10px; margin-bottom:10px"></div>
 
   <div class="grid">
@@ -266,11 +266,11 @@
     <div class="modal-actions" style="justify-content: space-between; width:100%; margin-top: 8px; display: flex; gap: 8px;">
       <span style="display:flex; gap:8px;">
         <button id="editUndoBtn" class="btn" style="background:#4b5563; padding: 10px 16px; border-radius: 8px; border: 0; color: #fff; font-weight: 700; cursor: pointer;" onclick="executeShippedUndo()">Undo Shipment Action</button>
-        <button id="editReturnBtn" class="btn" style="background:#eab308; color:#222; padding: 10px 16px; border-radius: 8px; border: 0; font-weight:700; cursor:pointer;" onclick="triggerReturnModal()">Return to Stock</button>
+        <button id="editReturnBtn" class="btn" style="background:#eab308; color:#222; border-radius: 8px; padding: 10px 16px; border: 0; font-weight:700; cursor:pointer;" onclick="triggerReturnModal()">Return to Stock</button>
       </span>
       <span style="display:flex; gap:8px; margin-left:auto;">
-        <button class="btn" style="background:#9ca3af; padding: 10px 16px; border-radius: 8px; border: 0; color: #fff; font-weight: 700; cursor: pointer;" onclick="$('#editModal').style.display='none'">Cancel</button>
-        <button id="editSaveBtn" class="btn" style="background:#e04f26; padding: 10px 16px; border-radius: 8px; border: 0; color: #fff; font-weight: 700; cursor: pointer;" onclick="saveEditedRecord()">Save Changes</button>
+        <button class="btn" style="background:#9ca3af; border-radius: 8px; padding: 10px 16px; border: 0; color:#fff; font-weight:700; cursor:pointer;" onclick="$('#editModal').style.display='none'">Cancel</button>
+        <button id="editSaveBtn" class="btn" style="background:#e04f26; border-radius: 8px; padding: 10px 16px; border: 0; color:#fff; font-weight:700; cursor:pointer;" onclick="saveEditedRecord()">Save Changes</button>
       </span>
     </div>
   </div>
@@ -311,7 +311,8 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const $ = sel => document.querySelector(sel);
 
 let appData = { staging: [], shipped: [] };
-let activeShipTargetItem = null;
+let currentEditId = null; 
+let activeShipTargetItem = null; 
 let editTargetRecord = { table: null, id: null, photo_urls: [] };
 let selectedPhotoBlobs = [];
 let mainPhotoBlobs = [];
@@ -493,11 +494,17 @@ async function submitFreightDispatch() {
     if(pmName) pmName = pmName.charAt(0).toUpperCase() + pmName.slice(1);
     const currentTimeStamp = new Date().toLocaleString();
 
-    await supabaseClient.from('shipped').insert([{
+    const { error: insertError } = await supabaseClient.from('shipped').insert([{
       so: activeShipTargetItem.so, customer: activeShipTargetItem.customer, type: activeShipTargetItem.type,
       qty: activeShipTargetItem.qty, carrier: carrierVal, location: activeShipTargetItem.location, coords: activeShipTargetItem.coords,
       weight: activeShipTargetItem.weight, shipped_by: dispatcher, pmd_email: pmName, photo_urls: photoUrls
     }]);
+    if (insertError) {
+      alert("Database Error: " + insertError.message);
+      $('#modalConfirmBtn').disabled = false;
+      return;
+    }
+
     await supabaseClient.from('staging').delete().eq('id', activeShipTargetItem.id);
     
     const photoLinks = photoUrls.length > 0 ? `\nAttached Photos:\n${photoUrls.map((p,i)=> `Image ${i+1}: ${SUPABASE_URL}/storage/v1/object/public/freight-photos/${p}`).join('\n')}\n` : '';
@@ -549,6 +556,7 @@ function getDynamicQty() {
 function openUniversalEditor(table, id) {
   const o = appData[table].find(x => x.id === id);
   if (!o) return;
+  currentEditId = o.id;
   editTargetRecord = { table: table, id: o.id, so: o.so, photo_urls: o.photo_urls || [] };
   
   const isReturned = (table === 'shipped' && o.carrier === 'RETURNED TO STOCK');
@@ -603,24 +611,31 @@ async function submitReturnToStock() {
   if(!pickedBy || !returnedBy || !reason || (pmChecked && !pmEmail)) return alert("Missing required inputs.");
   
   try {
+    const e = appData.staging.find(x => x.id === currentEditId);
     const currentTimeStamp = new Date().toLocaleString();
     let pmName = pmEmail ? pmEmail.split('@')[0].split('.')[0] : null;
     if(pmName) pmName = pmName.charAt(0).toUpperCase() + pmName.slice(1);
     
-    await supabaseClient.from('shipped').insert([{
-      so: editTargetRecord.so, customer: $('#e_cust').value.trim(), type: getDynamicType(), qty: getDynamicQty(),
+    const { error: insertError } = await supabaseClient.from('shipped').insert([{
+      so: e.so, customer: $('#e_cust').value.trim(), type: getDynamicType(), qty: getDynamicQty(),
       carrier: 'RETURNED TO STOCK', location: $('#e_loc').value.trim(), coords: $('#e_coords').value.trim(),
       weight: $('#e_weight').value.trim(), shipped_by: returnedBy, pmd_email: pickedBy, photo_urls: editTargetRecord.photo_urls
     }]); 
-    await supabaseClient.from('staging').delete().eq('id', editTargetRecord.id);
+    
+    if (insertError) {
+      alert("Database Error: " + insertError.message);
+      return;
+    }
+    
+    await supabaseClient.from('staging').delete().eq('id', currentEditId);
 
     const photoLinks = editTargetRecord.photo_urls.length > 0 ? `\nAttached Photos:\n${editTargetRecord.photo_urls.map((p,i)=> `Image ${i+1}: ${SUPABASE_URL}/storage/v1/object/public/freight-photos/${p}`).join('\n')}\n` : '';
 
-    const cachedSubject = `RETURN TO STOCK: ${editTargetRecord.so} for ${$('#e_cust').value.trim()}`;
+    const cachedSubject = `RETURN TO STOCK: ${e.so} for ${$('#e_cust').value.trim()}`;
     const cachedBody = `Your order/pick has now been Return to Stock. Return details:\n\n` +
       `Reason for Return to Stock: ${reason}\n\n` +
       `----------------------------------------------------------------------\n` +
-      `SO#                   | ${editTargetRecord.so}\n` +
+      `SO#                   | ${e.so}\n` +
       `Customer              | ${$('#e_cust').value.trim()}\n` +
       `Container(s)          | ${getDynamicType()}\n` +
       `Total Weight (In lbs) | ${$('#e_weight').value.trim() || '—'}\n` +
@@ -635,7 +650,7 @@ async function submitReturnToStock() {
     $('#returnModal').style.display='none';
     loadCloudData();
     if(pmChecked) { window.location.href = `mailto:${pmEmail}?cc=warehouse1@swiftsupply.ca&subject=${encodeURIComponent(cachedSubject)}&body=${encodeURIComponent(cachedBody)}`; }
-  } catch(e) { alert("Return to Stock error."); }
+  } catch(err) { alert("Return to Stock error."); }
 }
 
 function renderEditPhotoStrip() {
@@ -650,9 +665,11 @@ async function saveEditedRecord() {
   const basePayload = { so: $('#e_so').value.trim(), customer: $('#e_cust').value.trim(), location: $('#e_loc').value.trim(), coords: $('#e_coords').value.trim(), weight: $('#e_weight').value.trim(), type: dynamicType, qty: getDynamicQty() };
 
   if (editTargetRecord.table === 'staging') {
-    await supabaseClient.from('staging').update({ ...basePayload, status: $('#e_status').value.trim(), staged_by: $('#e_staged_by').value.trim(), photo_urls: editTargetRecord.photo_urls }).eq('id', editTargetRecord.id);
+    const { error } = await supabaseClient.from('staging').update({ ...basePayload, status: $('#e_status').value.trim(), staged_by: $('#e_staged_by').value.trim(), photo_urls: editTargetRecord.photo_urls }).eq('id', currentEditId);
+    if(error) { alert("Database Error: " + error.message); return; }
   } else {
-    await supabaseClient.from('shipped').update({ ...basePayload, carrier: $('#e_carrier').value.trim(), shipped_by: $('#e_shipped_by').value.trim(), pmd_email: $('#e_pm').value.trim() || null, photo_urls: editTargetRecord.photo_urls }).eq('id', editTargetRecord.id);
+    const { error } = await supabaseClient.from('shipped').update({ ...basePayload, carrier: $('#e_carrier').value.trim(), shipped_by: $('#e_shipped_by').value.trim(), pmd_email: $('#e_pm').value.trim() || null, photo_urls: editTargetRecord.photo_urls }).eq('id', currentEditId);
+    if(error) { alert("Database Error: " + error.message); return; }
   }
   $('#editModal').style.display = 'none'; loadCloudData();
 }
@@ -660,9 +677,11 @@ async function saveEditedRecord() {
 async function executeShippedUndo() {
   if(!confirm("Are you sure you want to undo this action and return it to Staging?")) return;
   try {
-    const { data: currentRecord } = await supabaseClient.from('shipped').select('*').eq('id', editTargetRecord.id).single();
-    await supabaseClient.from('staging').insert([{ so: currentRecord.so, customer: currentRecord.customer, type: currentRecord.type, qty: currentRecord.qty, location: currentRecord.location, coords: currentRecord.coords, weight: currentRecord.weight, status: 'Partial', photo_urls: currentRecord.photo_urls }]);
-    await supabaseClient.from('shipped').delete().eq('id', editTargetRecord.id);
+    const { data: currentRecord } = await supabaseClient.from('shipped').select('*').eq('id', currentEditId).single();
+    const { error } = await supabaseClient.from('staging').insert([{ so: currentRecord.so, customer: currentRecord.customer, type: currentRecord.type, qty: currentRecord.qty, location: currentRecord.location, coords: currentRecord.coords, weight: currentRecord.weight, status: 'Partial', photo_urls: currentRecord.photo_urls }]);
+    if (error) { alert("Undo Database Error: " + error.message); return; }
+    
+    await supabaseClient.from('shipped').delete().eq('id', currentEditId);
     $('#editModal').style.display = 'none'; loadCloudData();
   } catch(e) { alert("Undo error."); }
 }
@@ -742,15 +761,23 @@ $('#add').onclick = async () => {
       const file = mainPhotoBlobs[i]; 
       const cleanFileName = file.name.replace(/[^a-zA-Z0-9.]/g, '');
       const path = `${$('#so').value.trim()}-staging-${Date.now()}-${i}-${cleanFileName}`;
-      await supabaseClient.storage.from('freight-photos').upload(path, file); photoUrls.push(path);
+      const { error: uploadError } = await supabaseClient.storage.from('freight-photos').upload(path, file);
+      if(!uploadError) photoUrls.push(path);
     }
   
-    await supabaseClient.from('staging').insert([{ so: $('#so').value.trim(), customer: $('#customer').value.trim(), status: $('#status').value, location: $('#loc').value.trim(), coords: $('#coords').value.trim(), weight: $('#weight').value.trim(), staged_by: $('#staged_by').value.trim(), type: type.join(', '), qty: sk+bx+cr+pi+ot, photo_urls: photoUrls }]);
+    const { error } = await supabaseClient.from('staging').insert([{ so: $('#so').value.trim(), customer: $('#customer').value.trim(), status: $('#status').value, location: $('#loc').value.trim(), coords: $('#coords').value.trim(), weight: $('#weight').value.trim(), staged_by: $('#staged_by').value.trim(), type: type.join(', '), qty: sk+bx+cr+pi+ot, photo_urls: photoUrls }]);
+    
+    if (error) {
+      alert("Database Error: " + error.message + "\n\nIMPORTANT: You must add a 'photo_urls' column (Type: text array) to your 'staging' table in Supabase to save records!");
+      $('#add').disabled = false;
+      $('#add').textContent = 'Add';
+      return;
+    }
     
     $('#so').value=''; $('#customer').value=''; $('#loc').value=''; $('#coords').value=''; $('#staged_by').value=''; $('#weight').value=''; $('#c_skid').value=0; $('#c_box').value=0; $('#c_crate').value=0; $('#c_pipe').value=0; $('#c_other').value=0; 
     mainPhotoBlobs = []; renderMainPhotoStrip();
     loadCloudData();
-  } catch(e) { alert("Error adding staging record"); }
+  } catch(e) { alert("System Error: " + e.message); }
   
   $('#add').disabled = false;
   $('#add').textContent = 'Add';
