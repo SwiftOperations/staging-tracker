@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Shipped Expanded Log — v9.3</title>
+<title>Shipped Expanded Log — v9.7</title>
 <style>
   :root{--brand:#dd4d25;}
   body{margin:0;background:#fff;font:13px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Arial;color:#222;}
@@ -12,18 +12,16 @@
   .btn-del{background:#dc2626;color:#fff;border:0;border-radius:6px;padding:4px 8px;font-size:12px;font-weight:700;cursor:pointer}
   .btn-edit{background:#0284c7;color:#fff;border:0;border-radius:6px;padding:4px 8px;font-size:12px;font-weight:700;cursor:pointer}
   input { height: 34px; padding: 0 10px; border: 1px solid #cbd5e1; border-radius: 8px; width: 100%; max-width:300px; font-size:13px; }
-  input:disabled { background: #f3f4f6; color: #9ca3af; cursor: not-allowed; }
-  select:disabled { background: #f3f4f6; color: #9ca3af; cursor: not-allowed; }
+  input:disabled, select:disabled { background: #f3f4f6; color: #9ca3af; cursor: not-allowed; }
   .table-wrap{ overflow-x: auto; border:1px solid #e5e7eb; border-radius:10px }
   table{width:100%; border-collapse:collapse; min-width:1100px}
   th,td{border-top:1px solid #e5e7eb; padding:8px; white-space:nowrap; text-align:left}
   th{position:sticky; top:0; background:#fafafa; z-index: 1;}
   .green-check { color: #16a34a; font-weight: bold; }
   
-  /* REVISION: Checkbox uniform styling synced for any tables or modals displaying inputs */
   input[type="checkbox"] { width: 13px; height: 13px; cursor: pointer; transform: scale(1); margin: 0; }
   
-  /* PERFECT MASTER SYMMETRICAL MODAL BLUEPRINT REPLICATED EXACTLY FROM THE DASHBOARD MASTER RESOURCE */
+  /* PERFECT MASTER SYMMETRICAL MODAL BLUEPRINT */
   .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; padding: 12px; }
   .modal-window { background: #fff; border-radius: 16px; max-width: 500px; width: 100%; max-height: 90vh; padding: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); display: flex; flex-direction: column; gap: 12px; overflow-y: auto; position: relative; font-family: system-ui, -apple-system, sans-serif; color: #222; }
   .modal-close-x { position: absolute; top: 12px; right: 16px; font-size: 22px; font-weight: 700; color: #6b7280; cursor: pointer; border: 0; background: none; z-index: 10; }
@@ -41,19 +39,18 @@
 
   .photo-options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
   .photo-uploader { border: 2px dashed #cbd5e1; border-radius: 10px; padding: 10px; text-align: center; cursor: pointer; background: #f8fafc; font-size: 12px; font-weight: 700; }
-  .photo-strip { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+  .photo-strip { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; width: 100%; }
   .photo-badge { background: #e2e8f0; font-size: 11px; padding: 2px 6px; border-radius: 4px; display: flex; align-items: center; gap: 4px; }
   .photo-badge span { color: #dc2626; cursor: pointer; font-weight: bold; }
-
   .coord-link { color: #0284c7; text-decoration: none; font-weight: bold; }
   .coord-link:hover { text-decoration: underline; }
 </style>
 </head>
 <body>
-<!-- MEMORY DATALISTS -->
 <datalist id="dl_customers"></datalist>
 <datalist id="dl_locations"></datalist>
 <datalist id="dl_stagers"></datalist>
+<datalist id="dl_pastEmails"></datalist>
 
 <div class="wrap">
   <h2>Shipped Expanded Log</h2>
@@ -68,13 +65,12 @@
   </table></div>
 </div>
 
-<!-- LOCAL SHIPPED EDIT MODAL PROMPT WINDOW WITH RESTORED PHOTO WORKSPACES -->
 <div id="editModal" class="modal-overlay" onclick="if(event.target===this) document.querySelector('#editModal').style.display='none'">
   <div class="modal-window">
     <button class="modal-close-x" onclick="document.querySelector('#editModal').style.display='none'">×</button>
-    <h3 id="editModalTitle">Edit Shipped Entry Logs</h3>
+    <h3 id="editModalTitle">Edit Record</h3>
     
-    <div id="editShippedPhotoSection" style="display:flex; flex-direction:column; gap:8px;">
+    <div id="editPhotoSection" style="display:flex; flex-direction:column; gap:8px;">
       <label style="font-size:12px; font-weight:700; color:#4b5563;">Manage Freight Photos</label>
       <div class="photo-options-grid">
         <div class="photo-uploader" onclick="document.querySelector('#e_cameraFile').click()">📷 Take Live Photo
@@ -90,7 +86,7 @@
     <div class="modal-field"><label>SO#</label><input id="e_so" oninput="this.value=this.value.replace(/[^0-9]/g,'')" /></div>
     <div class="modal-field"><label>Customer</label><input id="e_cust" list="dl_customers" /></div>
     
-    <label style="font-size:12px; font-weight:700; color:#4b5563; margin-bottom:-4px; text-align: left;">Container Quantities</label>
+    <label style="font-size:12px; font-weight:700; color:#4b5563; margin-bottom:-4px;">Container Quantities</label>
     <div class="freight-block">
       <div class="counter-box"><label>Skids</label><div class="counter-controls"><button class="counter-btn" onclick="adjustEditCount('e_skid',-1)">-</button><input id="e_skid" value="0" readonly/><button class="counter-btn" onclick="adjustEditCount('e_skid',1)">+</button></div></div>
       <div class="counter-box"><label>Boxes</label><div class="counter-controls"><button class="counter-btn" onclick="adjustEditCount('e_box',-1)">-</button><input id="e_box" value="0" readonly/><button class="counter-btn" onclick="adjustEditCount('e_box',1)">+</button></div></div>
@@ -100,17 +96,32 @@
     </div>
 
     <div class="modal-field"><label>Location</label><input id="e_loc" list="dl_locations" /></div>
-    <div class="modal-field"><label>Coords</label><input id="e_coords" readonly onclick="fetchBrowserGPS('e_coords')" style="background:#fafafa; cursor:pointer;" /></div>
+    <div class="modal-field"><label>Coords</label><input id="e_coords" readonly onclick="fetchBrowserGPS('e_coords')" style="background:#fafafa; cursor:pointer;" placeholder="Tap to update coordinates" /></div>
     <div class="modal-field"><label>Total Weight (in lbs)</label><input id="e_weight" /></div>
-    <div class="modal-field"><label>Carrier</label><input id="e_carrier" /></div>
-    <div class="modal-field"><label>Shipped By</label><input id="e_shipped_by" list="dl_stagers" /></div>
-    <div class="modal-field"><label>PM Verified Shortname</label><input id="e_pm" /></div>
     
-    <div style="display:flex; justify-content:space-between; width:100%; margin-top: 8px; gap: 8px;">
-      <button id="editUndoBtn" style="background:#4b5563; padding: 10px 16px; border-radius: 8px; border: 0; color: #fff; font-weight: 700; cursor: pointer;" onclick="executeUndo()">Undo Shipment Action</button>
-      <span style="display:flex; gap:8px; margin-left: auto;">
-        <button style="background:#9ca3af; padding: 10px 16px; border-radius: 8px; border: 0; color: #fff; font-weight: 700; cursor: pointer;" onclick="document.querySelector('#editModal').style.display='none'">Cancel</button>
-        <button id="editSaveBtn" style="background:#e04f26; padding: 10px 16px; border-radius: 8px; border: 0; color: #fff; font-weight: 700; cursor: pointer;" onclick="saveEdit()">Save Changes</button>
+    <div id="editStagingFields">
+      <div class="modal-field"><label>Shipping Status</label>
+        <select id="e_status">
+          <option>Partial</option><option>Ship Today</option><option>Ship Tomorrow</option><option>Ship On Future Date</option><option>Corp Pick (Not Consolidated)</option><option>Customer Pick-Up</option><option>Awaiting Shipping Instructions</option>
+        </select>
+      </div>
+      <div class="modal-field"><label>Staged By</label><input id="e_staged_by" list="dl_stagers" /></div>
+    </div>
+    
+    <div id="editShippedFields" style="display:none;">
+      <div class="modal-field"><label>Carrier</label><input id="e_carrier" /></div>
+      <div class="modal-field"><label>Shipped By</label><input id="e_shipped_by" list="dl_stagers" /></div>
+      <div class="modal-field"><label>PM Verified Shortname</label><input id="e_pm" /></div>
+    </div>
+
+    <div class="modal-actions" style="justify-content: space-between; width:100%; margin-top: 8px; display: flex; gap: 8px;">
+      <span style="display:flex; gap:8px;">
+        <button id="editUndoBtn" class="btn" style="background:#4b5563; padding: 10px 16px; border-radius: 8px; border: 0; color: #fff; font-weight: 700; cursor: pointer;" onclick="executeShippedUndo()">Undo Shipment Action</button>
+        <button id="editReturnBtn" class="btn" style="background:#eab308; color:#222; padding: 10px 16px; border-radius: 8px; border: 0; font-weight:700; cursor:pointer;" onclick="triggerReturnModal()">Return to Stock</button>
+      </span>
+      <span style="display:flex; gap:8px; margin-left:auto;">
+        <button class="btn" style="background:#9ca3af; border-radius: 8px; padding: 10px 16px; border: 0; color:#fff; font-weight:700; cursor:pointer;" onclick="document.querySelector('#editModal').style.display='none'">Cancel</button>
+        <button id="editSaveBtn" class="btn" style="background:#e04f26; border-radius: 8px; padding: 10px 16px; border: 0; color:#fff; font-weight:700; cursor:pointer;" onclick="saveEditedRecord()">Save Changes</button>
       </span>
     </div>
   </div>
@@ -129,11 +140,24 @@
   const SUPABASE_URL = 'https://gdrpdiwykmnybmkadlrv.supabase.co';
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdkcnBkaXd5a21ueWJta2FkbHJ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1MjMyMTIsImV4cCI6MjA5NjA5OTIxMn0.Z7ih_vQic1GtzCyZmTEV-RWJnmuaNZQDfOV2_Fvan5g';
   const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-  let cache = []; let currentEditRecord = null;
+  const $ = sel => document.querySelector(sel);
+  
+  let appData = { staging: [], shipped: [] };
+  let currentEditId = null; 
+  let editTargetRecord = { table: null, id: null, photo_urls: [] };
 
   function adjustEditCount(id, amt) {
     const el = document.querySelector(`#${id}`); el.value = Math.max(0, (parseInt(el.value)||0) + amt);
   }
+
+  function formatContainer(count, type) {
+    if(!count || count === 0) return '';
+    if(count === 1) return `1 ${type}`;
+    if(type === 'Box') return `${count} Boxes`;
+    if(type === 'Pipe/Rod' || type === 'Other') return `${count} ${type}`;
+    return `${count} ${type}s`;
+  }
+
   function fetchBrowserGPS(targetInputId) {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -143,29 +167,34 @@
   }
 
   async function refresh() {
-    const res = await supabaseClient.from('shipped').select('*').order('shipped_at', { ascending: false });
-    cache = res.data || [];
+    const [st, sh] = await Promise.all([
+      supabaseClient.from('staging').select('*').order('entry_date', { ascending: false }),
+      supabaseClient.from('shipped').select('*').order('shipped_at', { ascending: false })
+    ]);
+    appData.staging = st.data || []; 
+    appData.shipped = sh.data || [];
     
-    document.querySelector('#dl_customers').innerHTML = [...new Set(cache.map(x=>x.customer).filter(Boolean))].map(c=>`<option value="${c}">`).join('');
-    document.querySelector('#dl_locations').innerHTML = [...new Set(cache.map(x=>x.location).filter(Boolean))].map(l=>`<option value="${l}">`).join('');
-    document.querySelector('#dl_stagers').innerHTML = [...new Set(cache.map(x=>x.shipped_by).filter(Boolean))].map(s=>`<option value="${s}">`).join('');
-
+    const allData = [...appData.staging, ...appData.shipped];
+    document.querySelector('#dl_customers').innerHTML = [...new Set(allData.map(x=>x.customer).filter(Boolean))].map(c=>`<option value="${c}">`).join('');
+    document.querySelector('#dl_locations').innerHTML = [...new Set(allData.map(x=>x.location).filter(Boolean))].map(l=>`<option value="${l}">`).join('');
+    document.querySelector('#dl_stagers').innerHTML = [...new Set(allData.map(x=>(x.staged_by || x.shipped_by)).filter(Boolean))].map(s=>`<option value="${s}">`).join('');
+    
     filter();
   }
 
   function filter() {
     const q = document.querySelector('#f').value.toLowerCase();
     const body = document.querySelector('#tbl tbody'); body.innerHTML = '';
-    cache.filter(e => (e.so || '').toLowerCase().includes(q) || (e.customer || '').toLowerCase().includes(q)).forEach(e => {
+    appData.shipped.filter(e => (e.so || '').toLowerCase().includes(q) || (e.customer || '').toLowerCase().includes(q)).forEach(e => {
       const row = document.createElement('tr');
       const geoLink = e.coords ? `<a class="coord-link" href="geo:0,0?q=${encodeURIComponent(e.coords)}" target="_blank">${e.coords}</a>` : '—';
-      
       const isRet = (e.carrier === 'RETURNED TO STOCK');
       const rowClass = isRet ? 'style="color:#9ca3af; text-decoration:line-through;"' : '';
-
-      row.innerHTML = `<tr ${rowClass}><td><button class="btn-del" onclick="deleteItem('${e.id}')">Delete</button></td>
-        <td><button class="btn-edit" onclick="openEditor('${e.id}')">Edit</button></td>
-        <td><button class="btn" style="padding:4px 8px; font-size:12px;" onclick="openPhotoViewer('${e.id}')">View</button></td>
+      const picBtn = (e.photo_urls && e.photo_urls.length > 0) ? `<button class="btn" style="padding:4px 8px; font-size:12px; margin-right:4px;" onclick="openPhotoViewer('${e.id}')">View</button>` : '';
+      
+      row.innerHTML = `<tr ${rowClass}><td><button class="btn-del" onclick="deleteItem('shipped','${e.id}')">Delete</button></td>
+        <td><button class="btn-edit" onclick="openUniversalEditor('shipped', '${e.id}')">Edit</button></td>
+        <td>${picBtn}</td>
         <td><b>${e.so}</b></td><td>${e.customer}</td><td>${e.type}</td><td>${e.carrier || '—'}</td><td>${e.location}</td><td><small>${geoLink}</small></td><td><b>${e.weight || '—'}</b></td>
         <td>${new Date(e.shipped_at).toLocaleString()}</td><td>${e.shipped_by||'—'}</td>
         <td>${e.pmd_email ? e.pmd_email+(isRet?'':' <span class="green-check">✓</span>') : '—'}</td></tr>`;
@@ -182,28 +211,62 @@
     const matchOt = typeStr.match(/(\d+)\s*Other/);if(matchOt) ot = parseInt(matchOt[1]);
     return { sk, bx, cr, pi, ot };
   }
+  
+  function getDynamicType(prefix) {
+    const sk = parseInt(document.querySelector(`#${prefix}_skid`).value)||0, bx = parseInt(document.querySelector(`#${prefix}_box`).value)||0, cr = parseInt(document.querySelector(`#${prefix}_crate`).value)||0, pi = parseInt(document.querySelector(`#${prefix}_pipe`).value)||0, ot = parseInt(document.querySelector(`#${prefix}_other`).value)||0;
+    let typeParts = []; 
+    if(sk) typeParts.push(formatContainer(sk, 'Skid'));
+    if(bx) typeParts.push(formatContainer(bx, 'Box'));
+    if(cr) typeParts.push(formatContainer(cr, 'Crate'));
+    if(pi) typeParts.push(formatContainer(pi, 'Pipe/Rod'));
+    if(ot) typeParts.push(formatContainer(ot, 'Other'));
+    return typeParts.join(', ') || '1 Skid';
+  }
+  function getDynamicQty(prefix) {
+    return (parseInt(document.querySelector(`#${prefix}_skid`).value)||0)+(parseInt(document.querySelector(`#${prefix}_box`).value)||0)+(parseInt(document.querySelector(`#${prefix}_crate`).value)||0)+(parseInt(document.querySelector(`#${prefix}_pipe`).value)||0)+(parseInt(document.querySelector(`#${prefix}_other`).value)||0);
+  }
 
-  function openEditor(id) {
-    const e = cache.find(x => x.id === id);
-    if (!e) return;
-    currentEditRecord = e;
+  function openUniversalEditor(table, id) {
+    const o = appData[table].find(x => x.id === id);
+    if (!o) return;
+    currentEditId = o.id;
+    editTargetRecord = { table: table, id: o.id, so: o.so, photo_urls: o.photo_urls || [] };
     
-    const isReturned = (e.carrier === 'RETURNED TO STOCK');
+    const isReturned = (table === 'shipped' && o.carrier === 'RETURNED TO STOCK');
     
-    document.querySelector('#e_so').value = e.so; document.querySelector('#e_cust').value = e.customer;
-    document.querySelector('#e_loc').value = e.location || ''; document.querySelector('#e_coords').value = e.coords || '';
-    document.querySelector('#e_weight').value = e.weight || ''; document.querySelector('#e_carrier').value = e.carrier || '';
-    document.querySelector('#e_shipped_by').value = e.shipped_by || ''; document.querySelector('#e_pm').value = e.pmd_email || '';
-    const counts = parseContainerString(e.type);
+    document.querySelector('#e_so').value = o.so; document.querySelector('#e_cust').value = o.customer;
+    document.querySelector('#e_loc').value = o.location || ''; document.querySelector('#e_coords').value = o.coords || '';
+    document.querySelector('#e_weight').value = o.weight || ''; 
+    const counts = parseContainerString(o.type);
     document.querySelector('#e_skid').value = counts.sk; document.querySelector('#e_box').value = counts.bx; document.querySelector('#e_crate').value = counts.cr;
     document.querySelector('#e_pipe').value = counts.pi; document.querySelector('#e_other').value = counts.ot;
     
-    const inputsToLock = ['e_so','e_cust','e_loc','e_weight','e_carrier','e_shipped_by','e_pm'];
+    const inputsToLock = ['e_so','e_cust','e_loc','e_weight','e_status','e_staged_by','e_carrier','e_shipped_by','e_pm'];
     inputsToLock.forEach(i => { if(document.querySelector(`#${i}`)) document.querySelector(`#${i}`).disabled = isReturned; });
     document.querySelectorAll('#editModal .counter-btn').forEach(b => b.disabled = isReturned);
     
-    document.querySelector('#editModalTitle').textContent = isReturned ? 'View Returned Record' : 'Edit Shipped Entry Logs';
-    document.querySelector('#editSaveBtn').style.display = isReturned ? 'none' : 'block';
+    document.querySelector('#editPhotoSection').style.display = 'flex';
+    
+    if (table === 'staging') {
+      document.querySelector('#editModalTitle').textContent = 'Edit Staging Entry'; 
+      document.querySelector('#editStagingFields').style.display = 'block';
+      document.querySelector('#editShippedFields').style.display = 'none'; 
+      document.querySelector('#editUndoBtn').style.display = 'none'; 
+      document.querySelector('#editReturnBtn').style.display = 'block'; 
+      document.querySelector('#editSaveBtn').style.display = 'block';
+      document.querySelector('#e_status').value = o.status; 
+      document.querySelector('#e_staged_by').value = o.staged_by || '';
+    } else {
+      document.querySelector('#editModalTitle').textContent = isReturned ? 'View Returned Record' : 'Edit Shipped Entry Logs'; 
+      document.querySelector('#editStagingFields').style.display = 'none'; 
+      document.querySelector('#editShippedFields').style.display = 'block'; 
+      document.querySelector('#editUndoBtn').style.display = 'block'; 
+      document.querySelector('#editReturnBtn').style.display = 'none'; 
+      document.querySelector('#editSaveBtn').style.display = isReturned ? 'none' : 'block';
+      document.querySelector('#e_carrier').value = o.carrier || ''; 
+      document.querySelector('#e_shipped_by').value = o.shipped_by || ''; 
+      document.querySelector('#e_pm').value = o.pmd_email || '';
+    }
     
     renderEditPhotoStrip();
     document.querySelector('#editModal').style.display = 'flex';
@@ -211,9 +274,9 @@
 
   function renderEditPhotoStrip() {
     const strip = document.querySelector('#editPhotoPreviewStrip'); strip.innerHTML = '';
-    if (currentEditRecord && currentEditRecord.photo_urls) {
-      currentEditRecord.photo_urls.forEach((url, index) => {
-        strip.insertAdjacentHTML('beforeend', `<span class="photo-badge">📎 Photo-${index+1} <span onclick="currentEditRecord.photo_urls.splice(${index},1); renderEditPhotoStrip()">×</span></span>`);
+    if (editTargetRecord && editTargetRecord.photo_urls) {
+      editTargetRecord.photo_urls.forEach((url, index) => {
+        strip.insertAdjacentHTML('beforeend', `<span class="photo-badge">📎 Photo-${index+1} <span onclick="editTargetRecord.photo_urls.splice(${index},1); renderEditPhotoStrip()">×</span></span>`);
       });
     }
   }
@@ -222,35 +285,33 @@
     if(!inputEl.files || inputEl.files.length === 0) return;
     Array.from(inputEl.files).forEach(async (file) => {
       const cleanFileName = file.name.replace(/[^a-zA-Z0-9.]/g, '');
-      const path = `${currentEditRecord.so || 'edit'}-${Date.now()}-${cleanFileName}`;
+      const path = `${editTargetRecord.so || 'edit'}-${Date.now()}-${cleanFileName}`;
       const { error } = await supabaseClient.storage.from('freight-photos').upload(path, file);
       if(!error) { 
-        if(!currentEditRecord.photo_urls) currentEditRecord.photo_urls = [];
-        currentEditRecord.photo_urls.push(path); 
+        if(!editTargetRecord.photo_urls) editTargetRecord.photo_urls = [];
+        editTargetRecord.photo_urls.push(path); 
         renderEditPhotoStrip(); 
       }
     });
   }
 
-  async function saveEdit() {
-    const sk = parseInt(document.querySelector('#e_skid').value)||0, bx = parseInt(document.querySelector('#e_box').value)||0, cr = parseInt(document.querySelector('#e_crate').value)||0, pi = parseInt(document.querySelector('#e_pipe').value)||0, ot = parseInt(document.querySelector('#e_other').value)||0;
-    let typeParts = []; 
-    if(sk) typeParts.push(sk+' Skid'); if(bx) typeParts.push(bx+' Box'); if(cr) typeParts.push(cr+' Crate');
-    if(pi) typeParts.push(pi+' Pipe/Rod'); if(ot) typeParts.push(ot+' Other');
-    const dynamicType = typeParts.join(', ') || '1 Skid';
+  async function saveEditedRecord() {
+    const dynamicType = getDynamicType('e');
+    const basePayload = { so: document.querySelector('#e_so').value.trim(), customer: document.querySelector('#e_cust').value.trim(), location: document.querySelector('#e_loc').value.trim(), coords: document.querySelector('#e_coords').value.trim(), weight: document.querySelector('#e_weight').value.trim(), type: dynamicType, qty: getDynamicQty('e') };
 
-    await supabaseClient.from('shipped').update({
-      so: document.querySelector('#e_so').value.trim(), customer: document.querySelector('#e_cust').value.trim(),
-      location: document.querySelector('#e_loc').value.trim(), coords: document.querySelector('#e_coords').value.trim(), weight: document.querySelector('#e_weight').value.trim(),
-      carrier: document.querySelector('#e_carrier').value.trim(), shipped_by: document.querySelector('#e_shipped_by').value.trim(), pmd_email: document.querySelector('#e_pm').value.trim() || null,
-      type: dynamicType, qty: sk+bx+cr+pi+ot, photo_urls: currentEditRecord.photo_urls
-    }).eq('id', currentEditRecord.id);
+    if (editTargetRecord.table === 'staging') {
+      const { error } = await supabaseClient.from('staging').update({ ...basePayload, status: document.querySelector('#e_status').value.trim(), staged_by: document.querySelector('#e_staged_by').value.trim(), photo_urls: editTargetRecord.photo_urls }).eq('id', currentEditId);
+      if (error) { alert("Database Error: " + error.message); return; }
+    } else {
+      const { error } = await supabaseClient.from('shipped').update({ ...basePayload, carrier: document.querySelector('#e_carrier').value.trim(), shipped_by: document.querySelector('#e_shipped_by').value.trim(), pmd_email: document.querySelector('#e_pm').value.trim() || null, photo_urls: editTargetRecord.photo_urls }).eq('id', currentEditId);
+      if (error) { alert("Database Error: " + error.message); return; }
+    }
     document.querySelector('#editModal').style.display = 'none'; refresh();
   }
 
   function openPhotoViewer(id) {
-    const e = cache.find(x => x.id === id);
-    const paths = e ? e.photo_urls : [];
+    const o = appData.shipped.find(x => x.id === id) || appData.staging.find(x => x.id === id);
+    const paths = o ? o.photo_urls : [];
     const gallery = document.querySelector('#modalPhotoGallery'); gallery.innerHTML = '';
     if(!paths || paths.length === 0) {
       gallery.innerHTML = '<p style="grid-column: 1/-1; text-align:center; font-weight:700; color:#6b7280; padding:12px 0;">No photos attached to this order.</p>';
@@ -266,14 +327,19 @@
     document.querySelector('#viewModal').style.display = 'flex';
   }
 
-  async function executeUndo() {
-    if(!confirm("Undo shipment action?")) return;
-    await supabaseClient.from('staging').insert([{ so: currentEditRecord.so, customer: currentEditRecord.customer, type: currentEditRecord.type, qty: currentEditRecord.qty, location: currentEditRecord.location, coords: currentEditRecord.coords, weight: currentEditRecord.weight, status: 'Partial' }]);
-    await supabaseClient.from('shipped').delete().eq('id', currentEditRecord.id);
-    document.querySelector('#editModal').style.display = 'none'; refresh();
+  async function executeShippedUndo() {
+    if(!confirm("Are you sure you want to undo this action and return it to Staging?")) return;
+    try {
+      const { data: currentRecord } = await supabaseClient.from('shipped').select('*').eq('id', currentEditId).single();
+      const { error } = await supabaseClient.from('staging').insert([{ so: currentRecord.so, customer: currentRecord.customer, type: currentRecord.type, qty: currentRecord.qty, location: currentRecord.location, coords: currentRecord.coords, weight: currentRecord.weight, status: 'Partial', photo_urls: currentRecord.photo_urls }]);
+      if (error) throw error;
+      
+      await supabaseClient.from('shipped').delete().eq('id', currentEditId);
+      document.querySelector('#editModal').style.display = 'none'; refresh();
+    } catch(e) { alert("Undo error: " + e.message); }
   }
 
-  async function deleteItem(id) { if(confirm("Permanently delete record?")) { await supabaseClient.from('shipped').delete().eq('id', id); refresh(); } }
+  async function deleteItem(table, id) { if(confirm("Permanently delete record?")) { await supabaseClient.from(table).delete().eq('id', id); refresh(); } }
   window.onload = () => { refresh(); setInterval(refresh, 5000); };
 </script>
 </body>
