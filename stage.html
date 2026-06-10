@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Staging Entries Expanded Log — v9.7</title>
+<title>Staging Entries Expanded Log — v9.8</title>
 <style>
   :root{--brand:#dd4d25;}
   body{margin:0;background:#fff;font:13px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Arial;color:#222;}
@@ -233,9 +233,10 @@
       const geoLink = e.coords ? `<a class="coord-link" href="geo:0,0?q=${encodeURIComponent(e.coords)}" target="_blank">${e.coords}</a>` : '—';
       const picBtn = (e.photo_urls && e.photo_urls.length > 0) ? `<button class="btn" style="padding:4px 8px; font-size:12px; margin-right:4px;" onclick="openPhotoViewer('${e.id}')">View</button>` : '';
       
-      row.innerHTML = `<td><button class="btn-del" onclick="deleteItem('staging','${e.id}')">Delete</button></td>
+      // FIX: picBtn and e.so separated into distinct <td> tags for perfect column alignment
+      row.innerHTML = `<td><button class="btn-del" onclick="deleteItem('${e.id}')">Delete</button></td>
         <td><button class="btn-edit" onclick="openUniversalEditor('staging', '${e.id}')">Edit</button></td>
-        <td>${picBtn}<b>${e.so}</b></td><td>${e.customer}</td><td>${new Date(e.entry_date).toLocaleString()}</td><td>${e.type}</td><td>${e.location}</td><td><small>${geoLink}</small></td><td><b>${e.weight || '—'}</b></td><td>${e.status}</td><td>${e.staged_by||'—'}</td>
+        <td>${picBtn}</td><td><b>${e.so}</b></td><td>${e.customer}</td><td>${new Date(e.entry_date).toLocaleString()}</td><td>${e.type}</td><td>${e.location}</td><td><small>${geoLink}</small></td><td><b>${e.weight || '—'}</b></td><td>${e.status}</td><td>${e.staged_by||'—'}</td>
         <td style="position:sticky;right:0;text-align:center;"><input type="checkbox" onchange="if(this.checked) { openShipPrompt('${e.id}'); this.checked = false; }"></td>`;
       body.appendChild(row);
     });
@@ -492,7 +493,7 @@
     } catch(e) { alert("Undo error: " + e.message); }
   }
 
-  async function deleteItem(table, id) { if(confirm("Permanently delete record?")) { await supabaseClient.from(table).delete().eq('id', id); refresh(); } }
+  async function deleteItem(id) { if(confirm("Permanently delete record?")) { await supabaseClient.from('staging').delete().eq('id', id); refresh(); } }
   window.onload = () => { refresh(); setInterval(refresh, 5000); };
 </script>
 </body>
