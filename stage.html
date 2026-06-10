@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Staging Entries Expanded Log — v9.4</title>
+<title>Staging Entries Expanded Log — v9.5</title>
 <style>
   :root{--brand:#dd4d25;}
   body{margin:0;background:#fff;font:13px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Arial;color:#222;}
@@ -20,10 +20,9 @@
   th{position:sticky; top:0; background:#fafafa; z-index: 1;}
   th[style*="position:sticky"], td[style*="position:sticky"] { background: #fff !important; position: sticky !important; right: 0 !important; z-index: 3; box-shadow: -2px 0 5px rgba(0,0,0,0.04); }
   
-  /* REVISION: Matched Checkbox scale from main dashboard exactly */
   input[type="checkbox"] { width: 13px; height: 13px; cursor: pointer; transform: scale(1); margin: 0; }
 
-  /* PERFECT MASTER SYMMETRICAL MODAL BLUEPRINT REPLICATED EXACTLY FROM THE DASHBOARD MASTER RESOURCE */
+  /* PERFECT MASTER SYMMETRICAL MODAL BLUEPRINT */
   .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; padding: 12px; }
   .modal-window { background: #fff; border-radius: 16px; max-width: 500px; width: 100%; max-height: 90vh; padding: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); display: flex; flex-direction: column; gap: 12px; overflow-y: auto; position: relative; font-family: system-ui, -apple-system, sans-serif; color: #222; }
   .modal-close-x { position: absolute; top: 12px; right: 16px; font-size: 22px; font-weight: 700; color: #6b7280; cursor: pointer; border: 0; background: none; z-index: 10; }
@@ -50,7 +49,6 @@
 </style>
 </head>
 <body>
-<!-- MEMORY DATALISTS -->
 <datalist id="dl_customers"></datalist>
 <datalist id="dl_locations"></datalist>
 <datalist id="dl_stagers"></datalist>
@@ -69,7 +67,6 @@
   </table></div>
 </div>
 
-<!-- RETURN TO STOCK SUB-MODAL -->
 <div id="returnModal" class="modal-overlay" onclick="if(event.target===this) document.querySelector('#returnModal').style.display='none'">
   <div class="modal-window">
     <button class="modal-close-x" onclick="document.querySelector('#returnModal').style.display='none'">×</button>
@@ -77,7 +74,6 @@
     <p style="font-size:13px; color:#4b5563; margin-top:0; margin-bottom:8px;">Are you sure you want to return this order to stock?</p>
     <div class="modal-field"><label>Picked By</label><input id="r_picked_by" list="dl_stagers" placeholder="Shortname" /></div>
     <div class="modal-field"><label>Returned By</label><input id="r_returned_by" list="dl_stagers" placeholder="Shortname" /></div>
-    <!-- REVISION: Added Reason for Return to Stock entry field -->
     <div class="modal-field"><label>Reason for Return to Stock</label><input id="r_reason" placeholder="Enter reason..." /></div>
     <div class="chk-row" style="margin-top:4px;"><input type="checkbox" id="r_pm_chk" onchange="document.querySelector('#r_pm_email').disabled=!this.checked"/><label>Confirm return to PM via e-mail</label></div>
     <div class="modal-field"><input id="r_pm_email" list="dl_pastEmails" placeholder="PM E-mail" disabled /></div>
@@ -85,13 +81,11 @@
   </div>
 </div>
 
-<!-- UNIVERSAL ITEM EDIT MODAL -->
 <div id="editModal" class="modal-overlay" onclick="if(event.target===this) document.querySelector('#editModal').style.display='none'">
   <div class="modal-window">
     <button class="modal-close-x" onclick="document.querySelector('#editModal').style.display='none'">×</button>
     <h3 id="editModalTitle">Edit Record</h3>
     
-    <!-- REVISION: Photo workspace is universally enabled for both staging and shipped -->
     <div id="editPhotoSection" style="display:flex; flex-direction:column; gap:8px;">
       <label style="font-size:12px; font-weight:700; color:#4b5563;">Manage Freight Photos</label>
       <div class="photo-options-grid">
@@ -108,7 +102,7 @@
     <div class="modal-field"><label>SO#</label><input id="e_so" oninput="this.value=this.value.replace(/[^0-9]/g,'')" /></div>
     <div class="modal-field"><label>Customer</label><input id="e_cust" list="dl_customers" /></div>
     
-    <label style="font-size:12px; font-weight:700; color:#4b5563; margin-bottom:-4px; text-align: left;">Container Quantities</label>
+    <label style="font-size:12px; font-weight:700; color:#4b5563; margin-bottom:-4px;">Container Quantities</label>
     <div class="freight-block">
       <div class="counter-box"><label>Skids</label><div class="counter-controls"><button class="counter-btn" onclick="adjustEditCount('e_skid',-1)">-</button><input id="e_skid" value="0" readonly/><button class="counter-btn" onclick="adjustEditCount('e_skid',1)">+</button></div></div>
       <div class="counter-box"><label>Boxes</label><div class="counter-controls"><button class="counter-btn" onclick="adjustEditCount('e_box',-1)">-</button><input id="e_box" value="0" readonly/><button class="counter-btn" onclick="adjustEditCount('e_box',1)">+</button></div></div>
@@ -118,7 +112,7 @@
     </div>
 
     <div class="modal-field"><label>Location</label><input id="e_loc" list="dl_locations" /></div>
-    <div class="modal-field"><label>Coords</label><input id="e_coords" readonly onclick="fetchBrowserGPS('e_coords')" style="background:#fafafa; cursor:pointer;" /></div>
+    <div class="modal-field"><label>Coords</label><input id="e_coords" readonly onclick="fetchBrowserGPS('e_coords')" style="background:#fafafa; cursor:pointer;" placeholder="Tap to update coordinates" /></div>
     <div class="modal-field"><label>Total Weight (in lbs)</label><input id="e_weight" /></div>
     
     <div id="editStagingFields">
@@ -136,20 +130,19 @@
       <div class="modal-field"><label>PM Verified Shortname</label><input id="e_pm" /></div>
     </div>
 
-    <div class="modal-actions" style="justify-content: space-between; width:100%; margin-top:8px; display:flex; gap:8px;">
+    <div class="modal-actions" style="justify-content: space-between; width:100%; margin-top: 8px; display: flex; gap: 8px;">
       <span style="display:flex; gap:8px;">
-        <button id="editUndoBtn" style="background:#4b5563; padding: 10px 16px; border-radius: 8px; border: 0; color: #fff; font-weight: 700; cursor: pointer;" onclick="executeShippedUndo()">Undo Shipment Action</button>
-        <button id="editReturnBtn" style="background:#eab308; color:#222; border-radius: 8px; padding: 10px 16px; border: 0; font-weight:700; cursor:pointer;" onclick="triggerReturnModal()">Return to Stock</button>
+        <button id="editUndoBtn" class="btn" style="background:#4b5563; padding: 10px 16px; border-radius: 8px; border: 0; color: #fff; font-weight: 700; cursor: pointer;" onclick="executeShippedUndo()">Undo Shipment Action</button>
+        <button id="editReturnBtn" class="btn" style="background:#eab308; color:#222; border-radius: 8px; padding: 10px 16px; border: 0; font-weight:700; cursor:pointer;" onclick="triggerReturnModal()">Return to Stock</button>
       </span>
       <span style="display:flex; gap:8px; margin-left:auto;">
-        <button style="background:#9ca3af; border-radius: 8px; padding: 10px 16px; border: 0; color:#fff; font-weight:700; cursor:pointer;" onclick="document.querySelector('#editModal').style.display='none'">Cancel</button>
-        <button id="editSaveBtn" style="background:#e04f26; border-radius: 8px; padding: 10px 16px; border: 0; color:#fff; font-weight:700; cursor:pointer;" onclick="saveEditedRecord()">Save Changes</button>
+        <button class="btn" style="background:#9ca3af; border-radius: 8px; padding: 10px 16px; border: 0; color:#fff; font-weight:700; cursor:pointer;" onclick="document.querySelector('#editModal').style.display='none'">Cancel</button>
+        <button id="editSaveBtn" class="btn" style="background:#e04f26; border-radius: 8px; padding: 10px 16px; border: 0; color:#fff; font-weight:700; cursor:pointer;" onclick="saveEditedRecord()">Save Changes</button>
       </span>
     </div>
   </div>
 </div>
 
-<!-- LOCAL FREIGHT CONFIRMATION WORKFLOW MODAL PROMPT WINDOW -->
 <div id="shipModal" class="modal-overlay" onclick="if(event.target===this) closeShipModal()">
   <div class="modal-window">
     <button class="modal-close-x" onclick="closeShipModal()">×</button>
@@ -191,20 +184,17 @@
   const SUPABASE_URL = 'https://gdrpdiwykmnybmkadlrv.supabase.co';
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdkcnBkaXd5a21ueWJta2FkbHJ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1MjMyMTIsImV4cCI6MjA5NjA5OTIxMn0.Z7ih_vQic1GtzCyZmTEV-RWJnmuaNZQDfOV2_Fvan5g';
   const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-  let cache = []; let cacheShipped = []; let currentEditId = null; let activeShipTargetItem = null; let selectedPhotoBlobs = [];
+  const $ = sel => document.querySelector(sel);
+  
+  let appData = { staging: [], shipped: [] };
+  let currentEditId = null; 
+  let activeShipTargetItem = null; 
+  let editTargetRecord = { table: null, id: null, photo_urls: [] };
+  let selectedPhotoBlobs = [];
 
   function adjustEditCount(id, amt) {
     const el = document.querySelector(`#${id}`); el.value = Math.max(0, (parseInt(el.value)||0) + amt);
   }
-  
-  function formatContainer(count, type) {
-    if(count === 0) return '';
-    if(count === 1) return `1 ${type}`;
-    if(type === 'Box') return `${count} Boxes`;
-    if(type === 'Pipe/Rod' || type === 'Other') return `${count} ${type}`;
-    return `${count} ${type}s`;
-  }
-
   function fetchBrowserGPS(targetInputId) {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -213,18 +203,26 @@
     }
   }
 
+  function formatContainer(count, type) {
+    if(count === 0) return '';
+    if(count === 1) return `1 ${type}`;
+    if(type === 'Box') return `${count} Boxes`;
+    if(type === 'Pipe/Rod' || type === 'Other') return `${count} ${type}`;
+    return `${count} ${type}s`;
+  }
+
   async function refresh() {
     const [st, sh] = await Promise.all([
       supabaseClient.from('staging').select('*').order('entry_date', { ascending: false }),
       supabaseClient.from('shipped').select('*').order('shipped_at', { ascending: false })
     ]);
-    cache = st.data || []; cacheShipped = sh.data || [];
+    appData.staging = st.data || []; appData.shipped = sh.data || [];
     
-    const allData = [...cache, ...cacheShipped];
+    const allData = [...appData.staging, ...appData.shipped];
     document.querySelector('#dl_customers').innerHTML = [...new Set(allData.map(x=>x.customer).filter(Boolean))].map(c=>`<option value="${c}">`).join('');
     document.querySelector('#dl_locations').innerHTML = [...new Set(allData.map(x=>x.location).filter(Boolean))].map(l=>`<option value="${l}">`).join('');
     document.querySelector('#dl_stagers').innerHTML = [...new Set(allData.map(x=>(x.staged_by || x.shipped_by)).filter(Boolean))].map(s=>`<option value="${s}">`).join('');
-    document.querySelector('#dl_pastEmails').innerHTML = [...new Set(cacheShipped.map(x=>x.pmd_email).filter(Boolean))].map(em=>`<option value="${em}@swiftsupply.ca">`).join('');
+    document.querySelector('#dl_pastEmails').innerHTML = [...new Set(appData.shipped.map(x=>x.pmd_email).filter(Boolean))].map(em=>`<option value="${em}@swiftsupply.ca">`).join('');
     
     filter();
   }
@@ -232,13 +230,13 @@
   function filter() {
     const q = document.querySelector('#f').value.toLowerCase();
     const body = document.querySelector('#tbl tbody'); body.innerHTML = '';
-    cache.filter(e => (e.so || '').toLowerCase().includes(q) || (e.customer || '').toLowerCase().includes(q)).forEach(e => {
+    appData.staging.filter(e => (e.so || '').toLowerCase().includes(q) || (e.customer || '').toLowerCase().includes(q)).forEach(e => {
       const row = document.createElement('tr');
       const geoLink = e.coords ? `<a class="coord-link" href="geo:0,0?q=${encodeURIComponent(e.coords)}" target="_blank">${e.coords}</a>` : '—';
       const picBtn = (e.photo_urls && e.photo_urls.length > 0) ? `<button class="btn" style="padding:4px 8px; font-size:12px; margin-right:4px;" onclick="openPhotoViewer('${e.id}')">View</button>` : '';
       
       row.innerHTML = `<td><button class="btn-del" onclick="deleteItem('${e.id}')">Delete</button></td>
-        <td><button class="btn-edit" onclick="openEditPrompt('${e.id}')">Edit</button></td>
+        <td><button class="btn-edit" onclick="openUniversalEditor('staging', '${e.id}')">Edit</button></td>
         <td>${picBtn}<b>${e.so}</b></td><td>${e.customer}</td><td>${new Date(e.entry_date).toLocaleString()}</td><td>${e.type}</td><td>${e.location}</td><td><small>${geoLink}</small></td><td><b>${e.weight || '—'}</b></td><td>${e.status}</td><td>${e.staged_by||'—'}</td>
         <td style="position:sticky;right:0;text-align:center;"><input type="checkbox" onchange="if(this.checked) { openShipPrompt('${e.id}'); this.checked = false; }"></td>`;
       body.appendChild(row);
@@ -269,23 +267,49 @@
     return (parseInt(document.querySelector('#e_skid').value)||0)+(parseInt(document.querySelector('#e_box').value)||0)+(parseInt(document.querySelector('#e_crate').value)||0)+(parseInt(document.querySelector('#e_pipe').value)||0)+(parseInt(document.querySelector('#e_other').value)||0);
   }
 
-  function openEditPrompt(id) {
-    const e = cache.find(x => x.id === id);
-    if (!e) return;
-    currentEditId = e.id;
-    editTargetRecord = { id: e.id, so: e.so, photo_urls: e.photo_urls || [] };
+  function openUniversalEditor(table, id) {
+    const o = appData[table].find(x => x.id === id);
+    if (!o) return;
+    currentEditId = o.id;
+    editTargetRecord = { table: table, id: o.id, so: o.so, photo_urls: o.photo_urls || [] };
     
-    document.querySelector('#e_so').value = e.so; document.querySelector('#e_cust').value = e.customer;
-    document.querySelector('#e_loc').value = e.location || ''; document.querySelector('#e_coords').value = e.coords || '';
-    document.querySelector('#e_weight').value = e.weight || ''; document.querySelector('#e_status').value = e.status || '';
-    document.querySelector('#e_staged_by').value = e.staged_by || '';
-    const counts = parseContainerString(e.type);
+    const isReturned = (table === 'shipped' && o.carrier === 'RETURNED TO STOCK');
+    
+    document.querySelector('#e_so').value = o.so; document.querySelector('#e_cust').value = o.customer;
+    document.querySelector('#e_loc').value = o.location || ''; document.querySelector('#e_coords').value = o.coords || '';
+    document.querySelector('#e_weight').value = o.weight || ''; 
+    const counts = parseContainerString(o.type);
     document.querySelector('#e_skid').value = counts.sk; document.querySelector('#e_box').value = counts.bx; document.querySelector('#e_crate').value = counts.cr;
     document.querySelector('#e_pipe').value = counts.pi; document.querySelector('#e_other').value = counts.ot;
     
-    document.querySelector('#editPhotoSection').style.display = 'flex';
-    renderEditPhotoStrip();
+    const inputsToLock = ['e_so','e_cust','e_loc','e_weight','e_status','e_staged_by','e_carrier','e_shipped_by','e_pm'];
+    inputsToLock.forEach(i => { if(document.querySelector(`#${i}`)) document.querySelector(`#${i}`).disabled = isReturned; });
+    document.querySelectorAll('#editModal .counter-btn').forEach(b => b.disabled = isReturned);
     
+    document.querySelector('#editPhotoSection').style.display = 'flex';
+    
+    if (table === 'staging') {
+      document.querySelector('#editModalTitle').textContent = 'Edit Staging Entry'; 
+      document.querySelector('#editStagingFields').style.display = 'block';
+      document.querySelector('#editShippedFields').style.display = 'none'; 
+      document.querySelector('#editUndoBtn').style.display = 'none'; 
+      document.querySelector('#editReturnBtn').style.display = 'block'; 
+      document.querySelector('#editSaveBtn').style.display = 'block';
+      document.querySelector('#e_status').value = o.status; 
+      document.querySelector('#e_staged_by').value = o.staged_by || '';
+    } else {
+      document.querySelector('#editModalTitle').textContent = isReturned ? 'View Returned Record' : 'Edit Shipped Entry Logs'; 
+      document.querySelector('#editStagingFields').style.display = 'none'; 
+      document.querySelector('#editShippedFields').style.display = 'block'; 
+      document.querySelector('#editUndoBtn').style.display = 'block'; 
+      document.querySelector('#editReturnBtn').style.display = 'none'; 
+      document.querySelector('#editSaveBtn').style.display = isReturned ? 'none' : 'block';
+      document.querySelector('#e_carrier').value = o.carrier || ''; 
+      document.querySelector('#e_shipped_by').value = o.shipped_by || ''; 
+      document.querySelector('#e_pm').value = o.pmd_email || '';
+    }
+    
+    renderEditPhotoStrip();
     document.querySelector('#editModal').style.display = 'flex';
   }
 
@@ -303,7 +327,7 @@
     if(!pickedBy || !returnedBy || !reason || (pmChecked && !pmEmail)) return alert("Missing required inputs.");
     
     try {
-      const e = cache.find(x => x.id === currentEditId);
+      const e = appData.staging.find(x => x.id === currentEditId);
       const currentTimeStamp = new Date().toLocaleString();
       let pmName = pmEmail ? pmEmail.split('@')[0].split('.')[0] : null;
       if(pmName) pmName = pmName.charAt(0).toUpperCase() + pmName.slice(1);
@@ -366,14 +390,16 @@
     const dynamicType = getDynamicType();
     const basePayload = { so: document.querySelector('#e_so').value.trim(), customer: document.querySelector('#e_cust').value.trim(), location: document.querySelector('#e_loc').value.trim(), coords: document.querySelector('#e_coords').value.trim(), weight: document.querySelector('#e_weight').value.trim(), type: dynamicType, qty: getDynamicQty() };
 
-    await supabaseClient.from('staging').update({
-      ...basePayload, status: document.querySelector('#e_status').value.trim(), staged_by: document.querySelector('#e_staged_by').value.trim(), photo_urls: editTargetRecord.photo_urls
-    }).eq('id', currentEditId);
+    if (editTargetRecord.table === 'staging') {
+      await supabaseClient.from('staging').update({ ...basePayload, status: document.querySelector('#e_status').value.trim(), staged_by: document.querySelector('#e_staged_by').value.trim(), photo_urls: editTargetRecord.photo_urls }).eq('id', currentEditId);
+    } else {
+      await supabaseClient.from('shipped').update({ ...basePayload, carrier: document.querySelector('#e_carrier').value.trim(), shipped_by: document.querySelector('#e_shipped_by').value.trim(), pmd_email: document.querySelector('#e_pm').value.trim() || null, photo_urls: editTargetRecord.photo_urls }).eq('id', currentEditId);
+    }
     document.querySelector('#editModal').style.display = 'none'; refresh();
   }
 
   function openShipPrompt(id) {
-    const item = cache.find(x => x.id === id);
+    const item = appData.staging.find(x => x.id === id);
     if (!item) return;
     activeShipTargetItem = item; selectedPhotoBlobs = []; document.querySelector('#photoPreviewStrip').innerHTML = '';
     document.querySelector('#m_so').value = item.so; document.querySelector('#m_cust').value = item.customer;
@@ -434,7 +460,7 @@
   }
 
   function openPhotoViewer(id) {
-    const e = cache.find(x => x.id === id);
+    const e = appData.shipped.find(x => x.id === id) || appData.staging.find(x => x.id === id);
     const paths = e ? e.photo_urls : [];
     const gallery = document.querySelector('#modalPhotoGallery'); gallery.innerHTML = '';
     if(!paths || paths.length === 0) {
@@ -451,7 +477,17 @@
     document.querySelector('#viewModal').style.display = 'flex';
   }
 
-  async function deleteItem(id) { if(confirm("Permanently delete item?")) { await supabaseClient.from('staging').delete().eq('id', id); refresh(); } }
+  async function executeShippedUndo() {
+    if(!confirm("Are you sure you want to undo this action and return it to Staging?")) return;
+    try {
+      const { data: currentRecord } = await supabaseClient.from('shipped').select('*').eq('id', editTargetRecord.id).single();
+      await supabaseClient.from('staging').insert([{ so: currentRecord.so, customer: currentRecord.customer, type: currentRecord.type, qty: currentRecord.qty, location: currentRecord.location, coords: currentRecord.coords, weight: currentRecord.weight, status: 'Partial', photo_urls: currentRecord.photo_urls }]);
+      await supabaseClient.from('shipped').delete().eq('id', editTargetRecord.id);
+      document.querySelector('#editModal').style.display = 'none'; refresh();
+    } catch(e) { alert("Undo error."); }
+  }
+
+  async function deleteItem(id) { if(confirm("Permanently delete record?")) { await supabaseClient.from('staging').delete().eq('id', id); refresh(); } }
   window.onload = () => { refresh(); setInterval(refresh, 5000); };
 </script>
 </body>
