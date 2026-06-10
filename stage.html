@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Staging Entries Expanded Log — v9.5</title>
+<title>Staging Entries Expanded Log — v9.6</title>
 <style>
   :root{--brand:#dd4d25;}
   body{margin:0;background:#fff;font:13px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Arial;color:#222;}
@@ -195,13 +195,6 @@
   function adjustEditCount(id, amt) {
     const el = document.querySelector(`#${id}`); el.value = Math.max(0, (parseInt(el.value)||0) + amt);
   }
-  function fetchBrowserGPS(targetInputId) {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => { document.querySelector(`#${targetInputId}`).value = position.coords.latitude.toFixed(6) + ", " + position.coords.longitude.toFixed(6); }
-      );
-    }
-  }
 
   function formatContainer(count, type) {
     if(count === 0) return '';
@@ -209,6 +202,14 @@
     if(type === 'Box') return `${count} Boxes`;
     if(type === 'Pipe/Rod' || type === 'Other') return `${count} ${type}`;
     return `${count} ${type}s`;
+  }
+
+  function fetchBrowserGPS(targetInputId) {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => { document.querySelector(`#${targetInputId}`).value = position.coords.latitude.toFixed(6) + ", " + position.coords.longitude.toFixed(6); }
+      );
+    }
   }
 
   async function refresh() {
@@ -332,11 +333,13 @@
       let pmName = pmEmail ? pmEmail.split('@')[0].split('.')[0] : null;
       if(pmName) pmName = pmName.charAt(0).toUpperCase() + pmName.slice(1);
       
-      await supabaseClient.from('shipped').insert([{
+      const { error: insertError } = await supabaseClient.from('shipped').insert([{
         so: e.so, customer: document.querySelector('#e_cust').value.trim(), type: getDynamicType(), qty: getDynamicQty(),
         carrier: 'RETURNED TO STOCK', location: document.querySelector('#e_loc').value.trim(), coords: document.querySelector('#e_coords').value.trim(),
         weight: document.querySelector('#e_weight').value.trim(), shipped_by: returnedBy, pmd_email: pickedBy, photo_urls: editTargetRecord.photo_urls
       }]); 
+      if (insertError) { alert("Database Error: " + insertError.message); return; }
+      
       await supabaseClient.from('staging').delete().eq('id', currentEditId);
 
       const photoLinks = editTargetRecord.photo_urls.length > 0 ? `\nAttached Photos:\n${editTargetRecord.photo_urls.map((p,i)=> `Image ${i+1}: ${SUPABASE_URL}/storage/v1/object/public/freight-photos/${p}`).join('\n')}\n` : '';
@@ -391,9 +394,11 @@
     const basePayload = { so: document.querySelector('#e_so').value.trim(), customer: document.querySelector('#e_cust').value.trim(), location: document.querySelector('#e_loc').value.trim(), coords: document.querySelector('#e_coords').value.trim(), weight: document.querySelector('#e_weight').value.trim(), type: dynamicType, qty: getDynamicQty() };
 
     if (editTargetRecord.table === 'staging') {
-      await supabaseClient.from('staging').update({ ...basePayload, status: document.querySelector('#e_status').value.trim(), staged_by: document.querySelector('#e_staged_by').value.trim(), photo_urls: editTargetRecord.photo_urls }).eq('id', currentEditId);
+      const { error } = await supabaseClient.from('staging').update({ ...basePayload, status: document.querySelector('#e_status').value.trim(), staged_by: document.querySelector('#e_staged_by').value.trim(), photo_urls: editTargetRecord.photo_urls }).eq('id', currentEditId);
+      if(error) { alert("Database Error: " + error.message); return; }
     } else {
-      await supabaseClient.from('shipped').update({ ...basePayload, carrier: document.querySelector('#e_carrier').value.trim(), shipped_by: document.querySelector('#e_shipped_by').value.trim(), pmd_email: document.querySelector('#e_pm').value.trim() || null, photo_urls: editTargetRecord.photo_urls }).eq('id', currentEditId);
+      const { error } = await supabaseClient.from('shipped').update({ ...basePayload, carrier: document.querySelector('#e_carrier').value.trim(), shipped_by: document.querySelector('#e_shipped_by').value.trim(), pmd_email: document.querySelector('#e_pm').value.trim() || null, photo_urls: editTargetRecord.photo_urls }).eq('id', currentEditId);
+      if(error) { alert("Database Error: " + error.message); return; }
     }
     document.querySelector('#editModal').style.display = 'none'; refresh();
   }
@@ -434,7 +439,9 @@
       if(pmName) pmName = pmName.charAt(0).toUpperCase() + pmName.slice(1);
       const currentTimeStamp = new Date().toLocaleString();
 
-      await supabaseClient.from('shipped').insert([{ so: activeShipTargetItem.so, customer: activeShipTargetItem.customer, type: activeShipTargetItem.type, qty: activeShipTargetItem.qty, carrier: carrierVal, location: activeShipTargetItem.location, coords: activeShipTargetItem.coords, weight: activeShipTargetItem.weight, shipped_by: dispatcher, pmd_email: pmName, photo_urls: photoUrls }]);
+      const { error: insertError } = await supabaseClient.from('shipped').insert([{ so: activeShipTargetItem.so, customer: activeShipTargetItem.customer, type: activeShipTargetItem.type, qty: activeShipTargetItem.qty, carrier: carrierVal, location: activeShipTargetItem.location, coords: activeShipTargetItem.coords, weight: activeShipTargetItem.weight, shipped_by: dispatcher, pmd_email: pmName, photo_urls: photoUrls }]);
+      if(insertError) { alert("Database Error: " + insertError.message); document.querySelector('#modalConfirmBtn').disabled = false; return; }
+      
       await supabaseClient.from('staging').delete().eq('id', activeShipTargetItem.id);
       
       const photoLinks = photoUrls.length > 0 ? `\nAttached Photos:\n${photoUrls.map((p,i)=> `Image ${i+1}: ${SUPABASE_URL}/storage/v1/object/public/freight-photos/${p}`).join('\n')}\n` : '';
@@ -480,9 +487,11 @@
   async function executeShippedUndo() {
     if(!confirm("Are you sure you want to undo this action and return it to Staging?")) return;
     try {
-      const { data: currentRecord } = await supabaseClient.from('shipped').select('*').eq('id', editTargetRecord.id).single();
-      await supabaseClient.from('staging').insert([{ so: currentRecord.so, customer: currentRecord.customer, type: currentRecord.type, qty: currentRecord.qty, location: currentRecord.location, coords: currentRecord.coords, weight: currentRecord.weight, status: 'Partial', photo_urls: currentRecord.photo_urls }]);
-      await supabaseClient.from('shipped').delete().eq('id', editTargetRecord.id);
+      const { data: currentRecord } = await supabaseClient.from('shipped').select('*').eq('id', currentEditId).single();
+      const { error } = await supabaseClient.from('staging').insert([{ so: currentRecord.so, customer: currentRecord.customer, type: currentRecord.type, qty: currentRecord.qty, location: currentRecord.location, coords: currentRecord.coords, weight: currentRecord.weight, status: 'Partial', photo_urls: currentRecord.photo_urls }]);
+      if (error) { alert("Undo Database Error: " + error.message); return; }
+      
+      await supabaseClient.from('shipped').delete().eq('id', currentEditId);
       document.querySelector('#editModal').style.display = 'none'; refresh();
     } catch(e) { alert("Undo error."); }
   }
