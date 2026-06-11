@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Shipped Expanded Log — Beta v10.2</title>
+<title>Shipped Expanded Log — Beta v10.3</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<link rel="stylesheet" href="style.css" />
+<link rel="stylesheet" href="style.css?v=10.3" />
 </head>
 <body>
 <datalist id="dl_customers"></datalist>
@@ -104,12 +104,72 @@
       <span style="display:flex; gap:8px; flex-wrap: wrap;">
         <button id="editDelBtn" class="btn" style="background:#dc2626; padding: 10px 16px; border-radius: 8px; border: 0; color: #fff; font-weight: 700; cursor: pointer;" onclick="deleteCurrentRecord()">Delete</button>
         <button id="editUndoBtn" class="btn" style="background:#4b5563; padding: 10px 16px; border-radius: 8px; border: 0; color: #fff; font-weight: 700; cursor: pointer;" onclick="executeShippedUndo()">Undo Shipment Action</button>
+        <button id="editReturnBtn" class="btn" style="background:#eab308; color:#222; padding: 10px 16px; border-radius: 8px; border: 0; font-weight:700; cursor:pointer;" onclick="triggerReturnModal()">Return to Stock</button>
+        <button id="editConsolidateBtn" class="btn" style="background:#8b5cf6; color:#fff; padding: 10px 16px; border-radius: 8px; border: 0; font-weight:700; cursor:pointer;" onclick="executeConsolidate()">Consolidated</button>
       </span>
       <span style="display:flex; gap:8px; margin-left:auto; flex-wrap: wrap;">
         <button class="btn" style="background:#9ca3af; border-radius: 8px; padding: 10px 16px; border: 0; color:#fff; font-weight:700; cursor:pointer;" onclick="document.querySelector('#editModal').style.display='none'">Cancel</button>
         <button id="editSaveBtn" class="btn" style="background:#e04f26; border-radius: 8px; padding: 10px 16px; border: 0; color:#fff; font-weight:700; cursor:pointer;" onclick="saveEditedRecord()">Save Changes</button>
       </span>
     </div>
+  </div>
+</div>
+
+<div id="shipModal" class="modal-overlay" onclick="if(event.target===this) closeShipModal()">
+  <div class="modal-window">
+    <button class="modal-close-x" onclick="closeShipModal()">×</button>
+    <h3>Confirm Freight Dispatch</h3>
+    <div class="photo-options-grid">
+      <div class="photo-uploader" onclick="document.querySelector('#cameraFile').click()">📷 Take Live Photo
+        <input type="file" id="cameraFile" accept="image/*" capture="environment" style="display:none" onchange="addPhotoBlob(this)" />
+      </div>
+      <div class="photo-uploader" onclick="document.querySelector('#uploadFile').click()">📁 File Upload
+        <input type="file" id="uploadFile" multiple accept="image/*" style="display:none" onchange="addPhotoBlob(this)" />
+      </div>
+    </div>
+    <div id="photoPreviewStrip" class="photo-strip"></div>
+    <div class="modal-field"><label>SO#</label><input id="m_so" readonly oninput="this.value=this.value.replace(/[^0-9]/g,'')"/></div>
+    <div class="modal-field"><label>Customer</label><input id="m_cust" readonly /></div>
+    <div class="modal-field"><label>Containers</label><input id="m_qty" readonly /></div>
+    <div class="modal-field"><label>Carrier</label><input id="m_carrier" placeholder="e.g. Fedex, Manitoulin, Customer Pickup" /></div>
+    <div class="modal-field"><label>Location</label><input id="m_loc" readonly /></div>
+    <div class="modal-field"><label>Total Weight (in lbs)</label><input id="m_weight" readonly /></div>
+    <div class="modal-field"><label>Shipped By</label>
+      <div style="display:flex; width:100%;">
+        <input id="m_by" list="dl_stagers" style="border-top-right-radius:0; border-bottom-right-radius:0; border-right:0;" />
+        <button type="button" onclick="banishMemory('m_by')" style="height:42px; width:36px; flex:none; background:#f8fafc; border:1px solid #cbd5e1; border-top-right-radius:8px; border-bottom-right-radius:8px; color:#dc2626; font-weight:bold; font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;">×</button>
+      </div>
+    </div>
+    <div class="chk-row"><input type="checkbox" id="m_pm_chk" onchange="if(document.querySelector('#m_pm_email')) document.querySelector('#m_pm_email').disabled=!this.checked; if(document.querySelector('#m_pm_email_btn')) document.querySelector('#m_pm_email_btn').disabled=!this.checked;"/><label>E-mail PM Verification</label></div>
+    <div class="modal-field">
+      <div style="display:flex; width:100%;">
+        <input id="m_pm_email" list="dl_pastEmails" disabled style="border-top-right-radius:0; border-bottom-right-radius:0; border-right:0;" />
+        <button type="button" id="m_pm_email_btn" disabled onclick="banishMemory('m_pm_email')" style="height:42px; width:36px; flex:none; background:#f8fafc; border:1px solid #cbd5e1; border-top-right-radius:8px; border-bottom-right-radius:8px; color:#dc2626; font-weight:bold; font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;">×</button>
+      </div>
+    </div>
+    <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:8px;">
+      <button id="modalConfirmBtn" class="btn" onclick="submitFreightDispatch()">Confirm Dispatch</button>
+    </div>
+  </div>
+</div>
+
+<div id="mapViewModal" class="modal-overlay" onclick="if(event.target===this) document.querySelector('#mapViewModal').style.display='none'">
+  <div class="modal-window">
+    <button class="modal-close-x" onclick="document.querySelector('#mapViewModal').style.display='none'">×</button>
+    <h3>Staged Manifest Details</h3>
+    <div id="mapViewPhotoSection" style="display:none; flex-direction:column; gap:4px;">
+      <label style="font-size:12px; font-weight:700; color:#4b5563;">Staged Images</label>
+      <div id="mapViewGalleryStrip" class="photo-strip"></div>
+    </div>
+    <div class="modal-field"><label>SO#</label><input id="v_so" readonly style="background:#f9fafb; border-color:#e5e7eb; color:#6b7280;"/></div>
+    <div class="modal-field"><label>Customer</label><input id="v_cust" readonly style="background:#f9fafb; border-color:#e5e7eb; color:#6b7280;"/></div>
+    <div class="modal-field"><label>Entry Date</label><input id="v_date" readonly style="background:#f9fafb; border-color:#e5e7eb; color:#6b7280;"/></div>
+    <div class="modal-field"><label>Containers</label><input id="v_type" readonly style="background:#f9fafb; border-color:#e5e7eb; color:#6b7280;"/></div>
+    <div class="modal-field"><label>Location</label><input id="v_loc" readonly style="background:#f9fafb; border-color:#e5e7eb; color:#6b7280;"/></div>
+    <div class="modal-field"><label>Coords</label><input id="v_coords" readonly style="background:#f9fafb; border-color:#e5e7eb; color:#6b7280;"/></div>
+    <div class="modal-field"><label>Total Weight (in lbs)</label><input id="v_weight" readonly style="background:#f9fafb; border-color:#e5e7eb; color:#6b7280;"/></div>
+    <div class="modal-field"><label>Status</label><input id="v_status" readonly style="background:#f9fafb; border-color:#e5e7eb; color:#6b7280;"/></div>
+    <div class="modal-field"><label>Staged By</label><input id="v_staged_by" readonly style="background:#f9fafb; border-color:#e5e7eb; color:#6b7280;"/></div>
   </div>
 </div>
 
@@ -121,6 +181,6 @@
   </div>
 </div>
 
-<script src="app.js"></script>
+<script src="app.js?v=10.3"></script>
 </body>
 </html>
