@@ -29,6 +29,22 @@ window.bootstrapStandalonePWA = function() {
 window.adjustCount = function(id, amt) { if($('#'+id)) $('#'+id).value = Math.max(0, (parseInt($('#'+id).value)||0) + amt); };
 window.adjustEditCount = function(id, amt) { if($('#'+id)) $('#'+id).value = Math.max(0, (parseInt($('#'+id).value)||0) + amt); };
 
+window.formatWeight = function(input) {
+  // Strip out anything that isn't a number or decimal point
+  let value = input.value.replace(/[^0-9.]/g, '');
+  
+  // Split the number at the decimal (so we don't accidentally format the decimal values)
+  let parts = value.split('.');
+  
+  // Apply the 1000s comma separator to the whole numbers
+  if (parts[0]) {
+    parts[0] = parseInt(parts[0], 10).toLocaleString('en-US');
+  }
+  
+  // Rejoin the number and display it in the input field
+  input.value = parts.slice(0, 2).join('.');
+};
+
 window.formatContainer = function(count, type) {
   if(!count || count === 0) return '';
   if(count === 1) return `1 ${type}`;
