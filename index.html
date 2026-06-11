@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Swift Staging Tracker — Beta v10.0</title>
+<title>Swift Staging Tracker — Beta v10.1</title>
 
 <link rel="manifest" href="data:application/manifest+json;charset=utf-8,%7B%22short_name%22%3A%22StagingTracker%22%2C%22name%22%3A%22Swift%20Staging%20Tracker%20Hub%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22https%3A%2F%2Fcdn-icons-png.flaticon.com%2F512%2F3014%2F3014166.png%22%2C%22type%22%3A%22image%22%2C%22sizes%22%3A%22512x512%22%7D%5D%2C%22start_url%22%3A%22.%22%2C%22background_color%22%3A%22%23f6f7f9%22%2C%22theme_color%22%3A%22%23dd4d25%22%2C%22display%22%3A%22standalone%22%2C%22orientation%22%3A%22portrait%22%7D" id="pwa-manifest">
 
@@ -26,7 +26,6 @@
   .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
   input,select{height:42px;padding:0 12px;border:1px solid #cbd5e1;border-radius:10px;background:#fff;width:100%;color:#222;font-size:14px;}
   
-  /* UI Disable sync for inputs and action buttons */
   input:disabled, select:disabled, button:disabled { background: #f3f4f6; color: #9ca3af; cursor: not-allowed; border-color:#e5e7eb; }
   
   .row > *{flex:1 1 150px}
@@ -79,7 +78,6 @@
     .freight-block { justify-content: space-between; }
   }
   
-  /* STRICT MOBILE PORTRAIT WRAPPER PREVENTS GRID STRETCHING */
   @media (max-width: 480px) {
     .freight-block, .modal-window .freight-block { display: grid !important; grid-template-columns: 1fr !important; gap: 8px !important; }
   }
@@ -93,7 +91,7 @@
 <datalist id="dl_pastEmails"></datalist>
 
 <div class="wrap">
-  <h1>Swift Staging Tracker — Beta v10.0</h1>
+  <h1>Swift Staging Tracker — Beta v10.1</h1>
   <div id="err" style="display:none; background:#fee2e2; color:#991b1b; padding:10px; border-radius:10px; margin-bottom:10px"></div>
 
   <div class="grid">
@@ -115,10 +113,10 @@
     <div class="split"><h3>Enter Staging Information</h3></div>
     <div class="row">
       <div class="photo-options-grid" style="flex: 1 1 180px; margin: 0;">
-        <div class="photo-uploader" style="padding: 8px; margin: 0; background: #fff;" onclick="$('#main_cameraFile').click()">📷 Live Photo
+        <div class="photo-uploader" style="padding: 8px; margin: 0; background: #fff;" onclick="document.querySelector('#main_cameraFile').click()">📷 Live Photo
           <input type="file" id="main_cameraFile" accept="image/*" capture="environment" style="display:none" onchange="addMainPhotoBlob(this)" />
         </div>
-        <div class="photo-uploader" style="padding: 8px; margin: 0; background: #fff;" onclick="$('#main_uploadFile').click()">📁 File Upload
+        <div class="photo-uploader" style="padding: 8px; margin: 0; background: #fff;" onclick="document.querySelector('#main_uploadFile').click()">📁 File Upload
           <input type="file" id="main_uploadFile" multiple accept="image/*" style="display:none" onchange="addMainPhotoBlob(this)" />
         </div>
       </div>
@@ -193,9 +191,9 @@
   </div>
 </div>
 
-<div id="returnModal" class="modal-overlay" onclick="if(event.target===this) $('#returnModal').style.display='none'">
+<div id="returnModal" class="modal-overlay" onclick="if(event.target===this) document.querySelector('#returnModal').style.display='none'">
   <div class="modal-window">
-    <button class="modal-close-x" onclick="$('#returnModal').style.display='none'">×</button>
+    <button class="modal-close-x" onclick="document.querySelector('#returnModal').style.display='none'">×</button>
     <h3>Return to Stock</h3>
     <p style="font-size:13px; color:#4b5563; margin-top:0; margin-bottom:8px;">Are you sure you want to return this order to stock?</p>
     
@@ -213,7 +211,7 @@
     </div>
     
     <div class="modal-field"><label>Reason for Return to Stock</label><input id="r_reason" placeholder="Enter reason..." /></div>
-    <div class="chk-row" style="margin-top:4px;"><input type="checkbox" id="r_pm_chk" onchange="$('#r_pm_email').disabled=!this.checked; $('#r_pm_email_btn').disabled=!this.checked;"/><label>Confirm return to PM via e-mail</label></div>
+    <div class="chk-row" style="margin-top:4px;"><input type="checkbox" id="r_pm_chk" onchange="document.querySelector('#r_pm_email').disabled=!this.checked; document.querySelector('#r_pm_email_btn').disabled=!this.checked;"/><label>Confirm return to PM via e-mail</label></div>
     
     <div class="modal-field">
       <div style="display:flex; width:100%;">
@@ -226,18 +224,18 @@
   </div>
 </div>
 
-<div id="editModal" class="modal-overlay" onclick="if(event.target===this) $('#editModal').style.display='none'">
+<div id="editModal" class="modal-overlay" onclick="if(event.target===this) document.querySelector('#editModal').style.display='none'">
   <div class="modal-window">
-    <button class="modal-close-x" onclick="$('#editModal').style.display='none'">×</button>
+    <button class="modal-close-x" onclick="document.querySelector('#editModal').style.display='none'">×</button>
     <h3 id="editModalTitle">Edit Record</h3>
     
     <div id="editPhotoSection" style="display:flex; flex-direction:column; gap:8px;">
       <label style="font-size:12px; font-weight:700; color:#4b5563;">Manage Freight Photos</label>
       <div class="photo-options-grid">
-        <div class="photo-uploader" onclick="$('#e_cameraFile').click()">📷 Take Live Photo
+        <div class="photo-uploader" onclick="document.querySelector('#e_cameraFile').click()">📷 Take Live Photo
           <input type="file" id="e_cameraFile" accept="image/*" capture="environment" style="display:none" onchange="addEditPhotoBlob(this)" />
         </div>
-        <div class="photo-uploader" onclick="$('#e_uploadFile').click()">📁 File Upload
+        <div class="photo-uploader" onclick="document.querySelector('#e_uploadFile').click()">📁 File Upload
           <input type="file" id="e_uploadFile" multiple accept="image/*" style="display:none" onchange="addEditPhotoBlob(this)" />
         </div>
       </div>
@@ -309,7 +307,7 @@
         <button id="editConsolidateBtn" class="btn" style="background:#8b5cf6; color:#fff; padding: 10px 16px; border-radius: 8px; border: 0; font-weight:700; cursor:pointer;" onclick="executeConsolidate()">Consolidated</button>
       </span>
       <span style="display:flex; gap:8px; margin-left:auto; flex-wrap: wrap;">
-        <button class="btn" style="background:#9ca3af; border-radius: 8px; padding: 10px 16px; border: 0; color:#fff; font-weight:700; cursor:pointer;" onclick="$('#editModal').style.display='none'">Cancel</button>
+        <button class="btn" style="background:#9ca3af; border-radius: 8px; padding: 10px 16px; border: 0; color:#fff; font-weight:700; cursor:pointer;" onclick="document.querySelector('#editModal').style.display='none'">Cancel</button>
         <button id="editSaveBtn" class="btn" style="background:#e04f26; border-radius: 8px; padding: 10px 16px; border: 0; color:#fff; font-weight:700; cursor:pointer;" onclick="saveEditedRecord()">Save Changes</button>
       </span>
     </div>
@@ -321,10 +319,10 @@
     <button class="modal-close-x" onclick="closeShipModal()">×</button>
     <h3>Confirm Freight Dispatch</h3>
     <div class="photo-options-grid">
-      <div class="photo-uploader" onclick="$('#cameraFile').click()">📷 Take Live Photo
+      <div class="photo-uploader" onclick="document.querySelector('#cameraFile').click()">📷 Take Live Photo
         <input type="file" id="cameraFile" accept="image/*" capture="environment" style="display:none" onchange="addPhotoBlob(this)" />
       </div>
-      <div class="photo-uploader" onclick="$('#uploadFile').click()">📁 File Upload
+      <div class="photo-uploader" onclick="document.querySelector('#uploadFile').click()">📁 File Upload
         <input type="file" id="uploadFile" multiple accept="image/*" style="display:none" onchange="addPhotoBlob(this)" />
       </div>
     </div>
@@ -341,7 +339,7 @@
         <button type="button" onclick="banishMemory('m_by')" style="height:42px; width:36px; flex:none; background:#f8fafc; border:1px solid #cbd5e1; border-top-right-radius:8px; border-bottom-right-radius:8px; color:#dc2626; font-weight:bold; font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;">×</button>
       </div>
     </div>
-    <div class="chk-row"><input type="checkbox" id="m_pm_chk" onchange="$('#m_pm_email').disabled=!this.checked; $('#m_pm_email_btn').disabled=!this.checked;"/><label>E-mail PM Verification</label></div>
+    <div class="chk-row"><input type="checkbox" id="m_pm_chk" onchange="document.querySelector('#m_pm_email').disabled=!this.checked; document.querySelector('#m_pm_email_btn').disabled=!this.checked;"/><label>E-mail PM Verification</label></div>
     <div class="modal-field">
       <div style="display:flex; width:100%;">
         <input id="m_pm_email" list="dl_pastEmails" disabled style="border-top-right-radius:0; border-bottom-right-radius:0; border-right:0;" />
@@ -354,9 +352,9 @@
   </div>
 </div>
 
-<div id="mapViewModal" class="modal-overlay" onclick="if(event.target===this) $('#mapViewModal').style.display='none'">
+<div id="mapViewModal" class="modal-overlay" onclick="if(event.target===this) document.querySelector('#viewModal').style.display='none'">
   <div class="modal-window">
-    <button class="modal-close-x" onclick="$('#mapViewModal').style.display='none'">×</button>
+    <button class="modal-close-x" onclick="document.querySelector('#viewModal').style.display='none'">×</button>
     <h3>Staged Manifest Details</h3>
     <div id="mapViewPhotoSection" style="display:none; flex-direction:column; gap:4px;">
       <label style="font-size:12px; font-weight:700; color:#4b5563;">Staged Images</label>
@@ -374,9 +372,9 @@
   </div>
 </div>
 
-<div id="viewModal" class="modal-overlay" onclick="if(event.target===this) $('#viewModal').style.display='none'">
+<div id="viewModal" class="modal-overlay" onclick="if(event.target===this) document.querySelector('#viewModal').style.display='none'">
   <div class="modal-window" style="max-width: 500px;">
-    <button class="modal-close-x" onclick="$('#viewModal').style.display='none'">×</button>
+    <button class="modal-close-x" onclick="document.querySelector('#viewModal').style.display='none'">×</button>
     <h3 style="margin:0 0 10px 0;">Staged Freight Photos</h3>
     <div id="modalPhotoGallery" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:12px; padding: 4px 0;"></div>
   </div>
@@ -473,6 +471,7 @@ function syncMapPins() {
 }
 
 function openStaticMapPromptWindow(item) {
+  if(!$('#mapViewModal')) return;
   $('#v_so').value = item.so; $('#v_cust').value = item.customer; $('#v_date').value = new Date(item.entry_date).toLocaleString();
   $('#v_type').value = item.type || '—'; $('#v_loc').value = item.location || '—'; $('#v_coords').value = item.coords || '—';
   $('#v_weight').value = item.weight || '—'; $('#v_status').value = item.status || '—'; $('#v_staged_by').value = item.staged_by || '—';
@@ -880,9 +879,11 @@ function renderTables() {
   if($('#tblStaging')) {
     const sBody = $('#tblStaging').querySelector('tbody'); 
     sBody.innerHTML = '';
-    fStaging.slice(0, 20).forEach(o => {
+    const limitStaging = $('#stageLimitNotice') ? 20 : 999999;
+    fStaging.slice(0, limitStaging).forEach(o => {
       const geoLink = o.coords ? `<a class="coord-link" href="geo:0,0?q=${encodeURIComponent(o.coords)}">${o.coords}</a>` : '—';
       const picBtn = (o.photo_urls && o.photo_urls.length > 0) ? `<button class="btn" style="padding:4px 8px; font-size:12px; margin-right:4px;" onclick="openPhotoViewer('${o.id}')">View</button>` : '';
+      
       sBody.insertAdjacentHTML('beforeend', `<tr>
         <td><button class="btn-edit" onclick="openUniversalEditor('staging', '${o.id}')">Edit</button></td>
         <td>${picBtn}</td><td><b>${o.so}</b></td><td>${o.customer}</td><td>${new Date(o.entry_date).toLocaleString()}</td><td>${o.type}</td><td>${o.location}</td><td><small>${geoLink}</small></td><td>${o.weight || '—'}</td><td>${o.status}</td><td>${o.staged_by||'—'}</td>
@@ -893,7 +894,8 @@ function renderTables() {
   if($('#tblShipped')) {
     const shBody = $('#tblShipped').querySelector('tbody'); 
     shBody.innerHTML = '';
-    fShipped.slice(0, 20).forEach(o => {
+    const limitShipped = $('#shippedLimitNotice') ? 20 : 999999;
+    fShipped.slice(0, limitShipped).forEach(o => {
       const geoLink = o.coords ? `<a class="coord-link" href="geo:0,0?q=${encodeURIComponent(o.coords)}">${o.coords}</a>` : '—';
       const isRet = (o.carrier === 'RETURNED TO STOCK' || o.carrier === 'CONSOLIDATED');
       const rowClass = isRet ? 'style="color:#9ca3af; text-decoration:line-through;"' : '';
