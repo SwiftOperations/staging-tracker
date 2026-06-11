@@ -244,12 +244,11 @@
     <button class="modal-close-x" onclick="window.closeShipModal()">&times;</button>
     <h3>Confirm Freight Dispatch</h3>
     <div class="photo-options-grid">
-      <div class="photo-uploader" onclick="document.querySelector('#cameraFile').click()">📷 Take Live Photo
-        <input type="file" id="cameraFile" accept="image/*" capture="environment" style="display:none" onchange="window.addPhotoBlob(this)" />
-      </div>
-      <div class="photo-uploader" onclick="document.querySelector('#uploadFile').click()">📁 File Upload
-        <input type="file" id="uploadFile" multiple accept="image/*" style="display:none" onchange="window.addPhotoBlob(this)" />
-      </div>
+      <div class="photo-uploader" onclick="document.querySelector('#cameraFile').click()">📷 Take Live Photo</div>
+      <input type="file" id="cameraFile" accept="image/*" capture="environment" style="display:none" onchange="window.addPhotoBlob(this)" />
+      
+      <div class="photo-uploader" onclick="document.querySelector('#uploadFile').click()">📁 File Upload</div>
+      <input type="file" id="uploadFile" multiple accept="image/*" style="display:none" onchange="window.addPhotoBlob(this)" />
     </div>
     <div id="photoPreviewStrip" class="photo-strip"></div>
     <div class="modal-field"><label>SO#</label><input id="m_so" readonly /></div>
