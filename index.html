@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Swift Staging Tracker — Beta v10.2</title>
+<title>Swift Staging Tracker — Beta v10.3</title>
 <link rel="manifest" href="data:application/manifest+json;charset=utf-8,%7B%22short_name%22%3A%22StagingTracker%22%2C%22name%22%3A%22Swift%20Staging%20Tracker%20Hub%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22https%3A%2F%2Fcdn-icons-png.flaticon.com%2F512%2F3014%2F3014166.png%22%2C%22type%22%3A%22image%22%2C%22sizes%22%3A%22512x512%22%7D%5D%2C%22start_url%22%3A%22.%22%2C%22background_color%22%3A%22%23f6f7f9%22%2C%22theme_color%22%3A%22%23dd4d25%22%2C%22display%22%3A%22standalone%22%2C%22orientation%22%3A%22portrait%22%7D" id="pwa-manifest">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<link rel="stylesheet" href="style.css" />
+<link rel="stylesheet" href="style.css?v=10.3" />
 </head>
 <body>
 <datalist id="dl_customers"></datalist>
@@ -17,7 +17,7 @@
 <datalist id="dl_pastEmails"></datalist>
 
 <div class="wrap">
-  <h1>Swift Staging Tracker — Beta v10.2</h1>
+  <h1>Swift Staging Tracker — Beta v10.3</h1>
   <div id="err" style="display:none; background:#fee2e2; color:#991b1b; padding:10px; border-radius:10px; margin-bottom:10px"></div>
 
   <div class="grid">
@@ -32,7 +32,7 @@
   </div>
 
   <div class="card">
-    <input id="q" placeholder="Quick search SO / Location / Customer..." oninput="renderTables()"/>
+    <input id="q" placeholder="Quick search SO / Location / Customer..." />
   </div>
 
   <div class="card" id="entryFormCard">
@@ -278,6 +278,26 @@
   </div>
 </div>
 
+<div id="mapViewModal" class="modal-overlay" onclick="if(event.target===this) document.querySelector('#mapViewModal').style.display='none'">
+  <div class="modal-window">
+    <button class="modal-close-x" onclick="document.querySelector('#mapViewModal').style.display='none'">×</button>
+    <h3>Staged Manifest Details</h3>
+    <div id="mapViewPhotoSection" style="display:none; flex-direction:column; gap:4px;">
+      <label style="font-size:12px; font-weight:700; color:#4b5563;">Staged Images</label>
+      <div id="mapViewGalleryStrip" class="photo-strip"></div>
+    </div>
+    <div class="modal-field"><label>SO#</label><input id="v_so" readonly style="background:#f9fafb; border-color:#e5e7eb; color:#6b7280;"/></div>
+    <div class="modal-field"><label>Customer</label><input id="v_cust" readonly style="background:#f9fafb; border-color:#e5e7eb; color:#6b7280;"/></div>
+    <div class="modal-field"><label>Entry Date</label><input id="v_date" readonly style="background:#f9fafb; border-color:#e5e7eb; color:#6b7280;"/></div>
+    <div class="modal-field"><label>Containers</label><input id="v_type" readonly style="background:#f9fafb; border-color:#e5e7eb; color:#6b7280;"/></div>
+    <div class="modal-field"><label>Location</label><input id="v_loc" readonly style="background:#f9fafb; border-color:#e5e7eb; color:#6b7280;"/></div>
+    <div class="modal-field"><label>Coords</label><input id="v_coords" readonly style="background:#f9fafb; border-color:#e5e7eb; color:#6b7280;"/></div>
+    <div class="modal-field"><label>Total Weight (in lbs)</label><input id="v_weight" readonly style="background:#f9fafb; border-color:#e5e7eb; color:#6b7280;"/></div>
+    <div class="modal-field"><label>Status</label><input id="v_status" readonly style="background:#f9fafb; border-color:#e5e7eb; color:#6b7280;"/></div>
+    <div class="modal-field"><label>Staged By</label><input id="v_staged_by" readonly style="background:#f9fafb; border-color:#e5e7eb; color:#6b7280;"/></div>
+  </div>
+</div>
+
 <div id="viewModal" class="modal-overlay" onclick="if(event.target===this) document.querySelector('#viewModal').style.display='none'">
   <div class="modal-window" style="max-width: 500px;">
     <button class="modal-close-x" onclick="document.querySelector('#viewModal').style.display='none'">×</button>
@@ -286,6 +306,6 @@
   </div>
 </div>
 
-<script src="app.js"></script>
+<script src="app.js?v=10.3"></script>
 </body>
 </html>
