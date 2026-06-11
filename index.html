@@ -74,7 +74,7 @@
       </div>
 
       <input id="coords" placeholder="Tap for GPS Coords (Optional)" readonly onclick="window.fetchBrowserGPS('coords')" style="background:#fafafa; cursor:pointer;" />
-      <input id="weight" placeholder="Total Weight" />
+      <input id="weight" placeholder="Total Weight" oninput="window.formatWeight(this)" />
       
       <div style="display:flex; flex: 1 1 150px;">
         <input id="staged_by" placeholder="Staged By" list="dl_stagers" style="border-top-right-radius:0; border-bottom-right-radius:0; border-right:0; width:100%;" />
