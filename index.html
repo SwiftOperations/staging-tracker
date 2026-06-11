@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Swift Staging Tracker — Stable v1.1</title>
+<title>Swift Staging Tracker — Beta v10.8</title>
 <link rel="manifest" href="data:application/manifest+json;charset=utf-8,%7B%22short_name%22%3A%22StagingTracker%22%2C%22name%22%3A%22Swift%20Staging%20Tracker%20Hub%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22https%3A%2F%2Fcdn-icons-png.flaticon.com%2F512%2F3014%2F3014166.png%22%2C%22type%22%3A%22image%22%2C%22sizes%22%3A%22512x512%22%7D%5D%2C%22start_url%22%3A%22.%22%2C%22background_color%22%3A%22%23f6f7f9%22%2C%22theme_color%22%3A%22%23dd4d25%22%2C%22display%22%3A%22standalone%22%2C%22orientation%22%3A%22portrait%22%7D" id="pwa-manifest">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<link rel="stylesheet" href="style.css?v=10.7" />
+<link rel="stylesheet" href="style.css?v=10.8" />
 </head>
 <body>
 <datalist id="dl_customers"></datalist>
@@ -17,7 +17,7 @@
 <datalist id="dl_pastEmails"></datalist>
 
 <div class="wrap">
-  <h1>Swift Staging Tracker — Stable v1.1</h1>
+  <h1>Swift Staging Tracker — Beta v10.8</h1>
   <div id="err" style="display:none; background:#fee2e2; color:#991b1b; padding:10px; border-radius:10px; margin-bottom:10px"></div>
 
   <div class="grid">
@@ -92,7 +92,7 @@
     <div class="tblwrap">
       <div class="tbl-scroller">
         <table id="tblStaging">
-          <thead><tr><th>Edit</th><th>Photo(s)</th><th>SO</th><th>Customer</th><th>Entry Date</th><th>Containers</th><th>Location</th><th>Coords</th><th>Total Weight (in lbs)</th><th>Comments</th><th>Status</th><th style="position:sticky;right:0;width:70px;text-align:center;">Shipped</th></tr></thead>
+          <thead><tr><th>Edit</th><th>Photo(s)</th><th>SO</th><th>Customer</th><th>Entry Date</th><th>Containers</th><th>Location</th><th>Coords</th><th>Total Weight (in lbs)</th><th>Comments</th><th>Status</th><th>Staged By</th><th style="position:sticky;right:0;width:70px;text-align:center;">Shipped</th></tr></thead>
           <tbody></tbody>
         </table>
       </div>
@@ -105,7 +105,7 @@
     <div class="tblwrap">
       <div class="tbl-scroller">
         <table id="tblShipped">
-          <thead><tr><th>Edit</th><th>Photo(s)</th><th>SO</th><th>Customer</th><th>Containers</th><th>Carrier</th><th>Location</th><th>Coords</th><th>Total Weight (in lbs)</th><th>Shipped At</th><th>Shipped By</th><th>PM'd Email</th></tr></thead>
+          <thead><tr><th>Edit</th><th>Photo(s)</th><th>SO</th><th>Customer</th><th>Containers</th><th>Carrier</th><th>Location</th><th>Coords</th><th>Total Weight (in lbs)</th><th>Comments</th><th>Shipped At</th><th>Shipped By</th><th>PM'd Email</th></tr></thead>
           <tbody></tbody>
         </table>
       </div>
@@ -119,6 +119,9 @@
   </div>
 </div>
 
+<!-- ============================================== -->
+<!-- ALL MODALS INJECTED EXACTLY THE SAME WORLDWIDE -->
+<!-- ============================================== -->
 <div id="returnModal" class="modal-overlay" onclick="if(event.target===this) document.querySelector('#returnModal').style.display='none'">
   <div class="modal-window">
     <button class="modal-close-x" onclick="document.querySelector('#returnModal').style.display='none'">&times;</button>
@@ -227,6 +230,12 @@
       </div>
     </div>
 
+    <!-- COMMENTS APPENDED BEFORE BUTTONS -->
+    <div class="modal-field" style="margin-top:4px;">
+      <label>Comments</label>
+      <textarea id="e_comments" rows="3" style="width:100%; border:1px solid #cbd5e1; border-radius:8px; padding:8px 12px; font-family:inherit; font-size:14px; resize:vertical;"></textarea>
+    </div>
+
     <div class="modal-actions" style="justify-content: space-between; width:100%; margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap;">
       <span style="display:flex; gap:8px; flex-wrap: wrap;">
         <button id="editDelBtn" class="btn" style="background:#dc2626; padding: 10px 16px; border-radius: 8px; border: 0; color: #fff; font-weight: 700; cursor: pointer;" onclick="window.deleteCurrentRecord()">Delete</button>
@@ -307,6 +316,21 @@
   </div>
 </div>
 
-<script src="app.js?v=10.7"></script>
+<!-- QUICK COMMENTS MODAL -->
+<div id="commentModal" class="modal-overlay" onclick="if(event.target===this) document.querySelector('#commentModal').style.display='none'">
+  <div class="modal-window" style="max-width: 400px;">
+    <button class="modal-close-x" onclick="document.querySelector('#commentModal').style.display='none'">&times;</button>
+    <h3 style="margin:0;">Comments</h3>
+    <div class="modal-field">
+      <textarea id="quick_comments" rows="4" style="width:100%; border:1px solid #cbd5e1; border-radius:8px; padding:8px 12px; font-family:inherit; font-size:14px; resize:vertical;"></textarea>
+    </div>
+    <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:4px;">
+      <button class="btn" style="background:#9ca3af; padding:8px 16px; border-radius:8px;" onclick="document.querySelector('#commentModal').style.display='none'">Cancel</button>
+      <button class="btn" style="padding:8px 16px; border-radius:8px;" onclick="window.saveQuickComment()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<script src="app.js?v=10.8"></script>
 </body>
 </html>
