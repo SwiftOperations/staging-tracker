@@ -15,26 +15,15 @@ let hiddenMemory = JSON.parse(localStorage.getItem('swift_hidden_memory') || '[]
 
 function bootstrapStandalonePWA() {
   const pwaData = {
-    "short_name": "StagingTracker",
-    "name": "Swift Staging Tracker Hub",
+    "short_name": "StagingTracker", "name": "Swift Staging Tracker Hub",
     "icons": [{"src": "https://cdn-icons-png.flaticon.com/512/3014/3014166.png", "type": "image/png", "sizes": "512x512"}],
-    "start_url": window.location.href,
-    "background_color": "#f6f7f9",
-    "theme_color": "#dd4d25",
-    "display": "standalone",
-    "orientation": "portrait"
+    "start_url": ".", "background_color": "#f6f7f9", "theme_color": "#dd4d25", "display": "standalone", "orientation": "portrait"
   };
   if($('#pwa-manifest')) $('#pwa-manifest').setAttribute('href', 'data:application/manifest+json;charset=utf-8,' + encodeURIComponent(JSON.stringify(pwaData)));
 }
 
-function adjustCount(id, amt) {
-  if(!$('#'+id)) return;
-  $('#'+id).value = Math.max(0, (parseInt($('#'+id).value)||0) + amt);
-}
-function adjustEditCount(id, amt) {
-  if(!$('#'+id)) return;
-  $('#'+id).value = Math.max(0, (parseInt($('#'+id).value)||0) + amt);
-}
+function adjustCount(id, amt) { if($('#'+id)) $('#'+id).value = Math.max(0, (parseInt($('#'+id).value)||0) + amt); }
+function adjustEditCount(id, amt) { if($('#'+id)) $('#'+id).value = Math.max(0, (parseInt($('#'+id).value)||0) + amt); }
 
 function formatContainer(count, type) {
   if(!count || count === 0) return '';
@@ -71,7 +60,6 @@ function syncMapPins() {
     const segments = item.coords.split(',');
     const latVal = parseFloat(segments[0].trim());
     const lngVal = parseFloat(segments[1].trim());
-    
     if (!isNaN(latVal) && !isNaN(lngVal)) {
       const marker = L.marker([latVal, lngVal]).addTo(openMapInstance);
       marker.on('click', () => { openStaticMapPromptWindow(item); });
@@ -85,27 +73,6 @@ function syncMapPins() {
   } else if (pointsForBoundFocus.length > 1) {
     openMapInstance.fitBounds(L.latLngBounds(pointsForBoundFocus), { padding: [5, 5], maxZoom: 18 });
   }
-}
-
-function openStaticMapPromptWindow(item) {
-  if(!$('#mapViewModal')) return;
-  $('#v_so').value = item.so; $('#v_cust').value = item.customer; $('#v_date').value = new Date(item.entry_date).toLocaleString();
-  $('#v_type').value = item.type || '—'; $('#v_loc').value = item.location || '—'; $('#v_coords').value = item.coords || '—';
-  $('#v_weight').value = item.weight || '—'; $('#v_status').value = item.status || '—'; $('#v_staged_by').value = item.staged_by || '—';
-  
-  const gallery = $('#mapViewGalleryStrip');
-  if(gallery) {
-    gallery.innerHTML = '';
-    if (item.photo_urls && item.photo_urls.length > 0) {
-      $('#mapViewPhotoSection').style.display = 'flex';
-      item.photo_urls.forEach(path => {
-        gallery.insertAdjacentHTML('beforeend', `<a href="${SUPABASE_URL}/storage/v1/object/public/freight-photos/${path}" target="_blank"><img src="${SUPABASE_URL}/storage/v1/object/public/freight-photos/${path}" style="width:70px; height:70px; object-fit:cover; border-radius:6px; border:1px solid #ddd;"/></a>`);
-      });
-    } else {
-      $('#mapViewPhotoSection').style.display = 'none';
-    }
-  }
-  $('#mapViewModal').style.display = 'flex';
 }
 
 function banishMemory(inputId) {
@@ -142,123 +109,6 @@ async function loadCloudData() {
   if(typeof syncMapPins === 'function') syncMapPins();
 }
 
-function triggerShipModal(id) {
-  const item = appData.staging.find(x => x.id === id);
-  if (!item) return;
-  activeShipTargetItem = item; 
-  if($('#photoPreviewStrip')) $('#photoPreviewStrip').innerHTML = ''; 
-  selectedPhotoBlobs = [];
-  
-  if($('#m_so')) $('#m_so').value = item.so; 
-  if($('#m_cust')) $('#m_cust').value = item.customer; 
-  if($('#m_qty')) $('#m_qty').value = item.type;
-  if($('#m_carrier')) $('#m_carrier').value = ''; 
-  if($('#m_loc')) $('#m_loc').value = item.location; 
-  if($('#m_weight')) $('#m_weight').value = item.weight || '—'; 
-  if($('#m_by')) $('#m_by').value = '';
-  
-  if($('#m_pm_chk')) $('#m_pm_chk').checked = false; 
-  if($('#m_pm_email')) $('#m_pm_email').disabled = true; 
-  if($('#m_pm_email_btn')) $('#m_pm_email_btn').disabled = true;
-  if($('#shipModal')) $('#shipModal').style.display = 'flex';
-}
-function closeShipModal() { if($('#shipModal')) $('#shipModal').style.display = 'none'; loadCloudData(); }
-
-function addMainPhotoBlob(inputEl) {
-  if(!inputEl.files || inputEl.files.length === 0) return;
-  Array.from(inputEl.files).forEach(f => { if(mainPhotoBlobs.length < 10) mainPhotoBlobs.push(f); });
-  renderMainPhotoStrip();
-}
-function renderMainPhotoStrip() {
-  const container = $('#mainPhotoPreviewStrip'); 
-  if(!container) return;
-  container.innerHTML = '';
-  mainPhotoBlobs.forEach((f, idx) => {
-    container.insertAdjacentHTML('beforeend', `<span class="photo-badge">📎 Img-${idx+1} <span onclick="mainPhotoBlobs.splice(${idx},1); renderMainPhotoStrip()">×</span></span>`);
-  });
-}
-
-function addPhotoBlob(inputEl) {
-  if(!inputEl.files || inputEl.files.length === 0) return;
-  Array.from(inputEl.files).forEach(f => { if(selectedPhotoBlobs.length < 10) selectedPhotoBlobs.push(f); });
-  renderPhotoStrip('#photoPreviewStrip', selectedPhotoBlobs);
-}
-
-function addEditPhotoBlob(inputEl) {
-  if(!inputEl.files || inputEl.files.length === 0) return;
-  Array.from(inputEl.files).forEach(async (file) => {
-    const cleanFileName = file.name.replace(/[^a-zA-Z0-9.]/g, '');
-    const path = `${editTargetRecord.so || 'edit'}-${Date.now()}-${cleanFileName}`;
-    const { error } = await supabaseClient.storage.from('freight-photos').upload(path, file);
-    if(!error) { editTargetRecord.photo_urls.push(path); renderEditPhotoStrip(); }
-  });
-}
-
-function renderPhotoStrip(containerSel, blobArray) {
-  const container = $(containerSel); 
-  if(!container) return;
-  container.innerHTML = '';
-  blobArray.forEach((f, idx) => {
-    const badge = document.createElement('span'); badge.className = 'photo-badge';
-    badge.innerHTML = `📎 Img-${idx+1} <span onclick="selectedPhotoBlobs.splice(${idx},1); renderPhotoStrip('${containerSel}', selectedPhotoBlobs)">×</span>`;
-    container.appendChild(badge);
-  });
-}
-
-async function submitFreightDispatch() {
-  const dispatcher = $('#m_by').value.trim(); const pmEmail = $('#m_pm_email').value.trim(); const pmChecked = $('#m_pm_chk').checked;
-  const carrierVal = $('#m_carrier').value.trim() || 'Unassigned Carrier';
-  if(!dispatcher || (pmChecked && !pmEmail)) return alert("Missing required inputs.");
-  
-  if($('#modalConfirmBtn')) $('#modalConfirmBtn').disabled = true;
-  try {
-    let photoUrls = [];
-    for (let i = 0; i < selectedPhotoBlobs.length; i++) {
-      const file = selectedPhotoBlobs[i]; 
-      const cleanFileName = file.name.replace(/[^a-zA-Z0-9.]/g, '');
-      const path = `${activeShipTargetItem.so}-${Date.now()}-${i}-${cleanFileName}`;
-      await supabaseClient.storage.from('freight-photos').upload(path, file); photoUrls.push(path);
-    }
-    
-    let pmName = pmEmail ? pmEmail.split('@')[0].split('.')[0] : null;
-    if(pmName) pmName = pmName.charAt(0).toUpperCase() + pmName.slice(1);
-    const currentTimeStamp = new Date().toLocaleString();
-
-    const { error: insertError } = await supabaseClient.from('shipped').insert([{
-      so: activeShipTargetItem.so, customer: activeShipTargetItem.customer, type: activeShipTargetItem.type,
-      qty: activeShipTargetItem.qty, carrier: carrierVal, location: activeShipTargetItem.location, coords: activeShipTargetItem.coords,
-      weight: activeShipTargetItem.weight, shipped_by: dispatcher, pmd_email: pmName, photo_urls: photoUrls
-    }]);
-    if (insertError) {
-      alert("Database Error: " + insertError.message);
-      if($('#modalConfirmBtn')) $('#modalConfirmBtn').disabled = false;
-      return;
-    }
-
-    await supabaseClient.from('staging').delete().eq('id', activeShipTargetItem.id);
-    
-    const photoLinks = photoUrls.length > 0 ? `\nAttached Photos:\n${photoUrls.map((p,i)=> `Image ${i+1}: ${SUPABASE_URL}/storage/v1/object/public/freight-photos/${p}`).join('\n')}\n` : '';
-    
-    const cachedSubject = `CONFIRMATION OF SHIPOUT: ${activeShipTargetItem.customer} ${activeShipTargetItem.so} @ ${activeShipTargetItem.type} via ${carrierVal}`;
-    const cachedBody = `Your order has now been shipped! Order details:\n\n` +
-      `----------------------------------------------------------------------\n` +
-      `SO#                   | ${activeShipTargetItem.so}\n` +
-      `Customer              | ${activeShipTargetItem.customer}\n` +
-      `Container(s)          | ${activeShipTargetItem.type}\n` +
-      `Total Weight (In lbs) | ${activeShipTargetItem.weight || '—'}\n` +
-      `Carrier               | ${carrierVal}\n` +
-      `Shipped At            | ${currentTimeStamp}\n` +
-      `Shipped By            | ${dispatcher}\n` +
-      `----------------------------------------------------------------------\n` +
-      photoLinks +
-      `\nFor more shipment details, visit the following link: https://swiftoperations.github.io/staging-tracker/\n\n` +
-      `Thanks\n`;
-
-    closeShipModal();
-    if(pmChecked) { window.location.href = `mailto:${pmEmail}?cc=warehouse1@swiftsupply.ca&subject=${encodeURIComponent(cachedSubject)}&body=${encodeURIComponent(cachedBody)}`; }
-  } catch(e) { alert("Data dispatch error."); } finally { if($('#modalConfirmBtn')) $('#modalConfirmBtn').disabled = false; }
-}
-
 function parseContainerString(typeStr) {
   let sk = 0, bx = 0, cr = 0, pi = 0, ot = 0; if(!typeStr) return { sk, bx, cr, pi, ot };
   const matchSk = typeStr.match(/(\d+)\s*Skid/); if(matchSk) sk = parseInt(matchSk[1]);
@@ -292,13 +142,61 @@ function getDynamicQty(prefix) {
   return sk+bx+cr+pi+ot;
 }
 
+function renderTables() {
+  const q = $('#q') ? $('#q').value.toLowerCase() : '';
+  const fStaging = appData.staging.filter(o => (o.so||'').toLowerCase().includes(q) || (o.customer||'').toLowerCase().includes(q));
+  const fShipped = appData.shipped.filter(o => (o.so||'').toLowerCase().includes(q) || (o.customer||'').toLowerCase().includes(q));
+
+  if($('#tblStaging')) {
+    const sBody = $('#tblStaging').querySelector('tbody'); 
+    sBody.innerHTML = '';
+    const limitStaging = $('#stageLimitNotice') ? 20 : 999999;
+    fStaging.slice(0, limitStaging).forEach(o => {
+      const geoLink = o.coords ? `<a class="coord-link" href="geo:0,0?q=${encodeURIComponent(o.coords)}" target="_blank">${o.coords}</a>` : '—';
+      const picBtn = (o.photo_urls && o.photo_urls.length > 0) ? `<button class="btn" style="padding:4px 8px; font-size:12px; margin-right:4px;" onclick="openPhotoViewer('${o.id}')">View</button>` : '';
+      
+      sBody.insertAdjacentHTML('beforeend', `<tr>
+        <td><button class="btn-edit" onclick="openUniversalEditor('staging', '${o.id}')">Edit</button></td>
+        <td>${picBtn}</td><td><b>${o.so}</b></td><td>${o.customer}</td><td>${new Date(o.entry_date).toLocaleString()}</td><td>${o.type}</td><td>${o.location}</td><td><small>${geoLink}</small></td><td>${o.weight || '—'}</td><td>${o.status}</td><td>${o.staged_by||'—'}</td>
+        <td style="position:sticky;right:0;text-align:center;"><input type="checkbox" onchange="if(this.checked)triggerShipModal('${o.id}')"></td></tr>`);
+    });
+  }
+
+  if($('#tblShipped')) {
+    const shBody = $('#tblShipped').querySelector('tbody'); 
+    shBody.innerHTML = '';
+    const limitShipped = $('#shippedLimitNotice') ? 20 : 999999;
+    fShipped.slice(0, limitShipped).forEach(o => {
+      const geoLink = o.coords ? `<a class="coord-link" href="geo:0,0?q=${encodeURIComponent(o.coords)}" target="_blank">${o.coords}</a>` : '—';
+      const isRet = (o.carrier === 'RETURNED TO STOCK' || o.carrier === 'CONSOLIDATED');
+      const rowClass = isRet ? 'style="color:#9ca3af; text-decoration:line-through;"' : '';
+      const picBtn = (o.photo_urls && o.photo_urls.length > 0) ? `<button class="btn" style="padding:4px 8px; font-size:12px; margin-right:4px;" onclick="openPhotoViewer('${o.id}')">View</button>` : '';
+      
+      shBody.insertAdjacentHTML('beforeend', `<tr ${rowClass}>
+        <td><button class="btn-edit" onclick="openUniversalEditor('shipped', '${o.id}')">Edit</button></td>
+        <td>${picBtn}</td>
+        <td><b>${o.so}</b></td><td>${o.customer}</td><td>${o.type}</td><td>${o.carrier || '—'}</td><td>${o.location}</td><td><small>${geoLink}</small></td><td>${o.weight || '—'}</td><td>${new Date(o.shipped_at).toLocaleString()}</td><td>${o.shipped_by || '—'}</td><td>${o.pmd_email ? o.pmd_email+(isRet?'':'<span class="green-check"> ✓</span>') : '—'}</td></tr>`);
+    });
+  }
+
+  const sumByType = t => appData.staging.reduce((acc, c) => c.type?.includes(t) ? acc + (parseInt(c.type.match(new RegExp(`(\\d+)\\s*${t}`))) || 0) : acc, 0);
+  if($('#kOrders')) $('#kOrders').textContent = appData.staging.length; 
+  if($('#kContainers')) $('#kContainers').textContent = appData.staging.reduce((acc, c) => acc + (parseInt(c.qty) || 0), 0);
+  if($('#kSkids')) $('#kSkids').textContent = sumByType('Skid'); 
+  if($('#kBoxes')) $('#kBoxes').textContent = sumByType('Box'); 
+  if($('#kCrates')) $('#kCrates').textContent = sumByType('Crate'); 
+  if($('#kPipe')) $('#kPipe').textContent = sumByType('Pipe/Rod'); 
+  if($('#kOther')) $('#kOther').textContent = sumByType('Other');
+  if($('#kShipped')) $('#kShipped').textContent = appData.shipped.filter(x => x.carrier !== 'RETURNED TO STOCK' && x.carrier !== 'CONSOLIDATED').length;
+}
+
 function openUniversalEditor(table, id) {
   const o = appData[table].find(x => x.id === id);
   if (!o) return;
   currentEditId = o.id;
   editTargetRecord = { table: table, id: o.id, so: o.so, photo_urls: o.photo_urls || [] };
   
-  const isRet = (table === 'shipped' && (o.carrier === 'RETURNED TO STOCK' || o.carrier === 'CONSOLIDATED'));
+  const isRet = (o.carrier === 'RETURNED TO STOCK' || o.carrier === 'CONSOLIDATED');
   
   if($('#e_so')) $('#e_so').value = o.so; 
   if($('#e_cust')) $('#e_cust').value = o.customer; 
@@ -502,104 +400,73 @@ function openPhotoViewer(id) {
   if($('#viewModal')) $('#viewModal').style.display = 'flex';
 }
 
-function renderTables() {
-  const q = $('#q') ? $('#q').value.toLowerCase() : '';
-  const fStaging = appData.staging.filter(o => (o.so||'').toLowerCase().includes(q) || (o.customer||'').toLowerCase().includes(q));
-  const fShipped = appData.shipped.filter(o => (o.so||'').toLowerCase().includes(q) || (o.customer||'').toLowerCase().includes(q));
-
-  if($('#tblStaging')) {
-    const sBody = $('#tblStaging').querySelector('tbody'); 
-    sBody.innerHTML = '';
-    const limitStaging = $('#stageLimitNotice') ? 20 : 999999;
-    fStaging.slice(0, limitStaging).forEach(o => {
-      const geoLink = o.coords ? `<a class="coord-link" href="geo:0,0?q=${encodeURIComponent(o.coords)}">${o.coords}</a>` : '—';
-      const picBtn = (o.photo_urls && o.photo_urls.length > 0) ? `<button class="btn" style="padding:4px 8px; font-size:12px; margin-right:4px;" onclick="openPhotoViewer('${o.id}')">View</button>` : '';
-      
-      sBody.insertAdjacentHTML('beforeend', `<tr>
-        <td><button class="btn-edit" onclick="openUniversalEditor('staging', '${o.id}')">Edit</button></td>
-        <td>${picBtn}</td><td><b>${o.so}</b></td><td>${o.customer}</td><td>${new Date(o.entry_date).toLocaleString()}</td><td>${o.type}</td><td>${o.location}</td><td><small>${geoLink}</small></td><td>${o.weight || '—'}</td><td>${o.status}</td><td>${o.staged_by||'—'}</td>
-        <td style="position:sticky;right:0;text-align:center;"><input type="checkbox" onchange="if(this.checked)triggerShipModal('${o.id}')"></td></tr>`);
-    });
+function openStaticMapPromptWindow(item) {
+  if(!$('#mapViewModal')) return;
+  $('#v_so').value = item.so; $('#v_cust').value = item.customer; $('#v_date').value = new Date(item.entry_date).toLocaleString();
+  $('#v_type').value = item.type || '—'; $('#v_loc').value = item.location || '—'; $('#v_coords').value = item.coords || '—';
+  $('#v_weight').value = item.weight || '—'; $('#v_status').value = item.status || '—'; $('#v_staged_by').value = item.staged_by || '—';
+  
+  const gallery = $('#mapViewGalleryStrip');
+  if(gallery) {
+    gallery.innerHTML = '';
+    if (item.photo_urls && item.photo_urls.length > 0) {
+      $('#mapViewPhotoSection').style.display = 'flex';
+      item.photo_urls.forEach(path => {
+        gallery.insertAdjacentHTML('beforeend', `<a href="${SUPABASE_URL}/storage/v1/object/public/freight-photos/${path}" target="_blank"><img src="${SUPABASE_URL}/storage/v1/object/public/freight-photos/${path}" style="width:70px; height:70px; object-fit:cover; border-radius:6px; border:1px solid #ddd;"/></a>`);
+      });
+    } else {
+      $('#mapViewPhotoSection').style.display = 'none';
+    }
   }
-
-  if($('#tblShipped')) {
-    const shBody = $('#tblShipped').querySelector('tbody'); 
-    shBody.innerHTML = '';
-    const limitShipped = $('#shippedLimitNotice') ? 20 : 999999;
-    fShipped.slice(0, limitShipped).forEach(o => {
-      const geoLink = o.coords ? `<a class="coord-link" href="geo:0,0?q=${encodeURIComponent(o.coords)}">${o.coords}</a>` : '—';
-      const isRet = (o.carrier === 'RETURNED TO STOCK' || o.carrier === 'CONSOLIDATED');
-      const rowClass = isRet ? 'style="color:#9ca3af; text-decoration:line-through;"' : '';
-      const picBtn = (o.photo_urls && o.photo_urls.length > 0) ? `<button class="btn" style="padding:4px 8px; font-size:12px; margin-right:4px;" onclick="openPhotoViewer('${o.id}')">View</button>` : '';
-      
-      shBody.insertAdjacentHTML('beforeend', `<tr ${rowClass}>
-        <td><button class="btn-edit" onclick="openUniversalEditor('shipped', '${o.id}')">Edit</button></td>
-        <td>${picBtn}</td>
-        <td><b>${o.so}</b></td><td>${o.customer}</td><td>${o.type}</td><td>${o.carrier || '—'}</td><td>${o.location}</td><td><small>${geoLink}</small></td><td>${o.weight || '—'}</td><td>${new Date(o.shipped_at).toLocaleString()}</td><td>${o.shipped_by || '—'}</td><td>${o.pmd_email ? o.pmd_email+(isRet?'':'<span class="green-check"> ✓</span>') : '—'}</td></tr>`);
-    });
-  }
-
-  const sumByType = t => appData.staging.reduce((acc, c) => c.type?.includes(t) ? acc + (parseInt(c.type.match(new RegExp(`(\\d+)\\s*${t}`))) || 0) : acc, 0);
-  if($('#kOrders')) $('#kOrders').textContent = appData.staging.length; 
-  if($('#kContainers')) $('#kContainers').textContent = appData.staging.reduce((acc, c) => acc + (parseInt(c.qty) || 0), 0);
-  if($('#kSkids')) $('#kSkids').textContent = sumByType('Skid'); 
-  if($('#kBoxes')) $('#kBoxes').textContent = sumByType('Box'); 
-  if($('#kCrates')) $('#kCrates').textContent = sumByType('Crate'); 
-  if($('#kPipe')) $('#kPipe').textContent = sumByType('Pipe/Rod'); 
-  if($('#kOther')) $('#kOther').textContent = sumByType('Other');
-  if($('#kShipped')) $('#kShipped').textContent = appData.shipped.filter(x => x.carrier !== 'RETURNED TO STOCK' && x.carrier !== 'CONSOLIDATED').length;
+  $('#mapViewModal').style.display = 'flex';
 }
 
-window.onload = () => { 
+if($('#add')) {
+  $('#add').onclick = async () => {
+    const sk = parseInt($('#c_skid').value)||0, bx = parseInt($('#c_box').value)||0, cr = parseInt($('#c_crate').value)||0, pi = parseInt($('#c_pipe').value)||0, ot = parseInt($('#c_other').value)||0;
+    if(!$('#so').value || !$('#customer').value || !$('#loc').value) return alert("Fields Missing.");
+    
+    let type = []; 
+    if(sk) type.push(formatContainer(sk, 'Skid'));
+    if(bx) type.push(formatContainer(bx, 'Box'));
+    if(cr) type.push(formatContainer(cr, 'Crate'));
+    if(pi) type.push(formatContainer(pi, 'Pipe/Rod'));
+    if(ot) type.push(formatContainer(ot, 'Other'));
+    
+    $('#add').disabled = true;
+    $('#add').textContent = 'Saving...';
+    
+    try {
+      let photoUrls = [];
+      for (let i = 0; i < mainPhotoBlobs.length; i++) {
+        const file = mainPhotoBlobs[i]; 
+        const cleanFileName = file.name.replace(/[^a-zA-Z0-9.]/g, '');
+        const path = `${$('#so').value.trim()}-staging-${Date.now()}-${i}-${cleanFileName}`;
+        const { error: uploadError } = await supabaseClient.storage.from('freight-photos').upload(path, file);
+        if(!uploadError) photoUrls.push(path);
+      }
+    
+      const { error } = await supabaseClient.from('staging').insert([{ so: $('#so').value.trim(), customer: $('#customer').value.trim(), status: $('#status').value, location: $('#loc').value.trim(), coords: $('#coords').value.trim(), weight: $('#weight').value.trim(), staged_by: $('#staged_by').value.trim(), type: type.join(', '), qty: sk+bx+cr+pi+ot, photo_urls: photoUrls }]);
+      
+      if (error) {
+        alert("Database Error: " + error.message + "\n\nIMPORTANT: Add a 'photo_urls' column (Type: text array) to your 'staging' table in Supabase!");
+        $('#add').disabled = false; $('#add').textContent = 'Add'; return;
+      }
+      
+      $('#so').value=''; $('#customer').value=''; $('#loc').value=''; $('#coords').value=''; $('#staged_by').value=''; $('#weight').value=''; $('#c_skid').value=0; $('#c_box').value=0; $('#c_crate').value=0; $('#c_pipe').value=0; $('#c_other').value=0; 
+      mainPhotoBlobs = []; renderMainPhotoStrip();
+      loadCloudData();
+    } catch(e) { alert("System Error: " + e.message); }
+    
+    $('#add').disabled = false;
+    $('#add').textContent = 'Add';
+  };
+}
+
+document.addEventListener('DOMContentLoaded', () => {
   bootstrapStandalonePWA(); 
   initOpenStreetMapEngine(); 
   loadCloudData(); 
   setInterval(loadCloudData, 5000); 
-
-  if($('#add')) {
-    $('#add').onclick = async () => {
-      const sk = parseInt($('#c_skid').value)||0, bx = parseInt($('#c_box').value)||0, cr = parseInt($('#c_crate').value)||0, pi = parseInt($('#c_pipe').value)||0, ot = parseInt($('#c_other').value)||0;
-      if(!$('#so').value || !$('#customer').value || !$('#loc').value) return alert("Fields Missing.");
-      
-      let type = []; 
-      if(sk) type.push(formatContainer(sk, 'Skid'));
-      if(bx) type.push(formatContainer(bx, 'Box'));
-      if(cr) type.push(formatContainer(cr, 'Crate'));
-      if(pi) type.push(formatContainer(pi, 'Pipe/Rod'));
-      if(ot) type.push(formatContainer(ot, 'Other'));
-      
-      $('#add').disabled = true;
-      $('#add').textContent = 'Saving...';
-      
-      try {
-        let photoUrls = [];
-        for (let i = 0; i < mainPhotoBlobs.length; i++) {
-          const file = mainPhotoBlobs[i]; 
-          const cleanFileName = file.name.replace(/[^a-zA-Z0-9.]/g, '');
-          const path = `${$('#so').value.trim()}-staging-${Date.now()}-${i}-${cleanFileName}`;
-          const { error: uploadError } = await supabaseClient.storage.from('freight-photos').upload(path, file);
-          if(!uploadError) photoUrls.push(path);
-        }
-      
-        const { error } = await supabaseClient.from('staging').insert([{ so: $('#so').value.trim(), customer: $('#customer').value.trim(), status: $('#status').value, location: $('#loc').value.trim(), coords: $('#coords').value.trim(), weight: $('#weight').value.trim(), staged_by: $('#staged_by').value.trim(), type: type.join(', '), qty: sk+bx+cr+pi+ot, photo_urls: photoUrls }]);
-        
-        if (error) {
-          alert("Database Error: " + error.message + "\n\nIMPORTANT: Add a 'photo_urls' column (Type: text array) to your 'staging' table in Supabase!");
-          $('#add').disabled = false; $('#add').textContent = 'Add'; return;
-        }
-        
-        $('#so').value=''; $('#customer').value=''; $('#loc').value=''; $('#coords').value=''; $('#staged_by').value=''; $('#weight').value=''; $('#c_skid').value=0; $('#c_box').value=0; $('#c_crate').value=0; $('#c_pipe').value=0; $('#c_other').value=0; 
-        mainPhotoBlobs = []; renderMainPhotoStrip();
-        loadCloudData();
-      } catch(e) { alert("System Error: " + e.message); }
-      
-      $('#add').disabled = false;
-      $('#add').textContent = 'Add';
-    };
-  }
-
-  if($('#q')) $('#q').oninput = renderTables;
-  if($('#expandStaging')) $('#expandStaging').onclick = () => window.open('stage.html', '_blank');
-  if($('#expandShipped')) $('#expandShipped').onclick = () => window.open('ship.html', '_blank');
-};
+});
 </script>
