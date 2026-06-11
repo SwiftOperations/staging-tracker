@@ -582,9 +582,11 @@ window.submitStagingEntry = async function() {
   $('#add').disabled = true;
   $('#add').textContent = 'Saving...';
   
-  try {
-    let photoUrls = [];
-    for (let i = 0; i < mainPhotoBlobs.length; i++) {
+ try {
+    // Retain existing staged photos before appending any new ones
+    let photoUrls = activeShipTargetItem.photo_urls ? [...activeShipTargetItem.photo_urls] : [];
+    
+    for (let i = 0; i < selectedPhotoBlobs.length; i++) {
       const file = mainPhotoBlobs[i]; 
       const cleanFileName = file.name.replace(/[^a-zA-Z0-9.]/g, '');
       const path = `${$('#so').value.trim()}-staging-${Date.now()}-${i}-${cleanFileName}`;
