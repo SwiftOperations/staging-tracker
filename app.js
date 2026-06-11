@@ -519,7 +519,9 @@ window.submitFreightDispatch = async function() {
   
   if($('#modalConfirmBtn')) $('#modalConfirmBtn').disabled = true;
   try {
-    let photoUrls = [];
+    // Retain old photos in the array before appending the new ones
+    let photoUrls = activeShipTargetItem.photo_urls ? [...activeShipTargetItem.photo_urls] : [];
+    
     for (let i = 0; i < selectedPhotoBlobs.length; i++) {
       const file = selectedPhotoBlobs[i]; 
       const cleanFileName = file.name.replace(/[^a-zA-Z0-9.]/g, '');
