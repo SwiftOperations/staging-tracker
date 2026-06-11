@@ -26,6 +26,7 @@
   .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
   input,select{height:42px;padding:0 12px;border:1px solid #cbd5e1;border-radius:10px;background:#fff;width:100%;color:#222;font-size:14px;}
   
+  /* UI Disable sync for inputs and action buttons */
   input:disabled, select:disabled, button:disabled { background: #f3f4f6; color: #9ca3af; cursor: not-allowed; border-color:#e5e7eb; }
   
   .row > *{flex:1 1 150px}
@@ -78,6 +79,7 @@
     .freight-block { justify-content: space-between; }
   }
   
+  /* STRICT MOBILE PORTRAIT WRAPPER PREVENTS GRID STRETCHING */
   @media (max-width: 480px) {
     .freight-block, .modal-window .freight-block { display: grid !important; grid-template-columns: 1fr !important; gap: 8px !important; }
   }
@@ -191,6 +193,7 @@
   </div>
 </div>
 
+<!-- RETURN TO STOCK SUB-MODAL -->
 <div id="returnModal" class="modal-overlay" onclick="if(event.target===this) document.querySelector('#returnModal').style.display='none'">
   <div class="modal-window">
     <button class="modal-close-x" onclick="document.querySelector('#returnModal').style.display='none'">×</button>
@@ -211,7 +214,7 @@
     </div>
     
     <div class="modal-field"><label>Reason for Return to Stock</label><input id="r_reason" placeholder="Enter reason..." /></div>
-    <div class="chk-row" style="margin-top:4px;"><input type="checkbox" id="r_pm_chk" onchange="document.querySelector('#r_pm_email').disabled=!this.checked; document.querySelector('#r_pm_email_btn').disabled=!this.checked;"/><label>Confirm return to PM via e-mail</label></div>
+    <div class="chk-row" style="margin-top:4px;"><input type="checkbox" id="r_pm_chk" onchange="if(document.querySelector('#r_pm_email')) document.querySelector('#r_pm_email').disabled=!this.checked; if(document.querySelector('#r_pm_email_btn')) document.querySelector('#r_pm_email_btn').disabled=!this.checked;"/><label>Confirm return to PM via e-mail</label></div>
     
     <div class="modal-field">
       <div style="display:flex; width:100%;">
@@ -224,6 +227,7 @@
   </div>
 </div>
 
+<!-- UNIVERSAL ITEM EDIT MODAL -->
 <div id="editModal" class="modal-overlay" onclick="if(event.target===this) document.querySelector('#editModal').style.display='none'">
   <div class="modal-window">
     <button class="modal-close-x" onclick="document.querySelector('#editModal').style.display='none'">×</button>
@@ -314,6 +318,7 @@
   </div>
 </div>
 
+<!-- SHIPPING WORKFLOW MODAL -->
 <div id="shipModal" class="modal-overlay" onclick="if(event.target===this) closeShipModal()">
   <div class="modal-window">
     <button class="modal-close-x" onclick="closeShipModal()">×</button>
@@ -339,7 +344,7 @@
         <button type="button" onclick="banishMemory('m_by')" style="height:42px; width:36px; flex:none; background:#f8fafc; border:1px solid #cbd5e1; border-top-right-radius:8px; border-bottom-right-radius:8px; color:#dc2626; font-weight:bold; font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;">×</button>
       </div>
     </div>
-    <div class="chk-row"><input type="checkbox" id="m_pm_chk" onchange="document.querySelector('#m_pm_email').disabled=!this.checked; document.querySelector('#m_pm_email_btn').disabled=!this.checked;"/><label>E-mail PM Verification</label></div>
+    <div class="chk-row"><input type="checkbox" id="m_pm_chk" onchange="if(document.querySelector('#m_pm_email')) document.querySelector('#m_pm_email').disabled=!this.checked; if(document.querySelector('#m_pm_email_btn')) document.querySelector('#m_pm_email_btn').disabled=!this.checked;"/><label>E-mail PM Verification</label></div>
     <div class="modal-field">
       <div style="display:flex; width:100%;">
         <input id="m_pm_email" list="dl_pastEmails" disabled style="border-top-right-radius:0; border-bottom-right-radius:0; border-right:0;" />
@@ -352,9 +357,9 @@
   </div>
 </div>
 
-<div id="mapViewModal" class="modal-overlay" onclick="if(event.target===this) document.querySelector('#viewModal').style.display='none'">
+<div id="mapViewModal" class="modal-overlay" onclick="if(event.target===this) document.querySelector('#mapViewModal').style.display='none'">
   <div class="modal-window">
-    <button class="modal-close-x" onclick="document.querySelector('#viewModal').style.display='none'">×</button>
+    <button class="modal-close-x" onclick="document.querySelector('#mapViewModal').style.display='none'">×</button>
     <h3>Staged Manifest Details</h3>
     <div id="mapViewPhotoSection" style="display:none; flex-direction:column; gap:4px;">
       <label style="font-size:12px; font-weight:700; color:#4b5563;">Staged Images</label>
@@ -380,6 +385,9 @@
   </div>
 </div>
 
+<!-- ========================================== -->
+<!-- MASTER UNIFIED JAVASCRIPT ENGINE           -->
+<!-- ========================================== -->
 <script>
 const SUPABASE_URL = 'https://gdrpdiwykmnybmkadlrv.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdkcnBkaXd5a21ueWJta2FkbHJ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1MjMyMTIsImV4cCI6MjA5NjA5OTIxMn0.Z7ih_vQic1GtzCyZmTEV-RWJnmuaNZQDfOV2_Fvan5g';
