@@ -29,19 +29,11 @@ window.bootstrapStandalonePWA = function() {
 window.adjustCount = function(id, amt) { if($('#'+id)) $('#'+id).value = Math.max(0, (parseInt($('#'+id).value)||0) + amt); };
 window.adjustEditCount = function(id, amt) { if($('#'+id)) $('#'+id).value = Math.max(0, (parseInt($('#'+id).value)||0) + amt); };
 
+// NEW 1000s Comma Separator Logic
 window.formatWeight = function(input) {
-  // Strip out anything that isn't a number or decimal point
   let value = input.value.replace(/[^0-9.]/g, '');
-  
-  // Split the number at the decimal (so we don't accidentally format the decimal values)
   let parts = value.split('.');
-  
-  // Apply the 1000s comma separator to the whole numbers
-  if (parts[0]) {
-    parts[0] = parseInt(parts[0], 10).toLocaleString('en-US');
-  }
-  
-  // Rejoin the number and display it in the input field
+  if (parts[0]) parts[0] = parseInt(parts[0], 10).toLocaleString('en-US');
   input.value = parts.slice(0, 2).join('.');
 };
 
@@ -453,8 +445,8 @@ window.triggerShipModal = function(id) {
   const item = appData.staging.find(x => x.id === id);
   if (!item) return;
   activeShipTargetItem = item; 
+  if($('#photoPreviewStrip')) $('#photoPreviewStrip').innerHTML = ''; 
   selectedPhotoBlobs = [];
-  window.renderPhotoStrip('#photoPreviewStrip', selectedPhotoBlobs);
   
   if($('#m_so')) $('#m_so').value = item.so; 
   if($('#m_cust')) $('#m_cust').value = item.customer; 
@@ -467,6 +459,9 @@ window.triggerShipModal = function(id) {
   if($('#m_pm_chk')) $('#m_pm_chk').checked = false; 
   window.togglePMEmail(false, 'm_pm_email', 'm_pm_email_btn');
   if($('#shipModal')) $('#shipModal').style.display = 'flex';
+  
+  // Render previously staged photos instantly
+  window.renderPhotoStrip('#photoPreviewStrip', selectedPhotoBlobs);
 };
 
 window.closeShipModal = function() { if($('#shipModal')) $('#shipModal').style.display = 'none'; window.loadCloudData(); };
@@ -497,14 +492,14 @@ window.renderPhotoStrip = function(containerSel, blobArray) {
   if(!container) return;
   container.innerHTML = '';
   
-  // 1. Pull in the previously staged photos (if any exist)
+  // Safely display previously staged photos in the Dispatch modal
   if (containerSel === '#photoPreviewStrip' && activeShipTargetItem && activeShipTargetItem.photo_urls) {
     activeShipTargetItem.photo_urls.forEach((url, idx) => {
       container.insertAdjacentHTML('beforeend', `<span class="photo-badge">📎 Staged-${idx+1} <span onclick="activeShipTargetItem.photo_urls.splice(${idx},1); window.renderPhotoStrip('${containerSel}', selectedPhotoBlobs)">&times;</span></span>`);
     });
   }
 
-  // 2. Add the newly uploaded photos to the strip
+  // Display newly added photos
   blobArray.forEach((f, idx) => {
     const badge = document.createElement('span'); badge.className = 'photo-badge';
     badge.innerHTML = `📎 New-${idx+1} <span onclick="selectedPhotoBlobs.splice(${idx},1); window.renderPhotoStrip('${containerSel}', selectedPhotoBlobs)">&times;</span>`;
@@ -519,8 +514,8 @@ window.submitFreightDispatch = async function() {
   
   if($('#modalConfirmBtn')) $('#modalConfirmBtn').disabled = true;
   try {
-    // Retain old photos in the array before appending the new ones
-    let photoUrls = activeShipTargetItem.photo_urls ? [...activeShipTargetItem.photo_urls] : [];
+    // Safely inherit old photos before adding the newly uploaded dispatch photos
+    let photoUrls = (activeShipTargetItem && activeShipTargetItem.photo_urls) ? [...activeShipTargetItem.photo_urls] : [];
     
     for (let i = 0; i < selectedPhotoBlobs.length; i++) {
       const file = selectedPhotoBlobs[i]; 
@@ -582,11 +577,11 @@ window.submitStagingEntry = async function() {
   $('#add').disabled = true;
   $('#add').textContent = 'Saving...';
   
- try {
-    // Retain existing staged photos before appending any new ones
-    let photoUrls = activeShipTargetItem.photo_urls ? [...activeShipTargetItem.photo_urls] : [];
+  try {
+    // This MUST safely initialize to an empty array so new entries don't crash
+    let photoUrls = []; 
     
-    for (let i = 0; i < selectedPhotoBlobs.length; i++) {
+    for (let i = 0; i < mainPhotoBlobs.length; i++) {
       const file = mainPhotoBlobs[i]; 
       const cleanFileName = file.name.replace(/[^a-zA-Z0-9.]/g, '');
       const path = `${$('#so').value.trim()}-staging-${Date.now()}-${i}-${cleanFileName}`;
