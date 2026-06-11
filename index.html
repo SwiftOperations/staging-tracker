@@ -25,8 +25,10 @@
   .card{background:#fff;border:1px solid #e6e7eb;border-radius:12px;padding:14px;margin:14px 0}
   .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
   input,select{height:42px;padding:0 12px;border:1px solid #cbd5e1;border-radius:10px;background:#fff;width:100%;color:#222;font-size:14px;}
-  input:disabled, select:disabled { background: #f3f4f6; color: #9ca3af; cursor: not-allowed; }
-  button:disabled { opacity: 0.5; cursor: not-allowed; }
+  
+  /* UI Disable sync for inputs and action buttons */
+  input:disabled, select:disabled, button:disabled { background: #f3f4f6; color: #9ca3af; cursor: not-allowed; border-color:#e5e7eb; }
+  
   .row > *{flex:1 1 150px}
   .btn{background:var(--brand);color:#fff;border:0;border-radius:12px;padding:12px 20px;font-weight:700;cursor:pointer}
   .btn-edit{background:#0284c7;color:#fff;border:0;border-radius:6px;padding:4px 8px;font-size:12px;font-weight:700;cursor:pointer}
@@ -77,9 +79,9 @@
     .freight-block { justify-content: space-between; }
   }
   
-  /* REVISION: Perfect column stacking for container quantities on mobile portrait views */
+  /* STRICT MOBILE PORTRAIT WRAPPER PREVENTS GRID STRETCHING */
   @media (max-width: 480px) {
-    .modal-window .freight-block { grid-template-columns: 1fr; }
+    .freight-block, .modal-window .freight-block { display: grid !important; grid-template-columns: 1fr !important; gap: 8px !important; }
   }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -109,14 +111,14 @@
     <input id="q" placeholder="Quick search SO / Location / Customer..." />
   </div>
 
-  <div class="card">
+  <div class="card" id="entryFormCard">
     <div class="split"><h3>Enter Staging Information</h3></div>
     <div class="row">
       <div class="photo-options-grid" style="flex: 1 1 180px; margin: 0;">
-        <div class="photo-uploader" style="padding: 8px; margin: 0; background: #fff;" onclick="document.querySelector('#main_cameraFile').click()">📷 Live Photo
+        <div class="photo-uploader" style="padding: 8px; margin: 0; background: #fff;" onclick="$('#main_cameraFile').click()">📷 Live Photo
           <input type="file" id="main_cameraFile" accept="image/*" capture="environment" style="display:none" onchange="addMainPhotoBlob(this)" />
         </div>
-        <div class="photo-uploader" style="padding: 8px; margin: 0; background: #fff;" onclick="document.querySelector('#main_uploadFile').click()">📁 File Upload
+        <div class="photo-uploader" style="padding: 8px; margin: 0; background: #fff;" onclick="$('#main_uploadFile').click()">📁 File Upload
           <input type="file" id="main_uploadFile" multiple accept="image/*" style="display:none" onchange="addMainPhotoBlob(this)" />
         </div>
       </div>
@@ -159,7 +161,7 @@
     </div>
   </div>
 
-  <div class="card">
+  <div class="card" id="stagingCard">
     <div class="split"><h3>Staging Entries</h3><button id="expandStaging" class="btn" style="padding:6px 12px">Expand</button></div>
     <div class="tblwrap">
       <div class="tbl-scroller">
@@ -172,7 +174,7 @@
     </div>
   </div>
 
-  <div class="card">
+  <div class="card" id="shippedCard">
     <div class="split"><h3>Shipped Log</h3><button id="expandShipped" class="btn" style="padding:6px 12px">Expand</button></div>
     <div class="tblwrap">
       <div class="tbl-scroller">
@@ -185,15 +187,15 @@
     </div>
   </div>
 
-  <div class="card">
+  <div class="card" id="mapCard">
     <h3>Staged Inventory Location Mapping</h3>
     <div id="openFreightMap" style="width:100%; height:420px; background:#e5e7eb; border-radius:10px; border:1px solid #cbd5e1; z-index:1;"></div>
   </div>
 </div>
 
-<div id="returnModal" class="modal-overlay" onclick="if(event.target===this) document.querySelector('#returnModal').style.display='none'">
+<div id="returnModal" class="modal-overlay" onclick="if(event.target===this) $('#returnModal').style.display='none'">
   <div class="modal-window">
-    <button class="modal-close-x" onclick="document.querySelector('#returnModal').style.display='none'">×</button>
+    <button class="modal-close-x" onclick="$('#returnModal').style.display='none'">×</button>
     <h3>Return to Stock</h3>
     <p style="font-size:13px; color:#4b5563; margin-top:0; margin-bottom:8px;">Are you sure you want to return this order to stock?</p>
     
@@ -211,7 +213,7 @@
     </div>
     
     <div class="modal-field"><label>Reason for Return to Stock</label><input id="r_reason" placeholder="Enter reason..." /></div>
-    <div class="chk-row" style="margin-top:4px;"><input type="checkbox" id="r_pm_chk" onchange="document.querySelector('#r_pm_email').disabled=!this.checked; document.querySelector('#r_pm_email_btn').disabled=!this.checked;"/><label>Confirm return to PM via e-mail</label></div>
+    <div class="chk-row" style="margin-top:4px;"><input type="checkbox" id="r_pm_chk" onchange="$('#r_pm_email').disabled=!this.checked; $('#r_pm_email_btn').disabled=!this.checked;"/><label>Confirm return to PM via e-mail</label></div>
     
     <div class="modal-field">
       <div style="display:flex; width:100%;">
@@ -224,18 +226,18 @@
   </div>
 </div>
 
-<div id="editModal" class="modal-overlay" onclick="if(event.target===this) document.querySelector('#editModal').style.display='none'">
+<div id="editModal" class="modal-overlay" onclick="if(event.target===this) $('#editModal').style.display='none'">
   <div class="modal-window">
-    <button class="modal-close-x" onclick="document.querySelector('#editModal').style.display='none'">×</button>
+    <button class="modal-close-x" onclick="$('#editModal').style.display='none'">×</button>
     <h3 id="editModalTitle">Edit Record</h3>
     
     <div id="editPhotoSection" style="display:flex; flex-direction:column; gap:8px;">
       <label style="font-size:12px; font-weight:700; color:#4b5563;">Manage Freight Photos</label>
       <div class="photo-options-grid">
-        <div class="photo-uploader" onclick="document.querySelector('#e_cameraFile').click()">📷 Take Live Photo
+        <div class="photo-uploader" onclick="$('#e_cameraFile').click()">📷 Take Live Photo
           <input type="file" id="e_cameraFile" accept="image/*" capture="environment" style="display:none" onchange="addEditPhotoBlob(this)" />
         </div>
-        <div class="photo-uploader" onclick="document.querySelector('#e_uploadFile').click()">📁 File Upload
+        <div class="photo-uploader" onclick="$('#e_uploadFile').click()">📁 File Upload
           <input type="file" id="e_uploadFile" multiple accept="image/*" style="display:none" onchange="addEditPhotoBlob(this)" />
         </div>
       </div>
@@ -307,7 +309,7 @@
         <button id="editConsolidateBtn" class="btn" style="background:#8b5cf6; color:#fff; padding: 10px 16px; border-radius: 8px; border: 0; font-weight:700; cursor:pointer;" onclick="executeConsolidate()">Consolidated</button>
       </span>
       <span style="display:flex; gap:8px; margin-left:auto; flex-wrap: wrap;">
-        <button class="btn" style="background:#9ca3af; border-radius: 8px; padding: 10px 16px; border: 0; color:#fff; font-weight:700; cursor:pointer;" onclick="document.querySelector('#editModal').style.display='none'">Cancel</button>
+        <button class="btn" style="background:#9ca3af; border-radius: 8px; padding: 10px 16px; border: 0; color:#fff; font-weight:700; cursor:pointer;" onclick="$('#editModal').style.display='none'">Cancel</button>
         <button id="editSaveBtn" class="btn" style="background:#e04f26; border-radius: 8px; padding: 10px 16px; border: 0; color:#fff; font-weight:700; cursor:pointer;" onclick="saveEditedRecord()">Save Changes</button>
       </span>
     </div>
@@ -319,10 +321,10 @@
     <button class="modal-close-x" onclick="closeShipModal()">×</button>
     <h3>Confirm Freight Dispatch</h3>
     <div class="photo-options-grid">
-      <div class="photo-uploader" onclick="document.querySelector('#cameraFile').click()">📷 Take Live Photo
+      <div class="photo-uploader" onclick="$('#cameraFile').click()">📷 Take Live Photo
         <input type="file" id="cameraFile" accept="image/*" capture="environment" style="display:none" onchange="addPhotoBlob(this)" />
       </div>
-      <div class="photo-uploader" onclick="document.querySelector('#uploadFile').click()">📁 File Upload
+      <div class="photo-uploader" onclick="$('#uploadFile').click()">📁 File Upload
         <input type="file" id="uploadFile" multiple accept="image/*" style="display:none" onchange="addPhotoBlob(this)" />
       </div>
     </div>
@@ -339,7 +341,7 @@
         <button type="button" onclick="banishMemory('m_by')" style="height:42px; width:36px; flex:none; background:#f8fafc; border:1px solid #cbd5e1; border-top-right-radius:8px; border-bottom-right-radius:8px; color:#dc2626; font-weight:bold; font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;">×</button>
       </div>
     </div>
-    <div class="chk-row"><input type="checkbox" id="m_pm_chk" onchange="document.querySelector('#m_pm_email').disabled=!this.checked; document.querySelector('#m_pm_email_btn').disabled=!this.checked;"/><label>E-mail PM Verification</label></div>
+    <div class="chk-row"><input type="checkbox" id="m_pm_chk" onchange="$('#m_pm_email').disabled=!this.checked; $('#m_pm_email_btn').disabled=!this.checked;"/><label>E-mail PM Verification</label></div>
     <div class="modal-field">
       <div style="display:flex; width:100%;">
         <input id="m_pm_email" list="dl_pastEmails" disabled style="border-top-right-radius:0; border-bottom-right-radius:0; border-right:0;" />
@@ -352,9 +354,9 @@
   </div>
 </div>
 
-<div id="mapViewModal" class="modal-overlay" onclick="if(event.target===this) document.querySelector('#viewModal').style.display='none'">
+<div id="mapViewModal" class="modal-overlay" onclick="if(event.target===this) $('#mapViewModal').style.display='none'">
   <div class="modal-window">
-    <button class="modal-close-x" onclick="document.querySelector('#viewModal').style.display='none'">×</button>
+    <button class="modal-close-x" onclick="$('#mapViewModal').style.display='none'">×</button>
     <h3>Staged Manifest Details</h3>
     <div id="mapViewPhotoSection" style="display:none; flex-direction:column; gap:4px;">
       <label style="font-size:12px; font-weight:700; color:#4b5563;">Staged Images</label>
@@ -372,9 +374,9 @@
   </div>
 </div>
 
-<div id="viewModal" class="modal-overlay" onclick="if(event.target===this) document.querySelector('#viewModal').style.display='none'">
+<div id="viewModal" class="modal-overlay" onclick="if(event.target===this) $('#viewModal').style.display='none'">
   <div class="modal-window" style="max-width: 500px;">
-    <button class="modal-close-x" onclick="document.querySelector('#viewModal').style.display='none'">×</button>
+    <button class="modal-close-x" onclick="$('#viewModal').style.display='none'">×</button>
     <h3 style="margin:0 0 10px 0;">Staged Freight Photos</h3>
     <div id="modalPhotoGallery" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:12px; padding: 4px 0;"></div>
   </div>
@@ -407,14 +409,16 @@ function bootstrapStandalonePWA() {
     "display": "standalone",
     "orientation": "portrait"
   };
-  $('#pwa-manifest').setAttribute('href', 'data:application/manifest+json;charset=utf-8,' + encodeURIComponent(JSON.stringify(pwaData)));
+  if($('#pwa-manifest')) $('#pwa-manifest').setAttribute('href', 'data:application/manifest+json;charset=utf-8,' + encodeURIComponent(JSON.stringify(pwaData)));
 }
 
 function adjustCount(id, amt) {
-  const el = $(`#${id}`); el.value = Math.max(0, (parseInt(el.value)||0) + amt);
+  if(!$('#'+id)) return;
+  $('#'+id).value = Math.max(0, (parseInt($('#'+id).value)||0) + amt);
 }
 function adjustEditCount(id, amt) {
-  const el = $(`#${id}`); el.value = Math.max(0, (parseInt(el.value)||0) + amt);
+  if(!$('#'+id)) return;
+  $('#'+id).value = Math.max(0, (parseInt($('#'+id).value)||0) + amt);
 }
 
 function formatContainer(count, type) {
@@ -428,13 +432,14 @@ function formatContainer(count, type) {
 function fetchBrowserGPS(targetInputId) {
   if (navigator.geolocation) {
     navigator.geolocation.getCurrentPosition(
-      (position) => { $(`#${targetInputId}`).value = position.coords.latitude.toFixed(6) + ", " + position.coords.longitude.toFixed(6); },
+      (position) => { if($('#'+targetInputId)) $('#'+targetInputId).value = position.coords.latitude.toFixed(6) + ", " + position.coords.longitude.toFixed(6); },
       (error) => { alert("GPS Tracking Denied: " + error.message); }
     );
   }
 }
 
 function initOpenStreetMapEngine() {
+  if(!$('#openFreightMap')) return;
   openMapInstance = L.map('openFreightMap').setView([53.5461, -113.4938], 11);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap' }).addTo(openMapInstance);
   syncMapPins();
@@ -488,14 +493,15 @@ function openStaticMapPromptWindow(item) {
 }
 
 function banishMemory(inputId) {
-  const val = $(`#${inputId}`).value.trim();
+  if(!$('#'+inputId)) return;
+  const val = $('#'+inputId).value.trim();
   if(!val) return;
   if(confirm(`Remove "${val}" from autocomplete memory?`)) {
     if(!hiddenMemory.includes(val)) {
       hiddenMemory.push(val);
       localStorage.setItem('swift_hidden_memory', JSON.stringify(hiddenMemory));
     }
-    $(`#${inputId}`).value = '';
+    $('#'+inputId).value = '';
     loadCloudData();
   }
 }
@@ -511,10 +517,10 @@ async function loadCloudData() {
   const allData = [...appData.staging, ...appData.shipped];
   const filterMem = (arr) => [...new Set(arr.filter(Boolean))].filter(x => !hiddenMemory.includes(x));
 
-  $('#dl_customers').innerHTML = filterMem(allData.map(x=>x.customer)).map(c=>`<option value="${c}">`).join('');
-  $('#dl_locations').innerHTML = filterMem(allData.map(x=>x.location)).map(l=>`<option value="${l}">`).join('');
-  $('#dl_stagers').innerHTML = filterMem(allData.map(x=>(x.staged_by || x.shipped_by))).map(s=>`<option value="${s}">`).join('');
-  $('#dl_pastEmails').innerHTML = filterMem(appData.shipped.map(x=>x.pmd_email)).map(em=>`<option value="${em}@swiftsupply.ca">`).join('');
+  if($('#dl_customers')) $('#dl_customers').innerHTML = filterMem(allData.map(x=>x.customer)).map(c=>`<option value="${c}">`).join('');
+  if($('#dl_locations')) $('#dl_locations').innerHTML = filterMem(allData.map(x=>x.location)).map(l=>`<option value="${l}">`).join('');
+  if($('#dl_stagers')) $('#dl_stagers').innerHTML = filterMem(allData.map(x=>(x.staged_by || x.shipped_by))).map(s=>`<option value="${s}">`).join('');
+  if($('#dl_pastEmails')) $('#dl_pastEmails').innerHTML = filterMem(appData.shipped.map(x=>x.pmd_email)).map(em=>`<option value="${em}@swiftsupply.ca">`).join('');
   
   renderTables(); 
   if(typeof syncMapPins === 'function') syncMapPins();
@@ -523,15 +529,24 @@ async function loadCloudData() {
 function triggerShipModal(id) {
   const item = appData.staging.find(x => x.id === id);
   if (!item) return;
-  activeShipTargetItem = item; $('#photoPreviewStrip').innerHTML = ''; selectedPhotoBlobs = [];
-  $('#m_so').value = item.so; $('#m_cust').value = item.customer; $('#m_qty').value = item.type;
-  $('#m_carrier').value = ''; $('#m_loc').value = item.location; $('#m_weight').value = item.weight || '—'; $('#m_by').value = '';
-  $('#m_pm_chk').checked = false; 
-  $('#m_pm_email').disabled = true; 
-  $('#m_pm_email_btn').disabled = true;
-  $('#shipModal').style.display = 'flex';
+  activeShipTargetItem = item; 
+  if($('#photoPreviewStrip')) $('#photoPreviewStrip').innerHTML = ''; 
+  selectedPhotoBlobs = [];
+  
+  if($('#m_so')) $('#m_so').value = item.so; 
+  if($('#m_cust')) $('#m_cust').value = item.customer; 
+  if($('#m_qty')) $('#m_qty').value = item.type;
+  if($('#m_carrier')) $('#m_carrier').value = ''; 
+  if($('#m_loc')) $('#m_loc').value = item.location; 
+  if($('#m_weight')) $('#m_weight').value = item.weight || '—'; 
+  if($('#m_by')) $('#m_by').value = '';
+  
+  if($('#m_pm_chk')) $('#m_pm_chk').checked = false; 
+  if($('#m_pm_email')) $('#m_pm_email').disabled = true; 
+  if($('#m_pm_email_btn')) $('#m_pm_email_btn').disabled = true;
+  if($('#shipModal')) $('#shipModal').style.display = 'flex';
 }
-function closeShipModal() { $('#shipModal').style.display = 'none'; loadCloudData(); }
+function closeShipModal() { if($('#shipModal')) $('#shipModal').style.display = 'none'; loadCloudData(); }
 
 function addMainPhotoBlob(inputEl) {
   if(!inputEl.files || inputEl.files.length === 0) return;
@@ -539,7 +554,9 @@ function addMainPhotoBlob(inputEl) {
   renderMainPhotoStrip();
 }
 function renderMainPhotoStrip() {
-  const container = $('#mainPhotoPreviewStrip'); container.innerHTML = '';
+  const container = $('#mainPhotoPreviewStrip'); 
+  if(!container) return;
+  container.innerHTML = '';
   mainPhotoBlobs.forEach((f, idx) => {
     container.insertAdjacentHTML('beforeend', `<span class="photo-badge">📎 Img-${idx+1} <span onclick="mainPhotoBlobs.splice(${idx},1); renderMainPhotoStrip()">×</span></span>`);
   });
@@ -562,7 +579,9 @@ function addEditPhotoBlob(inputEl) {
 }
 
 function renderPhotoStrip(containerSel, blobArray) {
-  const container = $(containerSel); container.innerHTML = '';
+  const container = $(containerSel); 
+  if(!container) return;
+  container.innerHTML = '';
   blobArray.forEach((f, idx) => {
     const badge = document.createElement('span'); badge.className = 'photo-badge';
     badge.innerHTML = `📎 Img-${idx+1} <span onclick="selectedPhotoBlobs.splice(${idx},1); renderPhotoStrip('${containerSel}', selectedPhotoBlobs)">×</span>`;
@@ -575,7 +594,7 @@ async function submitFreightDispatch() {
   const carrierVal = $('#m_carrier').value.trim() || 'Unassigned Carrier';
   if(!dispatcher || (pmChecked && !pmEmail)) return alert("Missing required inputs.");
   
-  $('#modalConfirmBtn').disabled = true;
+  if($('#modalConfirmBtn')) $('#modalConfirmBtn').disabled = true;
   try {
     let photoUrls = [];
     for (let i = 0; i < selectedPhotoBlobs.length; i++) {
@@ -596,7 +615,7 @@ async function submitFreightDispatch() {
     }]);
     if (insertError) {
       alert("Database Error: " + insertError.message);
-      $('#modalConfirmBtn').disabled = false;
+      if($('#modalConfirmBtn')) $('#modalConfirmBtn').disabled = false;
       return;
     }
 
@@ -621,7 +640,7 @@ async function submitFreightDispatch() {
 
     closeShipModal();
     if(pmChecked) { window.location.href = `mailto:${pmEmail}?cc=warehouse1@swiftsupply.ca&subject=${encodeURIComponent(cachedSubject)}&body=${encodeURIComponent(cachedBody)}`; }
-  } catch(e) { alert("Data dispatch error."); } finally { $('#modalConfirmBtn').disabled = false; }
+  } catch(e) { alert("Data dispatch error."); } finally { if($('#modalConfirmBtn')) $('#modalConfirmBtn').disabled = false; }
 }
 
 function parseContainerString(typeStr) {
@@ -635,7 +654,11 @@ function parseContainerString(typeStr) {
 }
 
 function getDynamicType(prefix) {
-  const sk = parseInt($(`#${prefix}_skid`).value)||0, bx = parseInt($(`#${prefix}_box`).value)||0, cr = parseInt($(`#${prefix}_crate`).value)||0, pi = parseInt($(`#${prefix}_pipe`).value)||0, ot = parseInt($(`#${prefix}_other`).value)||0;
+  const sk = parseInt($(`#${prefix}_skid`) ? $(`#${prefix}_skid`).value : 0)||0;
+  const bx = parseInt($(`#${prefix}_box`) ? $(`#${prefix}_box`).value : 0)||0;
+  const cr = parseInt($(`#${prefix}_crate`) ? $(`#${prefix}_crate`).value : 0)||0;
+  const pi = parseInt($(`#${prefix}_pipe`) ? $(`#${prefix}_pipe`).value : 0)||0;
+  const ot = parseInt($(`#${prefix}_other`) ? $(`#${prefix}_other`).value : 0)||0;
   let typeParts = []; 
   if(sk) typeParts.push(formatContainer(sk, 'Skid'));
   if(bx) typeParts.push(formatContainer(bx, 'Box'));
@@ -645,7 +668,12 @@ function getDynamicType(prefix) {
   return typeParts.join(', ') || '1 Skid';
 }
 function getDynamicQty(prefix) {
-  return (parseInt($(`#${prefix}_skid`).value)||0)+(parseInt($(`#${prefix}_box`).value)||0)+(parseInt($(`#${prefix}_crate`).value)||0)+(parseInt($(`#${prefix}_pipe`).value)||0)+(parseInt($(`#${prefix}_other`).value)||0);
+  const sk = parseInt($(`#${prefix}_skid`) ? $(`#${prefix}_skid`).value : 0)||0;
+  const bx = parseInt($(`#${prefix}_box`) ? $(`#${prefix}_box`).value : 0)||0;
+  const cr = parseInt($(`#${prefix}_crate`) ? $(`#${prefix}_crate`).value : 0)||0;
+  const pi = parseInt($(`#${prefix}_pipe`) ? $(`#${prefix}_pipe`).value : 0)||0;
+  const ot = parseInt($(`#${prefix}_other`) ? $(`#${prefix}_other`).value : 0)||0;
+  return sk+bx+cr+pi+ot;
 }
 
 function openUniversalEditor(table, id) {
@@ -654,63 +682,73 @@ function openUniversalEditor(table, id) {
   currentEditId = o.id;
   editTargetRecord = { table: table, id: o.id, so: o.so, photo_urls: o.photo_urls || [] };
   
-  const isRet = (table === 'shipped' && (o.carrier === 'RETURNED TO STOCK' || o.carrier === 'CONSOLIDATED'));
+  const isRet = (o.carrier === 'RETURNED TO STOCK' || o.carrier === 'CONSOLIDATED');
   
-  $('#e_so').value = o.so; $('#e_cust').value = o.customer; $('#e_loc').value = o.location; $('#e_coords').value = o.coords || ''; $('#e_weight').value = o.weight || '';
+  if($('#e_so')) $('#e_so').value = o.so; 
+  if($('#e_cust')) $('#e_cust').value = o.customer; 
+  if($('#e_loc')) $('#e_loc').value = o.location || ''; 
+  if($('#e_coords')) $('#e_coords').value = o.coords || ''; 
+  if($('#e_weight')) $('#e_weight').value = o.weight || '';
+  
   const counts = parseContainerString(o.type);
-  $('#e_skid').value = counts.sk; $('#e_box').value = counts.bx; $('#e_crate').value = counts.cr;
-  $('#e_pipe').value = counts.pi; $('#e_other').value = counts.ot;
+  if($('#e_skid')) $('#e_skid').value = counts.sk; 
+  if($('#e_box')) $('#e_box').value = counts.bx; 
+  if($('#e_crate')) $('#e_crate').value = counts.cr;
+  if($('#e_pipe')) $('#e_pipe').value = counts.pi; 
+  if($('#e_other')) $('#e_other').value = counts.ot;
   
   const inputsToLock = ['e_so','e_cust','e_loc','e_weight','e_status','e_staged_by','e_carrier','e_shipped_by','e_pm'];
   inputsToLock.forEach(i => { if($(`#${i}`)) $(`#${i}`).disabled = isRet; });
   document.querySelectorAll('#editModal .counter-btn').forEach(b => b.disabled = isRet);
   document.querySelectorAll('#editPhotoSection .photo-uploader').forEach(b => b.style.display = isRet ? 'none' : 'block');
   
-  $('#editPhotoSection').style.display = 'flex';
-  $('#editDelBtn').style.display = 'block';
+  if($('#editPhotoSection')) $('#editPhotoSection').style.display = 'flex';
+  if($('#editDelBtn')) $('#editDelBtn').style.display = 'block';
   
   if (table === 'staging') {
-    $('#editModalTitle').textContent = 'Edit Staging Entry'; 
-    $('#editStagingFields').style.display = 'block';
-    $('#editShippedFields').style.display = 'none'; 
-    $('#editUndoBtn').style.display = 'none'; 
-    $('#editReturnBtn').style.display = 'block'; 
-    $('#editConsolidateBtn').style.display = 'block';
-    $('#editSaveBtn').style.display = 'block';
-    $('#e_status').value = o.status; 
-    $('#e_staged_by').value = o.staged_by || '';
+    if($('#editModalTitle')) $('#editModalTitle').textContent = 'Edit Staging Entry'; 
+    if($('#editStagingFields')) $('#editStagingFields').style.display = 'block';
+    if($('#editShippedFields')) $('#editShippedFields').style.display = 'none'; 
+    if($('#editUndoBtn')) $('#editUndoBtn').style.display = 'none'; 
+    if($('#editReturnBtn')) $('#editReturnBtn').style.display = 'block'; 
+    if($('#editConsolidateBtn')) $('#editConsolidateBtn').style.display = 'block';
+    if($('#editSaveBtn')) $('#editSaveBtn').style.display = 'block';
+    if($('#e_status')) $('#e_status').value = o.status; 
+    if($('#e_staged_by')) $('#e_staged_by').value = o.staged_by || '';
   } else {
-    $('#editModalTitle').textContent = isRet ? 'View Locked Record' : 'Edit Shipped Entry Logs'; 
-    $('#editStagingFields').style.display = 'none'; 
-    $('#editShippedFields').style.display = 'block'; 
-    $('#editUndoBtn').style.display = 'block'; 
-    $('#editReturnBtn').style.display = 'none'; 
-    $('#editConsolidateBtn').style.display = 'none';
-    $('#editSaveBtn').style.display = isRet ? 'none' : 'block';
-    $('#e_carrier').value = o.carrier || ''; 
-    $('#e_shipped_by').value = o.shipped_by || ''; 
-    $('#e_pm').value = o.pmd_email || '';
+    if($('#editModalTitle')) $('#editModalTitle').textContent = isRet ? 'View Locked Record' : 'Edit Shipped Entry Logs'; 
+    if($('#editStagingFields')) $('#editStagingFields').style.display = 'none'; 
+    if($('#editShippedFields')) $('#editShippedFields').style.display = 'block'; 
+    if($('#editUndoBtn')) $('#editUndoBtn').style.display = 'block'; 
+    if($('#editReturnBtn')) $('#editReturnBtn').style.display = 'none'; 
+    if($('#editConsolidateBtn')) $('#editConsolidateBtn').style.display = 'none';
+    if($('#editSaveBtn')) $('#editSaveBtn').style.display = isRet ? 'none' : 'block';
+    if($('#e_carrier')) $('#e_carrier').value = o.carrier || ''; 
+    if($('#e_shipped_by')) $('#e_shipped_by').value = o.shipped_by || ''; 
+    if($('#e_pm')) $('#e_pm').value = o.pmd_email || '';
   }
   
   renderEditPhotoStrip();
-  $('#editModal').style.display = 'flex';
+  if($('#editModal')) $('#editModal').style.display = 'flex';
 }
 
 async function deleteCurrentRecord() {
   if(confirm("Are you sure you want to PERMANENTLY delete this record?")) {
     await supabaseClient.from(editTargetRecord.table).delete().eq('id', currentEditId);
-    $('#editModal').style.display = 'none';
+    if($('#editModal')) $('#editModal').style.display = 'none';
     loadCloudData();
   }
 }
 
 function triggerReturnModal() {
-  $('#returnModal').style.display = 'flex'; $('#editModal').style.display = 'none';
-  $('#r_picked_by').value = ''; $('#r_returned_by').value = ''; $('#r_reason').value = ''; 
-  $('#r_pm_chk').checked = false; 
-  $('#r_pm_email').value = ''; 
-  $('#r_pm_email').disabled = true;
-  $('#r_pm_email_btn').disabled = true;
+  if($('#returnModal')) $('#returnModal').style.display = 'flex'; 
+  if($('#editModal')) $('#editModal').style.display = 'none';
+  if($('#r_picked_by')) $('#r_picked_by').value = ''; 
+  if($('#r_returned_by')) $('#r_returned_by').value = ''; 
+  if($('#r_reason')) $('#r_reason').value = ''; 
+  if($('#r_pm_chk')) $('#r_pm_chk').checked = false; 
+  if($('#r_pm_email')) { $('#r_pm_email').value = ''; $('#r_pm_email').disabled = true; }
+  if($('#r_pm_email_btn')) $('#r_pm_email_btn').disabled = true;
 }
 
 async function submitReturnToStock() {
@@ -753,10 +791,10 @@ async function submitReturnToStock() {
       `\nFor more shipment details, visit the following link: https://swiftoperations.github.io/staging-tracker/\n\n` +
       `Thanks\n`;
 
-    $('#returnModal').style.display='none';
+    if($('#returnModal')) $('#returnModal').style.display='none';
     loadCloudData();
     if(pmChecked) { window.location.href = `mailto:${pmEmail}?cc=warehouse1@swiftsupply.ca&subject=${encodeURIComponent(cachedSubject)}&body=${encodeURIComponent(cachedBody)}`; }
-  } catch(e) { alert("Return to Stock error: " + e.message); }
+  } catch(err) { alert("Return to Stock error: " + err.message); }
 }
 
 async function executeConsolidate() {
@@ -772,13 +810,15 @@ async function executeConsolidate() {
     if(insertError) throw insertError;
     
     await supabaseClient.from('staging').delete().eq('id', currentEditId);
-    $('#editModal').style.display='none';
+    if($('#editModal')) $('#editModal').style.display='none';
     loadCloudData();
   } catch(err) { alert("Consolidate error: " + err.message); }
 }
 
 function renderEditPhotoStrip() {
-  const strip = $('#editPhotoPreviewStrip'); strip.innerHTML = '';
+  const strip = $('#editPhotoPreviewStrip'); 
+  if(!strip) return;
+  strip.innerHTML = '';
   editTargetRecord.photo_urls.forEach((url, index) => {
     strip.insertAdjacentHTML('beforeend', `<span class="photo-badge">📎 Photo-${index+1} <span onclick="editTargetRecord.photo_urls.splice(${index},1); renderEditPhotoStrip()">×</span></span>`);
   });
@@ -795,7 +835,8 @@ async function saveEditedRecord() {
     const { error } = await supabaseClient.from('shipped').update({ ...basePayload, carrier: $('#e_carrier').value.trim(), shipped_by: $('#e_shipped_by').value.trim(), pmd_email: $('#e_pm').value.trim() || null, photo_urls: editTargetRecord.photo_urls }).eq('id', editTargetRecord.id);
     if(error) { alert("Database Error: " + error.message); return; }
   }
-  $('#editModal').style.display = 'none'; loadCloudData();
+  if($('#editModal')) $('#editModal').style.display = 'none'; 
+  loadCloudData();
 }
 
 async function executeShippedUndo() {
@@ -806,14 +847,17 @@ async function executeShippedUndo() {
     if (error) { alert("Undo Database Error: " + error.message); return; }
     
     await supabaseClient.from('shipped').delete().eq('id', editTargetRecord.id);
-    $('#editModal').style.display = 'none'; loadCloudData();
-  } catch(e) { alert("Undo error."); }
+    if($('#editModal')) $('#editModal').style.display = 'none'; 
+    loadCloudData();
+  } catch(e) { alert("Undo error: " + e.message); }
 }
 
 function openPhotoViewer(id) {
   const o = appData.shipped.find(x => x.id === id) || appData.staging.find(x => x.id === id);
   const paths = o ? o.photo_urls : [];
-  const gallery = $('#modalPhotoGallery'); gallery.innerHTML = '';
+  const gallery = $('#modalPhotoGallery'); 
+  if(!gallery) return;
+  gallery.innerHTML = '';
   if(!paths || paths.length === 0) {
     gallery.innerHTML = '<p style="grid-column: 1/-1; text-align:center; font-weight:700; color:#6b7280; padding:12px 0;">No photos attached to this order.</p>';
   } else {
@@ -825,88 +869,100 @@ function openPhotoViewer(id) {
       `);
     });
   }
-  $('#viewModal').style.display = 'flex';
+  if($('#viewModal')) $('#viewModal').style.display = 'flex';
 }
 
 function renderTables() {
-  const q = $('#q').value.toLowerCase();
+  const q = $('#q') ? $('#q').value.toLowerCase() : '';
   const fStaging = appData.staging.filter(o => (o.so||'').toLowerCase().includes(q) || (o.customer||'').toLowerCase().includes(q));
   const fShipped = appData.shipped.filter(o => (o.so||'').toLowerCase().includes(q) || (o.customer||'').toLowerCase().includes(q));
 
-  const sBody = $('#tblStaging tbody'); sBody.innerHTML = '';
-  fStaging.slice(0, 20).forEach(o => {
-    const geoLink = o.coords ? `<a class="coord-link" href="geo:0,0?q=${encodeURIComponent(o.coords)}">${o.coords}</a>` : '—';
-    const picBtn = (o.photo_urls && o.photo_urls.length > 0) ? `<button class="btn" style="padding:4px 8px; font-size:12px; margin-right:4px;" onclick="openPhotoViewer('${o.id}')">View</button>` : '';
-    
-    sBody.insertAdjacentHTML('beforeend', `<tr>
-      <td><button class="btn-edit" onclick="openUniversalEditor('staging', '${o.id}')">Edit</button></td>
-      <td>${picBtn}</td><td><b>${o.so}</b></td><td>${o.customer}</td><td>${new Date(o.entry_date).toLocaleString()}</td><td>${o.type}</td><td>${o.location}</td><td><small>${geoLink}</small></td><td>${o.weight || '—'}</td><td>${o.status}</td><td>${o.staged_by||'—'}</td>
-      <td style="position:sticky;right:0;text-align:center;"><input type="checkbox" onchange="if(this.checked)triggerShipModal('${o.id}')"></td></tr>`);
-  });
+  if($('#tblStaging')) {
+    const sBody = $('#tblStaging').querySelector('tbody'); 
+    sBody.innerHTML = '';
+    fStaging.slice(0, 20).forEach(o => {
+      const geoLink = o.coords ? `<a class="coord-link" href="geo:0,0?q=${encodeURIComponent(o.coords)}">${o.coords}</a>` : '—';
+      const picBtn = (o.photo_urls && o.photo_urls.length > 0) ? `<button class="btn" style="padding:4px 8px; font-size:12px; margin-right:4px;" onclick="openPhotoViewer('${o.id}')">View</button>` : '';
+      sBody.insertAdjacentHTML('beforeend', `<tr>
+        <td><button class="btn-edit" onclick="openUniversalEditor('staging', '${o.id}')">Edit</button></td>
+        <td>${picBtn}</td><td><b>${o.so}</b></td><td>${o.customer}</td><td>${new Date(o.entry_date).toLocaleString()}</td><td>${o.type}</td><td>${o.location}</td><td><small>${geoLink}</small></td><td>${o.weight || '—'}</td><td>${o.status}</td><td>${o.staged_by||'—'}</td>
+        <td style="position:sticky;right:0;text-align:center;"><input type="checkbox" onchange="if(this.checked)triggerShipModal('${o.id}')"></td></tr>`);
+    });
+  }
 
-  const shBody = $('#tblShipped tbody'); shBody.innerHTML = '';
-  fShipped.slice(0, 20).forEach(o => {
-    const geoLink = o.coords ? `<a class="coord-link" href="geo:0,0?q=${encodeURIComponent(o.coords)}">${o.coords}</a>` : '—';
-    const isRet = (o.carrier === 'RETURNED TO STOCK' || o.carrier === 'CONSOLIDATED');
-    const rowClass = isRet ? 'style="color:#9ca3af; text-decoration:line-through;"' : '';
-    const picBtn = (o.photo_urls && o.photo_urls.length > 0) ? `<button class="btn" style="padding:4px 8px; font-size:12px; margin-right:4px;" onclick="openPhotoViewer('${o.id}')">View</button>` : '';
-    
-    shBody.insertAdjacentHTML('beforeend', `<tr ${rowClass}>
-      <td><button class="btn-edit" onclick="openUniversalEditor('shipped', '${o.id}')">Edit</button></td>
-      <td>${picBtn}</td>
-      <td><b>${o.so}</b></td><td>${o.customer}</td><td>${o.type}</td><td>${o.carrier || '—'}</td><td>${o.location}</td><td><small>${geoLink}</small></td><td>${o.weight || '—'}</td><td>${new Date(o.shipped_at).toLocaleString()}</td><td>${o.shipped_by || '—'}</td><td>${o.pmd_email ? o.pmd_email+(isRet?'':'<span class="green-check"> ✓</span>') : '—'}</td></tr>`);
-  });
+  if($('#tblShipped')) {
+    const shBody = $('#tblShipped').querySelector('tbody'); 
+    shBody.innerHTML = '';
+    fShipped.slice(0, 20).forEach(o => {
+      const geoLink = o.coords ? `<a class="coord-link" href="geo:0,0?q=${encodeURIComponent(o.coords)}">${o.coords}</a>` : '—';
+      const isRet = (o.carrier === 'RETURNED TO STOCK' || o.carrier === 'CONSOLIDATED');
+      const rowClass = isRet ? 'style="color:#9ca3af; text-decoration:line-through;"' : '';
+      const picBtn = (o.photo_urls && o.photo_urls.length > 0) ? `<button class="btn" style="padding:4px 8px; font-size:12px; margin-right:4px;" onclick="openPhotoViewer('${o.id}')">View</button>` : '';
+      
+      shBody.insertAdjacentHTML('beforeend', `<tr ${rowClass}>
+        <td><button class="btn-edit" onclick="openUniversalEditor('shipped', '${o.id}')">Edit</button></td>
+        <td>${picBtn}</td>
+        <td><b>${o.so}</b></td><td>${o.customer}</td><td>${o.type}</td><td>${o.carrier || '—'}</td><td>${o.location}</td><td><small>${geoLink}</small></td><td>${o.weight || '—'}</td><td>${new Date(o.shipped_at).toLocaleString()}</td><td>${o.shipped_by || '—'}</td><td>${o.pmd_email ? o.pmd_email+(isRet?'':'<span class="green-check"> ✓</span>') : '—'}</td></tr>`);
+    });
+  }
 
   const sumByType = t => appData.staging.reduce((acc, c) => c.type?.includes(t) ? acc + (parseInt(c.type.match(new RegExp(`(\\d+)\\s*${t}`))) || 0) : acc, 0);
-  $('#kOrders').textContent = appData.staging.length; $('#kContainers').textContent = appData.staging.reduce((acc, c) => acc + (parseInt(c.qty) || 0), 0);
-  $('#kSkids').textContent = sumByType('Skid'); $('#kBoxes').textContent = sumByType('Box'); $('#kCrates').textContent = sumByType('Crate'); 
-  $('#kPipe').textContent = sumByType('Pipe/Rod'); $('#kOther').textContent = sumByType('Other');
-  $('#kShipped').textContent = appData.shipped.filter(x => x.carrier !== 'RETURNED TO STOCK' && x.carrier !== 'CONSOLIDATED').length;
+  if($('#kOrders')) $('#kOrders').textContent = appData.staging.length; 
+  if($('#kContainers')) $('#kContainers').textContent = appData.staging.reduce((acc, c) => acc + (parseInt(c.qty) || 0), 0);
+  if($('#kSkids')) $('#kSkids').textContent = sumByType('Skid'); 
+  if($('#kBoxes')) $('#kBoxes').textContent = sumByType('Box'); 
+  if($('#kCrates')) $('#kCrates').textContent = sumByType('Crate'); 
+  if($('#kPipe')) $('#kPipe').textContent = sumByType('Pipe/Rod'); 
+  if($('#kOther')) $('#kOther').textContent = sumByType('Other');
+  if($('#kShipped')) $('#kShipped').textContent = appData.shipped.filter(x => x.carrier !== 'RETURNED TO STOCK' && x.carrier !== 'CONSOLIDATED').length;
 }
 
-$('#add').onclick = async () => {
-  const sk = parseInt($('#c_skid').value)||0, bx = parseInt($('#c_box').value)||0, cr = parseInt($('#c_crate').value)||0, pi = parseInt($('#c_pipe').value)||0, ot = parseInt($('#c_other').value)||0;
-  if(!$('#so').value || !$('#customer').value || !$('#loc').value) return alert("Fields Missing.");
-  
-  let type = []; 
-  if(sk) type.push(formatContainer(sk, 'Skid'));
-  if(bx) type.push(formatContainer(bx, 'Box'));
-  if(cr) type.push(formatContainer(cr, 'Crate'));
-  if(pi) type.push(formatContainer(pi, 'Pipe/Rod'));
-  if(ot) type.push(formatContainer(ot, 'Other'));
-  
-  $('#add').disabled = true;
-  $('#add').textContent = 'Saving...';
-  
-  try {
-    let photoUrls = [];
-    for (let i = 0; i < mainPhotoBlobs.length; i++) {
-      const file = mainPhotoBlobs[i]; 
-      const cleanFileName = file.name.replace(/[^a-zA-Z0-9.]/g, '');
-      const path = `${$('#so').value.trim()}-staging-${Date.now()}-${i}-${cleanFileName}`;
-      const { error: uploadError } = await supabaseClient.storage.from('freight-photos').upload(path, file);
-      if(!uploadError) photoUrls.push(path);
-    }
-  
-    const { error } = await supabaseClient.from('staging').insert([{ so: $('#so').value.trim(), customer: $('#customer').value.trim(), status: $('#status').value, location: $('#loc').value.trim(), coords: $('#coords').value.trim(), weight: $('#weight').value.trim(), staged_by: $('#staged_by').value.trim(), type: type.join(', '), qty: sk+bx+cr+pi+ot, photo_urls: photoUrls }]);
+if($('#add')) {
+  $('#add').onclick = async () => {
+    const sk = parseInt($('#c_skid').value)||0, bx = parseInt($('#c_box').value)||0, cr = parseInt($('#c_crate').value)||0, pi = parseInt($('#c_pipe').value)||0, ot = parseInt($('#c_other').value)||0;
+    if(!$('#so').value || !$('#customer').value || !$('#loc').value) return alert("Fields Missing.");
     
-    if (error) {
-      alert("Database Error: " + error.message + "\n\nIMPORTANT: Add a 'photo_urls' column (Type: text array) to your 'staging' table in Supabase!");
-      $('#add').disabled = false; $('#add').textContent = 'Add'; return;
-    }
+    let type = []; 
+    if(sk) type.push(formatContainer(sk, 'Skid'));
+    if(bx) type.push(formatContainer(bx, 'Box'));
+    if(cr) type.push(formatContainer(cr, 'Crate'));
+    if(pi) type.push(formatContainer(pi, 'Pipe/Rod'));
+    if(ot) type.push(formatContainer(ot, 'Other'));
     
-    $('#so').value=''; $('#customer').value=''; $('#loc').value=''; $('#coords').value=''; $('#staged_by').value=''; $('#weight').value=''; $('#c_skid').value=0; $('#c_box').value=0; $('#c_crate').value=0; $('#c_pipe').value=0; $('#c_other').value=0; 
-    mainPhotoBlobs = []; renderMainPhotoStrip();
-    loadCloudData();
-  } catch(e) { alert("System Error: " + e.message); }
-  
-  $('#add').disabled = false;
-  $('#add').textContent = 'Add';
-};
+    $('#add').disabled = true;
+    $('#add').textContent = 'Saving...';
+    
+    try {
+      let photoUrls = [];
+      for (let i = 0; i < mainPhotoBlobs.length; i++) {
+        const file = mainPhotoBlobs[i]; 
+        const cleanFileName = file.name.replace(/[^a-zA-Z0-9.]/g, '');
+        const path = `${$('#so').value.trim()}-staging-${Date.now()}-${i}-${cleanFileName}`;
+        const { error: uploadError } = await supabaseClient.storage.from('freight-photos').upload(path, file);
+        if(!uploadError) photoUrls.push(path);
+      }
+    
+      const { error } = await supabaseClient.from('staging').insert([{ so: $('#so').value.trim(), customer: $('#customer').value.trim(), status: $('#status').value, location: $('#loc').value.trim(), coords: $('#coords').value.trim(), weight: $('#weight').value.trim(), staged_by: $('#staged_by').value.trim(), type: type.join(', '), qty: sk+bx+cr+pi+ot, photo_urls: photoUrls }]);
+      
+      if (error) {
+        alert("Database Error: " + error.message + "\n\nIMPORTANT: Add a 'photo_urls' column (Type: text array) to your 'staging' table in Supabase!");
+        $('#add').disabled = false; $('#add').textContent = 'Add'; return;
+      }
+      
+      $('#so').value=''; $('#customer').value=''; $('#loc').value=''; $('#coords').value=''; $('#staged_by').value=''; $('#weight').value=''; $('#c_skid').value=0; $('#c_box').value=0; $('#c_crate').value=0; $('#c_pipe').value=0; $('#c_other').value=0; 
+      mainPhotoBlobs = []; renderMainPhotoStrip();
+      loadCloudData();
+    } catch(e) { alert("System Error: " + e.message); }
+    
+    $('#add').disabled = false;
+    $('#add').textContent = 'Add';
+  };
+}
 
-$('#q').oninput = renderTables;
-$('#expandStaging').onclick = () => window.open('stage.html', '_blank');
-$('#expandShipped').onclick = () => window.open('ship.html', '_blank');
+if($('#q')) $('#q').oninput = renderTables;
+if($('#expandStaging')) $('#expandStaging').onclick = () => window.open('stage.html', '_blank');
+if($('#expandShipped')) $('#expandShipped').onclick = () => window.open('ship.html', '_blank');
+
 window.onload = () => { bootstrapStandalonePWA(); initOpenStreetMapEngine(); loadCloudData(); setInterval(loadCloudData, 5000); };
 </script>
 </body>
