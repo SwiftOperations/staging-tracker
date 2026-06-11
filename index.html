@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Swift Staging Tracker - Stable v1.0</title>
+<title>Swift Staging Tracker — Beta v10.7</title>
 <link rel="manifest" href="data:application/manifest+json;charset=utf-8,%7B%22short_name%22%3A%22StagingTracker%22%2C%22name%22%3A%22Swift%20Staging%20Tracker%20Hub%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22https%3A%2F%2Fcdn-icons-png.flaticon.com%2F512%2F3014%2F3014166.png%22%2C%22type%22%3A%22image%22%2C%22sizes%22%3A%22512x512%22%7D%5D%2C%22start_url%22%3A%22.%22%2C%22background_color%22%3A%22%23f6f7f9%22%2C%22theme_color%22%3A%22%23dd4d25%22%2C%22display%22%3A%22standalone%22%2C%22orientation%22%3A%22portrait%22%7D" id="pwa-manifest">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<link rel="stylesheet" href="style.css?v=10.5" />
+<link rel="stylesheet" href="style.css?v=10.7" />
 </head>
 <body>
 <datalist id="dl_customers"></datalist>
@@ -17,7 +17,7 @@
 <datalist id="dl_pastEmails"></datalist>
 
 <div class="wrap">
-  <h1>Swift Staging Tracker — Stable v1.0</h1> 
+  <h1>Swift Staging Tracker — Beta v10.7</h1>
   <div id="err" style="display:none; background:#fee2e2; color:#991b1b; padding:10px; border-radius:10px; margin-bottom:10px"></div>
 
   <div class="grid">
@@ -39,12 +39,11 @@
     <div class="split"><h3>Enter Staging Information</h3></div>
     <div class="row">
       <div class="photo-options-grid" style="flex: 1 1 180px; margin: 0;">
-        <div class="photo-uploader" style="padding: 8px; margin: 0; background: #fff;" onclick="document.querySelector('#main_cameraFile').click()">📷 Live Photo
-          <input type="file" id="main_cameraFile" accept="image/*" capture="environment" style="display:none" onchange="window.addMainPhotoBlob(this)" />
-        </div>
-        <div class="photo-uploader" style="padding: 8px; margin: 0; background: #fff;" onclick="document.querySelector('#main_uploadFile').click()">📁 File Upload
-          <input type="file" id="main_uploadFile" multiple accept="image/*" style="display:none" onchange="window.addMainPhotoBlob(this)" />
-        </div>
+        <div class="photo-uploader" style="padding: 8px; margin: 0; background: #fff;" onclick="document.querySelector('#main_cameraFile').click()">📷 Live Photo</div>
+        <input type="file" id="main_cameraFile" accept="image/*" capture="environment" style="display:none" onchange="window.addMainPhotoBlob(this)" />
+        
+        <div class="photo-uploader" style="padding: 8px; margin: 0; background: #fff;" onclick="document.querySelector('#main_uploadFile').click()">📁 File Upload</div>
+        <input type="file" id="main_uploadFile" multiple accept="image/*" style="display:none" onchange="window.addMainPhotoBlob(this)" />
       </div>
       
       <input id="so" placeholder="SO number" style="flex: 1 1 110px;" />
@@ -74,6 +73,7 @@
       </div>
 
       <input id="coords" placeholder="Tap for GPS Coords (Optional)" readonly onclick="window.fetchBrowserGPS('coords')" style="background:#fafafa; cursor:pointer;" />
+      
       <input id="weight" placeholder="Total Weight" oninput="window.formatWeight(this)" />
       
       <div style="display:flex; flex: 1 1 150px;">
@@ -192,6 +192,7 @@
     </div>
     
     <div class="modal-field"><label>Coords</label><input id="e_coords" readonly onclick="window.fetchBrowserGPS('e_coords')" style="background:#fafafa; cursor:pointer;" placeholder="Tap to update coordinates" /></div>
+    
     <div class="modal-field"><label>Total Weight (in lbs)</label><input id="e_weight" oninput="window.formatWeight(this)" /></div>
     
     <div id="editStagingFields">
@@ -304,6 +305,6 @@
   </div>
 </div>
 
-<script src="app.js?v=10.5"></script>
+<script src="app.js?v=10.7"></script>
 </body>
 </html>
