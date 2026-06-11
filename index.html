@@ -39,11 +39,12 @@
     <div class="split"><h3>Enter Staging Information</h3></div>
     <div class="row">
       <div class="photo-options-grid" style="flex: 1 1 180px; margin: 0;">
-        <div class="photo-uploader" style="padding: 8px; margin: 0; background: #fff;" onclick="document.querySelector('#main_cameraFile').click()">📷 Live Photo</div>
-        <input type="file" id="main_cameraFile" accept="image/*" capture="environment" style="display:none" onchange="window.addMainPhotoBlob(this)" />
-        
-        <div class="photo-uploader" style="padding: 8px; margin: 0; background: #fff;" onclick="document.querySelector('#main_uploadFile').click()">📁 File Upload</div>
-        <input type="file" id="main_uploadFile" multiple accept="image/*" style="display:none" onchange="window.addMainPhotoBlob(this)" />
+        <div class="photo-uploader" style="padding: 8px; margin: 0; background: #fff;" onclick="document.querySelector('#main_cameraFile').click()">📷 Live Photo
+          <input type="file" id="main_cameraFile" accept="image/*" capture="environment" style="display:none" onchange="window.addMainPhotoBlob(this)" />
+        </div>
+        <div class="photo-uploader" style="padding: 8px; margin: 0; background: #fff;" onclick="document.querySelector('#main_uploadFile').click()">📁 File Upload
+          <input type="file" id="main_uploadFile" multiple accept="image/*" style="display:none" onchange="window.addMainPhotoBlob(this)" />
+        </div>
       </div>
       
       <input id="so" placeholder="SO number" style="flex: 1 1 110px;" />
