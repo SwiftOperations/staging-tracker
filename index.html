@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Swift Staging Tracker — v9.9</title>
+<title>Swift Staging Tracker — Beta v10.0</title>
 
 <link rel="manifest" href="data:application/manifest+json;charset=utf-8,%7B%22short_name%22%3A%22StagingTracker%22%2C%22name%22%3A%22Swift%20Staging%20Tracker%20Hub%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22https%3A%2F%2Fcdn-icons-png.flaticon.com%2F512%2F3014%2F3014166.png%22%2C%22type%22%3A%22image%22%2C%22sizes%22%3A%22512x512%22%7D%5D%2C%22start_url%22%3A%22.%22%2C%22background_color%22%3A%22%23f6f7f9%22%2C%22theme_color%22%3A%22%23dd4d25%22%2C%22display%22%3A%22standalone%22%2C%22orientation%22%3A%22portrait%22%7D" id="pwa-manifest">
 
@@ -26,6 +26,7 @@
   .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
   input,select{height:42px;padding:0 12px;border:1px solid #cbd5e1;border-radius:10px;background:#fff;width:100%;color:#222;font-size:14px;}
   input:disabled, select:disabled { background: #f3f4f6; color: #9ca3af; cursor: not-allowed; }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
   .row > *{flex:1 1 150px}
   .btn{background:var(--brand);color:#fff;border:0;border-radius:12px;padding:12px 20px;font-weight:700;cursor:pointer}
   .btn-edit{background:#0284c7;color:#fff;border:0;border-radius:6px;padding:4px 8px;font-size:12px;font-weight:700;cursor:pointer}
@@ -75,6 +76,11 @@
     table { min-width: 950px; } 
     .freight-block { justify-content: space-between; }
   }
+  
+  /* REVISION: Perfect column stacking for container quantities on mobile portrait views */
+  @media (max-width: 480px) {
+    .modal-window .freight-block { grid-template-columns: 1fr; }
+  }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -85,7 +91,7 @@
 <datalist id="dl_pastEmails"></datalist>
 
 <div class="wrap">
-  <h1>Swift Staging Tracker — v9.9</h1>
+  <h1>Swift Staging Tracker — Beta v10.0</h1>
   <div id="err" style="display:none; background:#fee2e2; color:#991b1b; padding:10px; border-radius:10px; margin-bottom:10px"></div>
 
   <div class="grid">
@@ -107,10 +113,10 @@
     <div class="split"><h3>Enter Staging Information</h3></div>
     <div class="row">
       <div class="photo-options-grid" style="flex: 1 1 180px; margin: 0;">
-        <div class="photo-uploader" style="padding: 8px; margin: 0; background: #fff;" onclick="$('#main_cameraFile').click()">📷 Live Photo
+        <div class="photo-uploader" style="padding: 8px; margin: 0; background: #fff;" onclick="document.querySelector('#main_cameraFile').click()">📷 Live Photo
           <input type="file" id="main_cameraFile" accept="image/*" capture="environment" style="display:none" onchange="addMainPhotoBlob(this)" />
         </div>
-        <div class="photo-uploader" style="padding: 8px; margin: 0; background: #fff;" onclick="$('#main_uploadFile').click()">📁 File Upload
+        <div class="photo-uploader" style="padding: 8px; margin: 0; background: #fff;" onclick="document.querySelector('#main_uploadFile').click()">📁 File Upload
           <input type="file" id="main_uploadFile" multiple accept="image/*" style="display:none" onchange="addMainPhotoBlob(this)" />
         </div>
       </div>
@@ -185,9 +191,9 @@
   </div>
 </div>
 
-<div id="returnModal" class="modal-overlay" onclick="if(event.target===this) $('#returnModal').style.display='none'">
+<div id="returnModal" class="modal-overlay" onclick="if(event.target===this) document.querySelector('#returnModal').style.display='none'">
   <div class="modal-window">
-    <button class="modal-close-x" onclick="$('#returnModal').style.display='none'">×</button>
+    <button class="modal-close-x" onclick="document.querySelector('#returnModal').style.display='none'">×</button>
     <h3>Return to Stock</h3>
     <p style="font-size:13px; color:#4b5563; margin-top:0; margin-bottom:8px;">Are you sure you want to return this order to stock?</p>
     
@@ -205,12 +211,12 @@
     </div>
     
     <div class="modal-field"><label>Reason for Return to Stock</label><input id="r_reason" placeholder="Enter reason..." /></div>
-    <div class="chk-row" style="margin-top:4px;"><input type="checkbox" id="r_pm_chk" onchange="$('#r_pm_email').disabled=!this.checked"/><label>Confirm return to PM via e-mail</label></div>
+    <div class="chk-row" style="margin-top:4px;"><input type="checkbox" id="r_pm_chk" onchange="document.querySelector('#r_pm_email').disabled=!this.checked; document.querySelector('#r_pm_email_btn').disabled=!this.checked;"/><label>Confirm return to PM via e-mail</label></div>
     
     <div class="modal-field">
       <div style="display:flex; width:100%;">
         <input id="r_pm_email" list="dl_pastEmails" placeholder="PM E-mail" disabled style="border-top-right-radius:0; border-bottom-right-radius:0; border-right:0;" />
-        <button type="button" onclick="banishMemory('r_pm_email')" style="height:42px; width:36px; flex:none; background:#f8fafc; border:1px solid #cbd5e1; border-top-right-radius:8px; border-bottom-right-radius:8px; color:#dc2626; font-weight:bold; font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;">×</button>
+        <button type="button" id="r_pm_email_btn" disabled onclick="banishMemory('r_pm_email')" style="height:42px; width:36px; flex:none; background:#f8fafc; border:1px solid #cbd5e1; border-top-right-radius:8px; border-bottom-right-radius:8px; color:#dc2626; font-weight:bold; font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;">×</button>
       </div>
     </div>
     
@@ -218,18 +224,18 @@
   </div>
 </div>
 
-<div id="editModal" class="modal-overlay" onclick="if(event.target===this) $('#editModal').style.display='none'">
+<div id="editModal" class="modal-overlay" onclick="if(event.target===this) document.querySelector('#editModal').style.display='none'">
   <div class="modal-window">
-    <button class="modal-close-x" onclick="$('#editModal').style.display='none'">×</button>
+    <button class="modal-close-x" onclick="document.querySelector('#editModal').style.display='none'">×</button>
     <h3 id="editModalTitle">Edit Record</h3>
     
     <div id="editPhotoSection" style="display:flex; flex-direction:column; gap:8px;">
       <label style="font-size:12px; font-weight:700; color:#4b5563;">Manage Freight Photos</label>
       <div class="photo-options-grid">
-        <div class="photo-uploader" onclick="$('#e_cameraFile').click()">📷 Take Live Photo
+        <div class="photo-uploader" onclick="document.querySelector('#e_cameraFile').click()">📷 Take Live Photo
           <input type="file" id="e_cameraFile" accept="image/*" capture="environment" style="display:none" onchange="addEditPhotoBlob(this)" />
         </div>
-        <div class="photo-uploader" onclick="$('#e_uploadFile').click()">📁 File Upload
+        <div class="photo-uploader" onclick="document.querySelector('#e_uploadFile').click()">📁 File Upload
           <input type="file" id="e_uploadFile" multiple accept="image/*" style="display:none" onchange="addEditPhotoBlob(this)" />
         </div>
       </div>
@@ -301,7 +307,7 @@
         <button id="editConsolidateBtn" class="btn" style="background:#8b5cf6; color:#fff; padding: 10px 16px; border-radius: 8px; border: 0; font-weight:700; cursor:pointer;" onclick="executeConsolidate()">Consolidated</button>
       </span>
       <span style="display:flex; gap:8px; margin-left:auto; flex-wrap: wrap;">
-        <button class="btn" style="background:#9ca3af; border-radius: 8px; padding: 10px 16px; border: 0; color:#fff; font-weight:700; cursor:pointer;" onclick="$('#editModal').style.display='none'">Cancel</button>
+        <button class="btn" style="background:#9ca3af; border-radius: 8px; padding: 10px 16px; border: 0; color:#fff; font-weight:700; cursor:pointer;" onclick="document.querySelector('#editModal').style.display='none'">Cancel</button>
         <button id="editSaveBtn" class="btn" style="background:#e04f26; border-radius: 8px; padding: 10px 16px; border: 0; color:#fff; font-weight:700; cursor:pointer;" onclick="saveEditedRecord()">Save Changes</button>
       </span>
     </div>
@@ -313,10 +319,10 @@
     <button class="modal-close-x" onclick="closeShipModal()">×</button>
     <h3>Confirm Freight Dispatch</h3>
     <div class="photo-options-grid">
-      <div class="photo-uploader" onclick="$('#cameraFile').click()">📷 Take Live Photo
+      <div class="photo-uploader" onclick="document.querySelector('#cameraFile').click()">📷 Take Live Photo
         <input type="file" id="cameraFile" accept="image/*" capture="environment" style="display:none" onchange="addPhotoBlob(this)" />
       </div>
-      <div class="photo-uploader" onclick="$('#uploadFile').click()">📁 File Upload
+      <div class="photo-uploader" onclick="document.querySelector('#uploadFile').click()">📁 File Upload
         <input type="file" id="uploadFile" multiple accept="image/*" style="display:none" onchange="addPhotoBlob(this)" />
       </div>
     </div>
@@ -333,20 +339,22 @@
         <button type="button" onclick="banishMemory('m_by')" style="height:42px; width:36px; flex:none; background:#f8fafc; border:1px solid #cbd5e1; border-top-right-radius:8px; border-bottom-right-radius:8px; color:#dc2626; font-weight:bold; font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;">×</button>
       </div>
     </div>
-    <div class="chk-row"><input type="checkbox" id="m_pm_chk" onchange="$('#m_pm_email').disabled=!this.checked"/><label>E-mail PM Verification</label></div>
+    <div class="chk-row"><input type="checkbox" id="m_pm_chk" onchange="document.querySelector('#m_pm_email').disabled=!this.checked; document.querySelector('#m_pm_email_btn').disabled=!this.checked;"/><label>E-mail PM Verification</label></div>
     <div class="modal-field">
       <div style="display:flex; width:100%;">
         <input id="m_pm_email" list="dl_pastEmails" disabled style="border-top-right-radius:0; border-bottom-right-radius:0; border-right:0;" />
-        <button type="button" onclick="banishMemory('m_pm_email')" style="height:42px; width:36px; flex:none; background:#f8fafc; border:1px solid #cbd5e1; border-top-right-radius:8px; border-bottom-right-radius:8px; color:#dc2626; font-weight:bold; font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;">×</button>
+        <button type="button" id="m_pm_email_btn" disabled onclick="banishMemory('m_pm_email')" style="height:42px; width:36px; flex:none; background:#f8fafc; border:1px solid #cbd5e1; border-top-right-radius:8px; border-bottom-right-radius:8px; color:#dc2626; font-weight:bold; font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;">×</button>
       </div>
     </div>
-    <div class="modal-actions"><button id="modalConfirmBtn" class="btn" onclick="submitFreightDispatch()">Confirm Dispatch</button></div>
+    <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:8px;">
+      <button id="modalConfirmBtn" class="btn" onclick="submitFreightDispatch()">Confirm Dispatch</button>
+    </div>
   </div>
 </div>
 
-<div id="mapViewModal" class="modal-overlay" onclick="if(event.target===this) $('#mapViewModal').style.display='none'">
+<div id="mapViewModal" class="modal-overlay" onclick="if(event.target===this) document.querySelector('#viewModal').style.display='none'">
   <div class="modal-window">
-    <button class="modal-close-x" onclick="$('#mapViewModal').style.display='none'">×</button>
+    <button class="modal-close-x" onclick="document.querySelector('#viewModal').style.display='none'">×</button>
     <h3>Staged Manifest Details</h3>
     <div id="mapViewPhotoSection" style="display:none; flex-direction:column; gap:4px;">
       <label style="font-size:12px; font-weight:700; color:#4b5563;">Staged Images</label>
@@ -364,9 +372,9 @@
   </div>
 </div>
 
-<div id="viewModal" class="modal-overlay" onclick="if(event.target===this) $('#viewModal').style.display='none'">
+<div id="viewModal" class="modal-overlay" onclick="if(event.target===this) document.querySelector('#viewModal').style.display='none'">
   <div class="modal-window" style="max-width: 500px;">
-    <button class="modal-close-x" onclick="$('#viewModal').style.display='none'">×</button>
+    <button class="modal-close-x" onclick="document.querySelector('#viewModal').style.display='none'">×</button>
     <h3 style="margin:0 0 10px 0;">Staged Freight Photos</h3>
     <div id="modalPhotoGallery" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:12px; padding: 4px 0;"></div>
   </div>
@@ -518,7 +526,10 @@ function triggerShipModal(id) {
   activeShipTargetItem = item; $('#photoPreviewStrip').innerHTML = ''; selectedPhotoBlobs = [];
   $('#m_so').value = item.so; $('#m_cust').value = item.customer; $('#m_qty').value = item.type;
   $('#m_carrier').value = ''; $('#m_loc').value = item.location; $('#m_weight').value = item.weight || '—'; $('#m_by').value = '';
-  $('#m_pm_chk').checked = false; $('#m_pm_email').disabled = true; $('#shipModal').style.display = 'flex';
+  $('#m_pm_chk').checked = false; 
+  $('#m_pm_email').disabled = true; 
+  $('#m_pm_email_btn').disabled = true;
+  $('#shipModal').style.display = 'flex';
 }
 function closeShipModal() { $('#shipModal').style.display = 'none'; loadCloudData(); }
 
@@ -623,8 +634,8 @@ function parseContainerString(typeStr) {
   return { sk, bx, cr, pi, ot };
 }
 
-function getDynamicType() {
-  const sk = parseInt($('#e_skid').value)||0, bx = parseInt($('#e_box').value)||0, cr = parseInt($('#e_crate').value)||0, pi = parseInt($('#e_pipe').value)||0, ot = parseInt($('#e_other').value)||0;
+function getDynamicType(prefix) {
+  const sk = parseInt($(`#${prefix}_skid`).value)||0, bx = parseInt($(`#${prefix}_box`).value)||0, cr = parseInt($(`#${prefix}_crate`).value)||0, pi = parseInt($(`#${prefix}_pipe`).value)||0, ot = parseInt($(`#${prefix}_other`).value)||0;
   let typeParts = []; 
   if(sk) typeParts.push(formatContainer(sk, 'Skid'));
   if(bx) typeParts.push(formatContainer(bx, 'Box'));
@@ -633,8 +644,8 @@ function getDynamicType() {
   if(ot) typeParts.push(formatContainer(ot, 'Other'));
   return typeParts.join(', ') || '1 Skid';
 }
-function getDynamicQty() {
-  return (parseInt($('#e_skid').value)||0)+(parseInt($('#e_box').value)||0)+(parseInt($('#e_crate').value)||0)+(parseInt($('#e_pipe').value)||0)+(parseInt($('#e_other').value)||0);
+function getDynamicQty(prefix) {
+  return (parseInt($(`#${prefix}_skid`).value)||0)+(parseInt($(`#${prefix}_box`).value)||0)+(parseInt($(`#${prefix}_crate`).value)||0)+(parseInt($(`#${prefix}_pipe`).value)||0)+(parseInt($(`#${prefix}_other`).value)||0);
 }
 
 function openUniversalEditor(table, id) {
@@ -643,7 +654,7 @@ function openUniversalEditor(table, id) {
   currentEditId = o.id;
   editTargetRecord = { table: table, id: o.id, so: o.so, photo_urls: o.photo_urls || [] };
   
-  const isRet = (o.carrier === 'RETURNED TO STOCK' || o.carrier === 'CONSOLIDATED');
+  const isRet = (table === 'shipped' && (o.carrier === 'RETURNED TO STOCK' || o.carrier === 'CONSOLIDATED'));
   
   $('#e_so').value = o.so; $('#e_cust').value = o.customer; $('#e_loc').value = o.location; $('#e_coords').value = o.coords || ''; $('#e_weight').value = o.weight || '';
   const counts = parseContainerString(o.type);
@@ -696,7 +707,10 @@ async function deleteCurrentRecord() {
 function triggerReturnModal() {
   $('#returnModal').style.display = 'flex'; $('#editModal').style.display = 'none';
   $('#r_picked_by').value = ''; $('#r_returned_by').value = ''; $('#r_reason').value = ''; 
-  $('#r_pm_chk').checked = false; $('#r_pm_email').value = ''; $('#r_pm_email').disabled = true;
+  $('#r_pm_chk').checked = false; 
+  $('#r_pm_email').value = ''; 
+  $('#r_pm_email').disabled = true;
+  $('#r_pm_email_btn').disabled = true;
 }
 
 async function submitReturnToStock() {
@@ -713,12 +727,11 @@ async function submitReturnToStock() {
     if(pmName) pmName = pmName.charAt(0).toUpperCase() + pmName.slice(1);
     
     const { error: insertError } = await supabaseClient.from('shipped').insert([{
-      so: editTargetRecord.so, customer: $('#e_cust').value.trim(), type: getDynamicType(), qty: getDynamicQty(),
+      so: editTargetRecord.so, customer: $('#e_cust').value.trim(), type: getDynamicType('e'), qty: getDynamicQty('e'),
       carrier: 'RETURNED TO STOCK', location: $('#e_loc').value.trim(), coords: $('#e_coords').value.trim(),
       weight: $('#e_weight').value.trim(), shipped_by: returnedBy, pmd_email: pickedBy, photo_urls: editTargetRecord.photo_urls
     }]); 
-    
-    if (insertError) { alert("Database Error: " + insertError.message); return; }
+    if(insertError) throw insertError;
     
     await supabaseClient.from('staging').delete().eq('id', editTargetRecord.id);
 
@@ -730,7 +743,7 @@ async function submitReturnToStock() {
       `----------------------------------------------------------------------\n` +
       `SO#                   | ${editTargetRecord.so}\n` +
       `Customer              | ${$('#e_cust').value.trim()}\n` +
-      `Container(s)          | ${getDynamicType()}\n` +
+      `Container(s)          | ${getDynamicType('e')}\n` +
       `Total Weight (In lbs) | ${$('#e_weight').value.trim() || '—'}\n` +
       `Picked by             | ${pickedBy}\n` +
       `Returned At           | ${currentTimeStamp}\n` +
@@ -743,7 +756,7 @@ async function submitReturnToStock() {
     $('#returnModal').style.display='none';
     loadCloudData();
     if(pmChecked) { window.location.href = `mailto:${pmEmail}?cc=warehouse1@swiftsupply.ca&subject=${encodeURIComponent(cachedSubject)}&body=${encodeURIComponent(cachedBody)}`; }
-  } catch(e) { alert("Return to Stock error."); }
+  } catch(e) { alert("Return to Stock error: " + e.message); }
 }
 
 async function executeConsolidate() {
@@ -752,7 +765,7 @@ async function executeConsolidate() {
     const e = appData.staging.find(x => x.id === currentEditId);
     
     const { error: insertError } = await supabaseClient.from('shipped').insert([{
-      so: e.so, customer: $('#e_cust').value.trim(), type: getDynamicType(), qty: getDynamicQty(),
+      so: e.so, customer: $('#e_cust').value.trim(), type: getDynamicType('e'), qty: getDynamicQty('e'),
       carrier: 'CONSOLIDATED', location: $('#e_loc').value.trim(), coords: $('#e_coords').value.trim(),
       weight: $('#e_weight').value.trim(), shipped_by: $('#e_staged_by').value.trim(), pmd_email: null, photo_urls: editTargetRecord.photo_urls
     }]); 
@@ -772,8 +785,8 @@ function renderEditPhotoStrip() {
 }
 
 async function saveEditedRecord() {
-  const dynamicType = getDynamicType();
-  const basePayload = { so: $('#e_so').value.trim(), customer: $('#e_cust').value.trim(), location: $('#e_loc').value.trim(), coords: $('#e_coords').value.trim(), weight: $('#e_weight').value.trim(), type: dynamicType, qty: getDynamicQty() };
+  const dynamicType = getDynamicType('e');
+  const basePayload = { so: $('#e_so').value.trim(), customer: $('#e_cust').value.trim(), location: $('#e_loc').value.trim(), coords: $('#e_coords').value.trim(), weight: $('#e_weight').value.trim(), type: dynamicType, qty: getDynamicQty('e') };
 
   if (editTargetRecord.table === 'staging') {
     const { error } = await supabaseClient.from('staging').update({ ...basePayload, status: $('#e_status').value.trim(), staged_by: $('#e_staged_by').value.trim(), photo_urls: editTargetRecord.photo_urls }).eq('id', editTargetRecord.id);
@@ -848,7 +861,7 @@ function renderTables() {
   $('#kOrders').textContent = appData.staging.length; $('#kContainers').textContent = appData.staging.reduce((acc, c) => acc + (parseInt(c.qty) || 0), 0);
   $('#kSkids').textContent = sumByType('Skid'); $('#kBoxes').textContent = sumByType('Box'); $('#kCrates').textContent = sumByType('Crate'); 
   $('#kPipe').textContent = sumByType('Pipe/Rod'); $('#kOther').textContent = sumByType('Other');
-  $('#kShipped').textContent = appData.shipped.filter(x => x.carrier !== 'RETURNED TO STOCK').length;
+  $('#kShipped').textContent = appData.shipped.filter(x => x.carrier !== 'RETURNED TO STOCK' && x.carrier !== 'CONSOLIDATED').length;
 }
 
 $('#add').onclick = async () => {
