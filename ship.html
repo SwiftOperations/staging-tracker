@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Shipped Expanded Log — Stable v1.0</title>
+<title>Shipped Expanded Log — Beta v10.7</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<link rel="stylesheet" href="style.css?v=10.5" />
+<link rel="stylesheet" href="style.css?v=10.7" />
 </head>
 <body>
 <datalist id="dl_customers"></datalist>
@@ -17,7 +17,7 @@
   <div class="actions">
     <button class="btn" onclick="window.print()">Print Manifest Log</button>
     <button class="btn" style="background:#4b5563;" onclick="window.close()">Close Window</button>
-    <input id="q" placeholder="Quick filter contents..." oninput="window.renderTables()"/>
+    <input id="q" placeholder="Quick filter contents..." oninput="if(typeof window.renderTables === 'function') window.renderTables()"/>
   </div>
   <div class="table-wrap"><table id="tblShipped">
     <thead><tr><th>Edit</th><th>Photo(s)</th><th>SO</th><th>Customer</th><th>Containers</th><th>Carrier</th><th>Location</th><th>Coords</th><th>Total Weight (in lbs)</th><th>Shipped At</th><th>Shipped By</th><th>PM'd Email</th></tr></thead>
@@ -75,7 +75,7 @@
       <div id="editPhotoPreviewStrip" class="photo-strip"></div>
     </div>
     
-    <div class="modal-field"><label>SO#</label><input id="e_so" /></div>
+    <div class="modal-field"><label>SO#</label><input id="e_so" oninput="this.value=this.value.replace(/[^0-9]/g,'')" /></div>
     <div class="modal-field"><label>Customer</label>
       <div style="display:flex; width:100%;">
         <input id="e_cust" list="dl_customers" style="border-top-right-radius:0; border-bottom-right-radius:0; border-right:0;" />
@@ -100,6 +100,7 @@
     </div>
     
     <div class="modal-field"><label>Coords</label><input id="e_coords" readonly onclick="window.fetchBrowserGPS('e_coords')" style="background:#fafafa; cursor:pointer;" placeholder="Tap to update coordinates" /></div>
+    
     <div class="modal-field"><label>Total Weight (in lbs)</label><input id="e_weight" oninput="window.formatWeight(this)" /></div>
     
     <div id="editStagingFields">
@@ -159,7 +160,7 @@
       <input type="file" id="uploadFile" multiple accept="image/*" style="display:none" onchange="window.addPhotoBlob(this)" />
     </div>
     <div id="photoPreviewStrip" class="photo-strip"></div>
-    <div class="modal-field"><label>SO#</label><input id="m_so" readonly /></div>
+    <div class="modal-field"><label>SO#</label><input id="m_so" readonly oninput="this.value=this.value.replace(/[^0-9]/g,'')"/></div>
     <div class="modal-field"><label>Customer</label><input id="m_cust" readonly /></div>
     <div class="modal-field"><label>Containers</label><input id="m_qty" readonly /></div>
     <div class="modal-field"><label>Carrier</label><input id="m_carrier" placeholder="e.g. Fedex, Manitoulin, Customer Pickup" /></div>
@@ -212,6 +213,6 @@
   </div>
 </div>
 
-<script src="app.js?v=10.5"></script>
+<script src="app.js?v=10.7"></script>
 </body>
 </html>
