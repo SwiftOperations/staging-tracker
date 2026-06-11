@@ -1,12 +1,8 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Swift Staging Tracker — Beta v10.2</title>
-<link rel="manifest" href="data:application/manifest+json;charset=utf-8,%7B%22short_name%22%3A%22StagingTracker%22%2C%22name%22%3A%22Swift%20Staging%20Tracker%20Hub%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22https%3A%2F%2Fcdn-icons-png.flaticon.com%2F512%2F3014%2F3014166.png%22%2C%22type%22%3A%22image%22%2C%22sizes%22%3A%22512x512%22%7D%5D%2C%22start_url%22%3A%22.%22%2C%22background_color%22%3A%22%23f6f7f9%22%2C%22theme_color%22%3A%22%23dd4d25%22%2C%22display%22%3A%22standalone%22%2C%22orientation%22%3A%22portrait%22%7D" id="pwa-manifest">
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Staging Entries Expanded Log — Beta v10.2</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="stylesheet" href="style.css" />
 </head>
@@ -17,104 +13,16 @@
 <datalist id="dl_pastEmails"></datalist>
 
 <div class="wrap">
-  <h1>Swift Staging Tracker — Beta v10.2</h1>
-  <div id="err" style="display:none; background:#fee2e2; color:#991b1b; padding:10px; border-radius:10px; margin-bottom:10px"></div>
-
-  <div class="grid">
-    <div class="tile"><h4>Orders</h4><div id="kOrders" class="big">0</div></div>
-    <div class="tile"><h4>Containers</h4><div id="kContainers" class="big">0</div></div>
-    <div class="tile"><h4>Skids</h4><div id="kSkids" class="big">0</div></div>
-    <div class="tile"><h4>Boxes</h4><div id="kBoxes" class="big">0</div></div>
-    <div class="tile"><h4>Crates</h4><div id="kCrates" class="big">0</div></div>
-    <div class="tile"><h4>Pipe/Rod</h4><div id="kPipe" class="big">0</div></div>
-    <div class="tile"><h4>Other</h4><div id="kOther" class="big">0</div></div>
-    <div class="tile"><h4>Shipped</h4><div id="kShipped" class="big">0</div></div>
+  <h2>Staging Entries Expanded Log</h2>
+  <div class="actions">
+    <button class="btn" onclick="window.print()">Print Log</button>
+    <button class="btn" style="background:#4b5563;" onclick="window.close()">Close Window</button>
+    <input id="q" placeholder="Quick filter contents..." oninput="if(typeof renderTables === 'function') renderTables()"/>
   </div>
-
-  <div class="card">
-    <input id="q" placeholder="Quick search SO / Location / Customer..." />
-  </div>
-
-  <div class="card" id="entryFormCard">
-    <div class="split"><h3>Enter Staging Information</h3></div>
-    <div class="row">
-      <div class="photo-options-grid" style="flex: 1 1 180px; margin: 0;">
-        <div class="photo-uploader" style="padding: 8px; margin: 0; background: #fff;" onclick="document.querySelector('#main_cameraFile').click()">📷 Live Photo
-          <input type="file" id="main_cameraFile" accept="image/*" capture="environment" style="display:none" onchange="addMainPhotoBlob(this)" />
-        </div>
-        <div class="photo-uploader" style="padding: 8px; margin: 0; background: #fff;" onclick="document.querySelector('#main_uploadFile').click()">📁 File Upload
-          <input type="file" id="main_uploadFile" multiple accept="image/*" style="display:none" onchange="addMainPhotoBlob(this)" />
-        </div>
-      </div>
-      
-      <input id="so" placeholder="SO number" oninput="this.value=this.value.replace(/[^0-9]/g,'')" style="flex: 1 1 110px;" />
-      
-      <div style="display:flex; flex: 1 1 130px;">
-        <input id="customer" placeholder="Customer" list="dl_customers" style="border-top-right-radius:0; border-bottom-right-radius:0; border-right:0; width:100%;" />
-        <button type="button" onclick="banishMemory('customer')" title="Remove typo from memory" style="height:42px; width:36px; flex:none; background:#f8fafc; border:1px solid #cbd5e1; border-top-right-radius:10px; border-bottom-right-radius:10px; color:#dc2626; font-weight:bold; font-size:18px; cursor:pointer; margin:0; padding:0; display:flex; align-items:center; justify-content:center;">×</button>
-      </div>
-      
-      <select id="status" style="flex: 1 1 130px;">
-        <option>Partial</option><option>Ship Today</option><option>Ship Tomorrow</option><option>Ship On Future Date</option><option>Corp Pick (Not Consolidated)</option><option>Customer Pick-Up</option><option>Awaiting Shipping Instructions</option>
-      </select>
-      
-      <div id="mainPhotoPreviewStrip" class="photo-strip" style="margin-top:0px;"></div>
-      
-      <div class="freight-block">
-        <div class="counter-box"><label>Skids</label><div class="counter-controls"><button onclick="adjustCount('c_skid',-1)" class="counter-btn">-</button><input id="c_skid" value="0" readonly/><button onclick="adjustCount('c_skid',1)" class="counter-btn">+</button></div></div>
-        <div class="counter-box"><label>Boxes</label><div class="counter-controls"><button onclick="adjustCount('c_box',-1)" class="counter-btn">-</button><input id="c_box" value="0" readonly/><button onclick="adjustCount('c_box',1)" class="counter-btn">+</button></div></div>
-        <div class="counter-box"><label>Crates</label><div class="counter-controls"><button onclick="adjustCount('c_crate',-1)" class="counter-btn">-</button><input id="c_crate" value="0" readonly/><button onclick="adjustCount('c_crate',1)" class="counter-btn">+</button></div></div>
-        <div class="counter-box"><label>Pipe/Rod</label><div class="counter-controls"><button onclick="adjustCount('c_pipe',-1)" class="counter-btn">-</button><input id="c_pipe" value="0" readonly/><button onclick="adjustCount('c_pipe',1)" class="counter-btn">+</button></div></div>
-        <div class="counter-box"><label>Other</label><div class="counter-controls"><button onclick="adjustCount('c_other',-1)" class="counter-btn">-</button><input id="c_other" value="0" readonly/><button onclick="adjustCount('c_other',1)" class="counter-btn">+</button></div></div>
-      </div>
-      
-      <div style="display:flex; flex: 1 1 150px;">
-        <input id="loc" placeholder="Location" list="dl_locations" style="border-top-right-radius:0; border-bottom-right-radius:0; border-right:0; width:100%;" />
-        <button type="button" onclick="banishMemory('loc')" title="Remove typo from memory" style="height:42px; width:36px; flex:none; background:#f8fafc; border:1px solid #cbd5e1; border-top-right-radius:10px; border-bottom-right-radius:10px; color:#dc2626; font-weight:bold; font-size:18px; cursor:pointer; margin:0; padding:0; display:flex; align-items:center; justify-content:center;">×</button>
-      </div>
-
-      <input id="coords" placeholder="Tap for GPS Coords (Optional)" readonly onclick="fetchBrowserGPS('coords')" style="background:#fafafa; cursor:pointer;" />
-      <input id="weight" placeholder="Total Weight" />
-      
-      <div style="display:flex; flex: 1 1 150px;">
-        <input id="staged_by" placeholder="Staged By" list="dl_stagers" style="border-top-right-radius:0; border-bottom-right-radius:0; border-right:0; width:100%;" />
-        <button type="button" onclick="banishMemory('staged_by')" title="Remove typo from memory" style="height:42px; width:36px; flex:none; background:#f8fafc; border:1px solid #cbd5e1; border-top-right-radius:10px; border-bottom-right-radius:10px; color:#dc2626; font-weight:bold; font-size:18px; cursor:pointer; margin:0; padding:0; display:flex; align-items:center; justify-content:center;">×</button>
-      </div>
-
-      <button id="add" class="btn">Add</button>
-    </div>
-  </div>
-
-  <div class="card" id="stagingCard">
-    <div class="split"><h3>Staging Entries</h3><button id="expandStaging" class="btn" style="padding:6px 12px">Expand</button></div>
-    <div class="tblwrap">
-      <div class="tbl-scroller">
-        <table id="tblStaging">
-          <thead><tr><th>Edit</th><th>Photo(s)</th><th>SO</th><th>Customer</th><th>Entry Date</th><th>Containers</th><th>Location</th><th>Coords</th><th>Total Weight (in lbs)</th><th>Status</th><th>Staged By</th><th style="position:sticky;right:0;width:70px;text-align:center;">Shipped</th></tr></thead>
-          <tbody></tbody>
-        </table>
-      </div>
-      <div id="stageLimitNotice" class="log-limit-notice">Showing first 20. Expand for full log.</div>
-    </div>
-  </div>
-
-  <div class="card" id="shippedCard">
-    <div class="split"><h3>Shipped Log</h3><button id="expandShipped" class="btn" style="padding:6px 12px">Expand</button></div>
-    <div class="tblwrap">
-      <div class="tbl-scroller">
-        <table id="tblShipped">
-          <thead><tr><th>Edit</th><th>Photo(s)</th><th>SO</th><th>Customer</th><th>Containers</th><th>Carrier</th><th>Location</th><th>Coords</th><th>Total Weight (in lbs)</th><th>Shipped At</th><th>Shipped By</th><th>PM'd Email</th></tr></thead>
-          <tbody></tbody>
-        </table>
-      </div>
-      <div id="shippedLimitNotice" class="log-limit-notice">Showing first 20. Expand for full log.</div>
-    </div>
-  </div>
-
-  <div class="card" id="mapCard">
-    <h3>Staged Inventory Location Mapping</h3>
-    <div id="openFreightMap" style="width:100%; height:420px; background:#e5e7eb; border-radius:10px; border:1px solid #cbd5e1; z-index:1;"></div>
-  </div>
+  <div class="table-wrap"><table id="tblStaging">
+    <thead><tr><th>Edit</th><th>Photo(s)</th><th>SO</th><th>Customer</th><th>Entry Date</th><th>Containers</th><th>Location</th><th>Coords</th><th>Total Weight (in lbs)</th><th>Status</th><th>Staged By</th><th style="position:sticky;right:0;width:70px;text-align:center;">Shipped</th></tr></thead>
+    <tbody></tbody>
+  </table></div>
 </div>
 
 <div id="returnModal" class="modal-overlay" onclick="if(event.target===this) document.querySelector('#returnModal').style.display='none'">
@@ -275,26 +183,6 @@
     <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:8px;">
       <button id="modalConfirmBtn" class="btn" onclick="submitFreightDispatch()">Confirm Dispatch</button>
     </div>
-  </div>
-</div>
-
-<div id="mapViewModal" class="modal-overlay" onclick="if(event.target===this) document.querySelector('#mapViewModal').style.display='none'">
-  <div class="modal-window">
-    <button class="modal-close-x" onclick="document.querySelector('#mapViewModal').style.display='none'">×</button>
-    <h3>Staged Manifest Details</h3>
-    <div id="mapViewPhotoSection" style="display:none; flex-direction:column; gap:4px;">
-      <label style="font-size:12px; font-weight:700; color:#4b5563;">Staged Images</label>
-      <div id="mapViewGalleryStrip" class="photo-strip"></div>
-    </div>
-    <div class="modal-field"><label>SO#</label><input id="v_so" readonly style="background:#f9fafb; border-color:#e5e7eb; color:#6b7280;"/></div>
-    <div class="modal-field"><label>Customer</label><input id="v_cust" readonly style="background:#f9fafb; border-color:#e5e7eb; color:#6b7280;"/></div>
-    <div class="modal-field"><label>Entry Date</label><input id="v_date" readonly style="background:#f9fafb; border-color:#e5e7eb; color:#6b7280;"/></div>
-    <div class="modal-field"><label>Containers</label><input id="v_type" readonly style="background:#f9fafb; border-color:#e5e7eb; color:#6b7280;"/></div>
-    <div class="modal-field"><label>Location</label><input id="v_loc" readonly style="background:#f9fafb; border-color:#e5e7eb; color:#6b7280;"/></div>
-    <div class="modal-field"><label>Coords</label><input id="v_coords" readonly style="background:#f9fafb; border-color:#e5e7eb; color:#6b7280;"/></div>
-    <div class="modal-field"><label>Total Weight (in lbs)</label><input id="v_weight" readonly style="background:#f9fafb; border-color:#e5e7eb; color:#6b7280;"/></div>
-    <div class="modal-field"><label>Status</label><input id="v_status" readonly style="background:#f9fafb; border-color:#e5e7eb; color:#6b7280;"/></div>
-    <div class="modal-field"><label>Staged By</label><input id="v_staged_by" readonly style="background:#f9fafb; border-color:#e5e7eb; color:#6b7280;"/></div>
   </div>
 </div>
 
