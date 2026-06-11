@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Swift Staging Tracker — v9.8</title>
+<title>Swift Staging Tracker — v9.9</title>
 
 <link rel="manifest" href="data:application/manifest+json;charset=utf-8,%7B%22short_name%22%3A%22StagingTracker%22%2C%22name%22%3A%22Swift%20Staging%20Tracker%20Hub%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22https%3A%2F%2Fcdn-icons-png.flaticon.com%2F512%2F3014%2F3014166.png%22%2C%22type%22%3A%22image%22%2C%22sizes%22%3A%22512x512%22%7D%5D%2C%22start_url%22%3A%22.%22%2C%22background_color%22%3A%22%23f6f7f9%22%2C%22theme_color%22%3A%22%23dd4d25%22%2C%22display%22%3A%22standalone%22%2C%22orientation%22%3A%22portrait%22%7D" id="pwa-manifest">
 
@@ -28,7 +28,6 @@
   input:disabled, select:disabled { background: #f3f4f6; color: #9ca3af; cursor: not-allowed; }
   .row > *{flex:1 1 150px}
   .btn{background:var(--brand);color:#fff;border:0;border-radius:12px;padding:12px 20px;font-weight:700;cursor:pointer}
-  .btn-del{background:#dc2626;color:#fff;border:0;border-radius:6px;padding:4px 8px;font-size:12px;font-weight:700;cursor:pointer}
   .btn-edit{background:#0284c7;color:#fff;border:0;border-radius:6px;padding:4px 8px;font-size:12px;font-weight:700;cursor:pointer}
   
   .freight-block { display: flex; flex-wrap: wrap; gap: 8px; background: #fff; border: 1px solid #d1d5db; padding: 6px 12px; border-radius: 10px; align-items: center; justify-content: space-around; flex: 2 1 100%; }
@@ -86,7 +85,7 @@
 <datalist id="dl_pastEmails"></datalist>
 
 <div class="wrap">
-  <h1>Swift Staging Tracker — v9.8</h1>
+  <h1>Swift Staging Tracker — v9.9</h1>
   <div id="err" style="display:none; background:#fee2e2; color:#991b1b; padding:10px; border-radius:10px; margin-bottom:10px"></div>
 
   <div class="grid">
@@ -117,7 +116,12 @@
       </div>
       
       <input id="so" placeholder="SO number" oninput="this.value=this.value.replace(/[^0-9]/g,'')" style="flex: 1 1 110px;" />
-      <input id="customer" placeholder="Customer" list="dl_customers" style="flex: 1 1 130px;" />
+      
+      <div style="display:flex; flex: 1 1 130px;">
+        <input id="customer" placeholder="Customer" list="dl_customers" style="border-top-right-radius:0; border-bottom-right-radius:0; border-right:0; width:100%;" />
+        <button type="button" onclick="banishMemory('customer')" title="Remove typo from memory" style="height:42px; width:36px; flex:none; background:#f8fafc; border:1px solid #cbd5e1; border-top-right-radius:10px; border-bottom-right-radius:10px; color:#dc2626; font-weight:bold; font-size:18px; cursor:pointer; margin:0; padding:0; display:flex; align-items:center; justify-content:center;">×</button>
+      </div>
+      
       <select id="status" style="flex: 1 1 130px;">
         <option>Partial</option><option>Ship Today</option><option>Ship Tomorrow</option><option>Ship On Future Date</option><option>Corp Pick (Not Consolidated)</option><option>Customer Pick-Up</option><option>Awaiting Shipping Instructions</option>
       </select>
@@ -131,10 +135,20 @@
         <div class="counter-box"><label>Pipe/Rod</label><div class="counter-controls"><button onclick="adjustCount('c_pipe',-1)" class="counter-btn">-</button><input id="c_pipe" value="0" readonly/><button onclick="adjustCount('c_pipe',1)" class="counter-btn">+</button></div></div>
         <div class="counter-box"><label>Other</label><div class="counter-controls"><button onclick="adjustCount('c_other',-1)" class="counter-btn">-</button><input id="c_other" value="0" readonly/><button onclick="adjustCount('c_other',1)" class="counter-btn">+</button></div></div>
       </div>
-      <input id="loc" placeholder="Location" list="dl_locations" />
+      
+      <div style="display:flex; flex: 1 1 150px;">
+        <input id="loc" placeholder="Location" list="dl_locations" style="border-top-right-radius:0; border-bottom-right-radius:0; border-right:0; width:100%;" />
+        <button type="button" onclick="banishMemory('loc')" title="Remove typo from memory" style="height:42px; width:36px; flex:none; background:#f8fafc; border:1px solid #cbd5e1; border-top-right-radius:10px; border-bottom-right-radius:10px; color:#dc2626; font-weight:bold; font-size:18px; cursor:pointer; margin:0; padding:0; display:flex; align-items:center; justify-content:center;">×</button>
+      </div>
+
       <input id="coords" placeholder="Tap for GPS Coords (Optional)" readonly onclick="fetchBrowserGPS('coords')" style="background:#fafafa; cursor:pointer;" />
       <input id="weight" placeholder="Total Weight" />
-      <input id="staged_by" placeholder="Staged By" list="dl_stagers" />
+      
+      <div style="display:flex; flex: 1 1 150px;">
+        <input id="staged_by" placeholder="Staged By" list="dl_stagers" style="border-top-right-radius:0; border-bottom-right-radius:0; border-right:0; width:100%;" />
+        <button type="button" onclick="banishMemory('staged_by')" title="Remove typo from memory" style="height:42px; width:36px; flex:none; background:#f8fafc; border:1px solid #cbd5e1; border-top-right-radius:10px; border-bottom-right-radius:10px; color:#dc2626; font-weight:bold; font-size:18px; cursor:pointer; margin:0; padding:0; display:flex; align-items:center; justify-content:center;">×</button>
+      </div>
+
       <button id="add" class="btn">Add</button>
     </div>
   </div>
@@ -144,7 +158,7 @@
     <div class="tblwrap">
       <div class="tbl-scroller">
         <table id="tblStaging">
-          <thead><tr><th>Delete</th><th>Edit</th><th>Photo(s)</th><th>SO</th><th>Customer</th><th>Entry Date</th><th>Containers</th><th>Location</th><th>Coords</th><th>Total Weight (in lbs)</th><th>Status</th><th>Staged By</th><th style="position:sticky;right:0;width:70px;text-align:center;">Shipped</th></tr></thead>
+          <thead><tr><th>Edit</th><th>Photo(s)</th><th>SO</th><th>Customer</th><th>Entry Date</th><th>Containers</th><th>Location</th><th>Coords</th><th>Total Weight (in lbs)</th><th>Status</th><th>Staged By</th><th style="position:sticky;right:0;width:70px;text-align:center;">Shipped</th></tr></thead>
           <tbody></tbody>
         </table>
       </div>
@@ -157,7 +171,7 @@
     <div class="tblwrap">
       <div class="tbl-scroller">
         <table id="tblShipped">
-          <thead><tr><th>Delete</th><th>Edit</th><th>Photo(s)</th><th>SO</th><th>Customer</th><th>Containers</th><th>Carrier</th><th>Location</th><th>Coords</th><th>Total Weight (in lbs)</th><th>Shipped At</th><th>Shipped By</th><th>PM'd Email</th></tr></thead>
+          <thead><tr><th>Edit</th><th>Photo(s)</th><th>SO</th><th>Customer</th><th>Containers</th><th>Carrier</th><th>Location</th><th>Coords</th><th>Total Weight (in lbs)</th><th>Shipped At</th><th>Shipped By</th><th>PM'd Email</th></tr></thead>
           <tbody></tbody>
         </table>
       </div>
@@ -176,11 +190,30 @@
     <button class="modal-close-x" onclick="$('#returnModal').style.display='none'">×</button>
     <h3>Return to Stock</h3>
     <p style="font-size:13px; color:#4b5563; margin-top:0; margin-bottom:8px;">Are you sure you want to return this order to stock?</p>
-    <div class="modal-field"><label>Picked By</label><input id="r_picked_by" list="dl_stagers" placeholder="Shortname" /></div>
-    <div class="modal-field"><label>Returned By</label><input id="r_returned_by" list="dl_stagers" placeholder="Shortname" /></div>
+    
+    <div class="modal-field"><label>Picked By</label>
+      <div style="display:flex; width:100%;">
+        <input id="r_picked_by" list="dl_stagers" placeholder="Shortname" style="border-top-right-radius:0; border-bottom-right-radius:0; border-right:0;" />
+        <button type="button" onclick="banishMemory('r_picked_by')" style="height:42px; width:36px; flex:none; background:#f8fafc; border:1px solid #cbd5e1; border-top-right-radius:8px; border-bottom-right-radius:8px; color:#dc2626; font-weight:bold; font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;">×</button>
+      </div>
+    </div>
+    <div class="modal-field"><label>Returned By</label>
+      <div style="display:flex; width:100%;">
+        <input id="r_returned_by" list="dl_stagers" placeholder="Shortname" style="border-top-right-radius:0; border-bottom-right-radius:0; border-right:0;" />
+        <button type="button" onclick="banishMemory('r_returned_by')" style="height:42px; width:36px; flex:none; background:#f8fafc; border:1px solid #cbd5e1; border-top-right-radius:8px; border-bottom-right-radius:8px; color:#dc2626; font-weight:bold; font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;">×</button>
+      </div>
+    </div>
+    
     <div class="modal-field"><label>Reason for Return to Stock</label><input id="r_reason" placeholder="Enter reason..." /></div>
     <div class="chk-row" style="margin-top:4px;"><input type="checkbox" id="r_pm_chk" onchange="$('#r_pm_email').disabled=!this.checked"/><label>Confirm return to PM via e-mail</label></div>
-    <div class="modal-field"><input id="r_pm_email" list="dl_pastEmails" placeholder="PM E-mail" disabled /></div>
+    
+    <div class="modal-field">
+      <div style="display:flex; width:100%;">
+        <input id="r_pm_email" list="dl_pastEmails" placeholder="PM E-mail" disabled style="border-top-right-radius:0; border-bottom-right-radius:0; border-right:0;" />
+        <button type="button" onclick="banishMemory('r_pm_email')" style="height:42px; width:36px; flex:none; background:#f8fafc; border:1px solid #cbd5e1; border-top-right-radius:8px; border-bottom-right-radius:8px; color:#dc2626; font-weight:bold; font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;">×</button>
+      </div>
+    </div>
+    
     <div class="modal-actions" style="margin-top:8px;"><button class="btn" style="background:#dc2626; width:100%; border:0; padding:10px 16px; border-radius:8px; color:#fff; font-weight:bold; cursor:pointer;" onclick="submitReturnToStock()">Confirm Return</button></div>
   </div>
 </div>
@@ -204,7 +237,12 @@
     </div>
     
     <div class="modal-field"><label>SO#</label><input id="e_so" oninput="this.value=this.value.replace(/[^0-9]/g,'')" /></div>
-    <div class="modal-field"><label>Customer</label><input id="e_cust" list="dl_customers" /></div>
+    <div class="modal-field"><label>Customer</label>
+      <div style="display:flex; width:100%;">
+        <input id="e_cust" list="dl_customers" style="border-top-right-radius:0; border-bottom-right-radius:0; border-right:0;" />
+        <button type="button" onclick="banishMemory('e_cust')" style="height:42px; width:36px; flex:none; background:#f8fafc; border:1px solid #cbd5e1; border-top-right-radius:8px; border-bottom-right-radius:8px; color:#dc2626; font-weight:bold; font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;">×</button>
+      </div>
+    </div>
     
     <label style="font-size:12px; font-weight:700; color:#4b5563; margin-bottom:-4px;">Container Quantities</label>
     <div class="freight-block">
@@ -215,7 +253,13 @@
       <div class="counter-box"><label>Other</label><div class="counter-controls"><button class="counter-btn" onclick="adjustEditCount('e_other',-1)">-</button><input id="e_other" value="0" readonly/><button class="counter-btn" onclick="adjustEditCount('e_other',1)">+</button></div></div>
     </div>
 
-    <div class="modal-field"><label>Location</label><input id="e_loc" list="dl_locations" /></div>
+    <div class="modal-field"><label>Location</label>
+      <div style="display:flex; width:100%;">
+        <input id="e_loc" list="dl_locations" style="border-top-right-radius:0; border-bottom-right-radius:0; border-right:0;" />
+        <button type="button" onclick="banishMemory('e_loc')" style="height:42px; width:36px; flex:none; background:#f8fafc; border:1px solid #cbd5e1; border-top-right-radius:8px; border-bottom-right-radius:8px; color:#dc2626; font-weight:bold; font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;">×</button>
+      </div>
+    </div>
+    
     <div class="modal-field"><label>Coords</label><input id="e_coords" readonly onclick="fetchBrowserGPS('e_coords')" style="background:#fafafa; cursor:pointer;" placeholder="Tap to update coordinates" /></div>
     <div class="modal-field"><label>Total Weight (in lbs)</label><input id="e_weight" /></div>
     
@@ -225,21 +269,38 @@
           <option>Partial</option><option>Ship Today</option><option>Ship Tomorrow</option><option>Ship On Future Date</option><option>Corp Pick (Not Consolidated)</option><option>Customer Pick-Up</option><option>Awaiting Shipping Instructions</option>
         </select>
       </div>
-      <div class="modal-field"><label>Staged By</label><input id="e_staged_by" list="dl_stagers" /></div>
+      <div class="modal-field"><label>Staged By</label>
+        <div style="display:flex; width:100%;">
+          <input id="e_staged_by" list="dl_stagers" style="border-top-right-radius:0; border-bottom-right-radius:0; border-right:0;" />
+          <button type="button" onclick="banishMemory('e_staged_by')" style="height:42px; width:36px; flex:none; background:#f8fafc; border:1px solid #cbd5e1; border-top-right-radius:8px; border-bottom-right-radius:8px; color:#dc2626; font-weight:bold; font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;">×</button>
+        </div>
+      </div>
     </div>
     
     <div id="editShippedFields" style="display:none;">
       <div class="modal-field"><label>Carrier</label><input id="e_carrier" /></div>
-      <div class="modal-field"><label>Shipped By</label><input id="e_shipped_by" list="dl_stagers" /></div>
-      <div class="modal-field"><label>PM Verified Shortname</label><input id="e_pm" /></div>
+      <div class="modal-field"><label>Shipped By</label>
+        <div style="display:flex; width:100%;">
+          <input id="e_shipped_by" list="dl_stagers" style="border-top-right-radius:0; border-bottom-right-radius:0; border-right:0;" />
+          <button type="button" onclick="banishMemory('e_shipped_by')" style="height:42px; width:36px; flex:none; background:#f8fafc; border:1px solid #cbd5e1; border-top-right-radius:8px; border-bottom-right-radius:8px; color:#dc2626; font-weight:bold; font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;">×</button>
+        </div>
+      </div>
+      <div class="modal-field"><label>PM Verified Shortname</label>
+        <div style="display:flex; width:100%;">
+          <input id="e_pm" list="dl_pastEmails" style="border-top-right-radius:0; border-bottom-right-radius:0; border-right:0;" />
+          <button type="button" onclick="banishMemory('e_pm')" style="height:42px; width:36px; flex:none; background:#f8fafc; border:1px solid #cbd5e1; border-top-right-radius:8px; border-bottom-right-radius:8px; color:#dc2626; font-weight:bold; font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;">×</button>
+        </div>
+      </div>
     </div>
 
-    <div class="modal-actions" style="justify-content: space-between; width:100%; margin-top: 8px; display: flex; gap: 8px;">
-      <span style="display:flex; gap:8px;">
+    <div class="modal-actions" style="justify-content: space-between; width:100%; margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap;">
+      <span style="display:flex; gap:8px; flex-wrap: wrap;">
+        <button id="editDelBtn" class="btn" style="background:#dc2626; padding: 10px 16px; border-radius: 8px; border: 0; color: #fff; font-weight: 700; cursor: pointer;" onclick="deleteCurrentRecord()">Delete</button>
         <button id="editUndoBtn" class="btn" style="background:#4b5563; padding: 10px 16px; border-radius: 8px; border: 0; color: #fff; font-weight: 700; cursor: pointer;" onclick="executeShippedUndo()">Undo Shipment Action</button>
         <button id="editReturnBtn" class="btn" style="background:#eab308; color:#222; padding: 10px 16px; border-radius: 8px; border: 0; font-weight:700; cursor:pointer;" onclick="triggerReturnModal()">Return to Stock</button>
+        <button id="editConsolidateBtn" class="btn" style="background:#8b5cf6; color:#fff; padding: 10px 16px; border-radius: 8px; border: 0; font-weight:700; cursor:pointer;" onclick="executeConsolidate()">Consolidated</button>
       </span>
-      <span style="display:flex; gap:8px; margin-left:auto;">
+      <span style="display:flex; gap:8px; margin-left:auto; flex-wrap: wrap;">
         <button class="btn" style="background:#9ca3af; border-radius: 8px; padding: 10px 16px; border: 0; color:#fff; font-weight:700; cursor:pointer;" onclick="$('#editModal').style.display='none'">Cancel</button>
         <button id="editSaveBtn" class="btn" style="background:#e04f26; border-radius: 8px; padding: 10px 16px; border: 0; color:#fff; font-weight:700; cursor:pointer;" onclick="saveEditedRecord()">Save Changes</button>
       </span>
@@ -266,9 +327,19 @@
     <div class="modal-field"><label>Carrier</label><input id="m_carrier" placeholder="e.g. Fedex, Manitoulin, Customer Pickup" /></div>
     <div class="modal-field"><label>Location</label><input id="m_loc" readonly /></div>
     <div class="modal-field"><label>Total Weight (in lbs)</label><input id="m_weight" readonly /></div>
-    <div class="modal-field"><label>Shipped By</label><input id="m_by" list="dl_stagers" /></div>
+    <div class="modal-field"><label>Shipped By</label>
+      <div style="display:flex; width:100%;">
+        <input id="m_by" list="dl_stagers" style="border-top-right-radius:0; border-bottom-right-radius:0; border-right:0;" />
+        <button type="button" onclick="banishMemory('m_by')" style="height:42px; width:36px; flex:none; background:#f8fafc; border:1px solid #cbd5e1; border-top-right-radius:8px; border-bottom-right-radius:8px; color:#dc2626; font-weight:bold; font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;">×</button>
+      </div>
+    </div>
     <div class="chk-row"><input type="checkbox" id="m_pm_chk" onchange="$('#m_pm_email').disabled=!this.checked"/><label>E-mail PM Verification</label></div>
-    <div class="modal-field"><input id="m_pm_email" list="dl_pastEmails" disabled /></div>
+    <div class="modal-field">
+      <div style="display:flex; width:100%;">
+        <input id="m_pm_email" list="dl_pastEmails" disabled style="border-top-right-radius:0; border-bottom-right-radius:0; border-right:0;" />
+        <button type="button" onclick="banishMemory('m_pm_email')" style="height:42px; width:36px; flex:none; background:#f8fafc; border:1px solid #cbd5e1; border-top-right-radius:8px; border-bottom-right-radius:8px; color:#dc2626; font-weight:bold; font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;">×</button>
+      </div>
+    </div>
     <div class="modal-actions"><button id="modalConfirmBtn" class="btn" onclick="submitFreightDispatch()">Confirm Dispatch</button></div>
   </div>
 </div>
@@ -309,11 +380,13 @@ const $ = sel => document.querySelector(sel);
 
 let appData = { staging: [], shipped: [] };
 let activeShipTargetItem = null;
+let currentEditId = null;
 let editTargetRecord = { table: null, id: null, photo_urls: [] };
 let selectedPhotoBlobs = [];
 let mainPhotoBlobs = [];
 let openMapInstance = null;
 let openMapMarkers = [];
+let hiddenMemory = JSON.parse(localStorage.getItem('swift_hidden_memory') || '[]');
 
 function bootstrapStandalonePWA() {
   const pwaData = {
@@ -380,9 +453,9 @@ function syncMapPins() {
   });
 
   if (pointsForBoundFocus.length === 1) {
-    openMapInstance.setView(pointsForBoundFocus[0], 16);
+    openMapInstance.setView(pointsForBoundFocus[0], 18);
   } else if (pointsForBoundFocus.length > 1) {
-    openMapInstance.fitBounds(L.latLngBounds(pointsForBoundFocus), { padding: [40, 40], maxZoom: 16 });
+    openMapInstance.fitBounds(L.latLngBounds(pointsForBoundFocus), { padding: [5, 5], maxZoom: 18 });
   }
 }
 
@@ -406,6 +479,19 @@ function openStaticMapPromptWindow(item) {
   $('#mapViewModal').style.display = 'flex';
 }
 
+function banishMemory(inputId) {
+  const val = $(`#${inputId}`).value.trim();
+  if(!val) return;
+  if(confirm(`Remove "${val}" from autocomplete memory?`)) {
+    if(!hiddenMemory.includes(val)) {
+      hiddenMemory.push(val);
+      localStorage.setItem('swift_hidden_memory', JSON.stringify(hiddenMemory));
+    }
+    $(`#${inputId}`).value = '';
+    loadCloudData();
+  }
+}
+
 async function loadCloudData() {
   const [st, sh] = await Promise.all([
     supabaseClient.from('staging').select('*').order('entry_date', { ascending: false }),
@@ -415,10 +501,12 @@ async function loadCloudData() {
   appData.shipped = sh.data || [];
   
   const allData = [...appData.staging, ...appData.shipped];
-  $('#dl_customers').innerHTML = [...new Set(allData.map(x=>x.customer).filter(Boolean))].map(c=>`<option value="${c}">`).join('');
-  $('#dl_locations').innerHTML = [...new Set(allData.map(x=>x.location).filter(Boolean))].map(l=>`<option value="${l}">`).join('');
-  $('#dl_stagers').innerHTML = [...new Set(allData.map(x=>(x.staged_by || x.shipped_by)).filter(Boolean))].map(s=>`<option value="${s}">`).join('');
-  $('#dl_pastEmails').innerHTML = [...new Set(appData.shipped.map(x=>x.pmd_email).filter(Boolean))].map(em=>`<option value="${em}@swiftsupply.ca">`).join('');
+  const filterMem = (arr) => [...new Set(arr.filter(Boolean))].filter(x => !hiddenMemory.includes(x));
+
+  $('#dl_customers').innerHTML = filterMem(allData.map(x=>x.customer)).map(c=>`<option value="${c}">`).join('');
+  $('#dl_locations').innerHTML = filterMem(allData.map(x=>x.location)).map(l=>`<option value="${l}">`).join('');
+  $('#dl_stagers').innerHTML = filterMem(allData.map(x=>(x.staged_by || x.shipped_by))).map(s=>`<option value="${s}">`).join('');
+  $('#dl_pastEmails').innerHTML = filterMem(appData.shipped.map(x=>x.pmd_email)).map(em=>`<option value="${em}@swiftsupply.ca">`).join('');
   
   renderTables(); 
   if(typeof syncMapPins === 'function') syncMapPins();
@@ -552,9 +640,10 @@ function getDynamicQty() {
 function openUniversalEditor(table, id) {
   const o = appData[table].find(x => x.id === id);
   if (!o) return;
+  currentEditId = o.id;
   editTargetRecord = { table: table, id: o.id, so: o.so, photo_urls: o.photo_urls || [] };
   
-  const isReturned = (table === 'shipped' && o.carrier === 'RETURNED TO STOCK');
+  const isRet = (o.carrier === 'RETURNED TO STOCK' || o.carrier === 'CONSOLIDATED');
   
   $('#e_so').value = o.so; $('#e_cust').value = o.customer; $('#e_loc').value = o.location; $('#e_coords').value = o.coords || ''; $('#e_weight').value = o.weight || '';
   const counts = parseContainerString(o.type);
@@ -562,10 +651,12 @@ function openUniversalEditor(table, id) {
   $('#e_pipe').value = counts.pi; $('#e_other').value = counts.ot;
   
   const inputsToLock = ['e_so','e_cust','e_loc','e_weight','e_status','e_staged_by','e_carrier','e_shipped_by','e_pm'];
-  inputsToLock.forEach(i => { if($(`#${i}`)) $(`#${i}`).disabled = isReturned; });
-  document.querySelectorAll('#editModal .counter-btn').forEach(b => b.disabled = isReturned);
+  inputsToLock.forEach(i => { if($(`#${i}`)) $(`#${i}`).disabled = isRet; });
+  document.querySelectorAll('#editModal .counter-btn').forEach(b => b.disabled = isRet);
+  document.querySelectorAll('#editPhotoSection .photo-uploader').forEach(b => b.style.display = isRet ? 'none' : 'block');
   
   $('#editPhotoSection').style.display = 'flex';
+  $('#editDelBtn').style.display = 'block';
   
   if (table === 'staging') {
     $('#editModalTitle').textContent = 'Edit Staging Entry'; 
@@ -573,16 +664,18 @@ function openUniversalEditor(table, id) {
     $('#editShippedFields').style.display = 'none'; 
     $('#editUndoBtn').style.display = 'none'; 
     $('#editReturnBtn').style.display = 'block'; 
+    $('#editConsolidateBtn').style.display = 'block';
     $('#editSaveBtn').style.display = 'block';
     $('#e_status').value = o.status; 
     $('#e_staged_by').value = o.staged_by || '';
   } else {
-    $('#editModalTitle').textContent = isReturned ? 'View Returned Record' : 'Edit Shipped Entry Logs'; 
+    $('#editModalTitle').textContent = isRet ? 'View Locked Record' : 'Edit Shipped Entry Logs'; 
     $('#editStagingFields').style.display = 'none'; 
     $('#editShippedFields').style.display = 'block'; 
     $('#editUndoBtn').style.display = 'block'; 
     $('#editReturnBtn').style.display = 'none'; 
-    $('#editSaveBtn').style.display = isReturned ? 'none' : 'block';
+    $('#editConsolidateBtn').style.display = 'none';
+    $('#editSaveBtn').style.display = isRet ? 'none' : 'block';
     $('#e_carrier').value = o.carrier || ''; 
     $('#e_shipped_by').value = o.shipped_by || ''; 
     $('#e_pm').value = o.pmd_email || '';
@@ -590,6 +683,14 @@ function openUniversalEditor(table, id) {
   
   renderEditPhotoStrip();
   $('#editModal').style.display = 'flex';
+}
+
+async function deleteCurrentRecord() {
+  if(confirm("Are you sure you want to PERMANENTLY delete this record?")) {
+    await supabaseClient.from(editTargetRecord.table).delete().eq('id', currentEditId);
+    $('#editModal').style.display = 'none';
+    loadCloudData();
+  }
 }
 
 function triggerReturnModal() {
@@ -606,6 +707,7 @@ async function submitReturnToStock() {
   if(!pickedBy || !returnedBy || !reason || (pmChecked && !pmEmail)) return alert("Missing required inputs.");
   
   try {
+    const e = appData.staging.find(x => x.id === currentEditId);
     const currentTimeStamp = new Date().toLocaleString();
     let pmName = pmEmail ? pmEmail.split('@')[0].split('.')[0] : null;
     if(pmName) pmName = pmName.charAt(0).toUpperCase() + pmName.slice(1);
@@ -616,10 +718,7 @@ async function submitReturnToStock() {
       weight: $('#e_weight').value.trim(), shipped_by: returnedBy, pmd_email: pickedBy, photo_urls: editTargetRecord.photo_urls
     }]); 
     
-    if (insertError) {
-      alert("Database Error: " + insertError.message);
-      return;
-    }
+    if (insertError) { alert("Database Error: " + insertError.message); return; }
     
     await supabaseClient.from('staging').delete().eq('id', editTargetRecord.id);
 
@@ -645,6 +744,24 @@ async function submitReturnToStock() {
     loadCloudData();
     if(pmChecked) { window.location.href = `mailto:${pmEmail}?cc=warehouse1@swiftsupply.ca&subject=${encodeURIComponent(cachedSubject)}&body=${encodeURIComponent(cachedBody)}`; }
   } catch(e) { alert("Return to Stock error."); }
+}
+
+async function executeConsolidate() {
+  if(!confirm("Are you sure you want to mark this order as Consolidated?")) return;
+  try {
+    const e = appData.staging.find(x => x.id === currentEditId);
+    
+    const { error: insertError } = await supabaseClient.from('shipped').insert([{
+      so: e.so, customer: $('#e_cust').value.trim(), type: getDynamicType(), qty: getDynamicQty(),
+      carrier: 'CONSOLIDATED', location: $('#e_loc').value.trim(), coords: $('#e_coords').value.trim(),
+      weight: $('#e_weight').value.trim(), shipped_by: $('#e_staged_by').value.trim(), pmd_email: null, photo_urls: editTargetRecord.photo_urls
+    }]); 
+    if(insertError) throw insertError;
+    
+    await supabaseClient.from('staging').delete().eq('id', currentEditId);
+    $('#editModal').style.display='none';
+    loadCloudData();
+  } catch(err) { alert("Consolidate error: " + err.message); }
 }
 
 function renderEditPhotoStrip() {
@@ -708,8 +825,7 @@ function renderTables() {
     const geoLink = o.coords ? `<a class="coord-link" href="geo:0,0?q=${encodeURIComponent(o.coords)}">${o.coords}</a>` : '—';
     const picBtn = (o.photo_urls && o.photo_urls.length > 0) ? `<button class="btn" style="padding:4px 8px; font-size:12px; margin-right:4px;" onclick="openPhotoViewer('${o.id}')">View</button>` : '';
     
-    // FIX: picBtn and o.so separated into distinct <td> tags for Staging alignment
-    sBody.insertAdjacentHTML('beforeend', `<tr><td><button class="btn-del" onclick="deleteItem('staging','${o.id}')">Delete</button></td>
+    sBody.insertAdjacentHTML('beforeend', `<tr>
       <td><button class="btn-edit" onclick="openUniversalEditor('staging', '${o.id}')">Edit</button></td>
       <td>${picBtn}</td><td><b>${o.so}</b></td><td>${o.customer}</td><td>${new Date(o.entry_date).toLocaleString()}</td><td>${o.type}</td><td>${o.location}</td><td><small>${geoLink}</small></td><td>${o.weight || '—'}</td><td>${o.status}</td><td>${o.staged_by||'—'}</td>
       <td style="position:sticky;right:0;text-align:center;"><input type="checkbox" onchange="if(this.checked)triggerShipModal('${o.id}')"></td></tr>`);
@@ -718,11 +834,11 @@ function renderTables() {
   const shBody = $('#tblShipped tbody'); shBody.innerHTML = '';
   fShipped.slice(0, 20).forEach(o => {
     const geoLink = o.coords ? `<a class="coord-link" href="geo:0,0?q=${encodeURIComponent(o.coords)}">${o.coords}</a>` : '—';
-    const isRet = (o.carrier === 'RETURNED TO STOCK');
+    const isRet = (o.carrier === 'RETURNED TO STOCK' || o.carrier === 'CONSOLIDATED');
     const rowClass = isRet ? 'style="color:#9ca3af; text-decoration:line-through;"' : '';
     const picBtn = (o.photo_urls && o.photo_urls.length > 0) ? `<button class="btn" style="padding:4px 8px; font-size:12px; margin-right:4px;" onclick="openPhotoViewer('${o.id}')">View</button>` : '';
     
-    shBody.insertAdjacentHTML('beforeend', `<tr ${rowClass}><td><button class="btn-del" onclick="deleteItem('shipped','${o.id}')">Delete</button></td>
+    shBody.insertAdjacentHTML('beforeend', `<tr ${rowClass}>
       <td><button class="btn-edit" onclick="openUniversalEditor('shipped', '${o.id}')">Edit</button></td>
       <td>${picBtn}</td>
       <td><b>${o.so}</b></td><td>${o.customer}</td><td>${o.type}</td><td>${o.carrier || '—'}</td><td>${o.location}</td><td><small>${geoLink}</small></td><td>${o.weight || '—'}</td><td>${new Date(o.shipped_at).toLocaleString()}</td><td>${o.shipped_by || '—'}</td><td>${o.pmd_email ? o.pmd_email+(isRet?'':'<span class="green-check"> ✓</span>') : '—'}</td></tr>`);
@@ -734,8 +850,6 @@ function renderTables() {
   $('#kPipe').textContent = sumByType('Pipe/Rod'); $('#kOther').textContent = sumByType('Other');
   $('#kShipped').textContent = appData.shipped.filter(x => x.carrier !== 'RETURNED TO STOCK').length;
 }
-
-async function deleteItem(table, id) { if(confirm("Permanently delete record?")) { await supabaseClient.from(table).delete().eq('id', id); loadCloudData(); } }
 
 $('#add').onclick = async () => {
   const sk = parseInt($('#c_skid').value)||0, bx = parseInt($('#c_box').value)||0, cr = parseInt($('#c_crate').value)||0, pi = parseInt($('#c_pipe').value)||0, ot = parseInt($('#c_other').value)||0;
