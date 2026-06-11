@@ -1,6 +1,6 @@
 :root { --brand: #dd4d25; }
 * { box-sizing: border-box; }
-body { margin: 0; font: 13px/1.45 system-ui, -apple-system, Segoe UI, Roboto, Arial; background: #f6f7f9; color: #222; }
+body { margin: 0; font: 14px/1.45 system-ui, -apple-system, Segoe UI, Roboto, Arial; background: #f6f7f9; color: #222; }
 .wrap { max-width: 1100px; margin: 24px auto; padding: 12px; }
 h1, h2, h3 { font-weight: 700; margin: 0 0 18px; }
 
@@ -16,6 +16,7 @@ input:disabled, select:disabled, button:disabled { background: #f3f4f6; color: #
 .row > * { flex: 1 1 150px; }
 
 .btn { background: var(--brand); color: #fff; border: 0; border-radius: 12px; padding: 12px 20px; font-weight: 700; cursor: pointer; }
+.btn-del { background: #dc2626; color: #fff; border: 0; border-radius: 6px; padding: 4px 8px; font-size: 12px; font-weight: 700; cursor: pointer; }
 .btn-edit { background: #0284c7; color: #fff; border: 0; border-radius: 6px; padding: 4px 8px; font-size: 12px; font-weight: 700; cursor: pointer; }
 .actions { display: flex; gap: 8px; margin-bottom: 12px; align-items: center; }
 
@@ -31,6 +32,7 @@ input:disabled, select:disabled, button:disabled { background: #f3f4f6; color: #
 .modal-close-x { position: absolute; top: 12px; right: 16px; font-size: 22px; font-weight: 700; color: #6b7280; cursor: pointer; border: 0; background: none; z-index: 10; }
 .modal-field { display: flex; flex-direction: column; gap: 2px; text-align: left; }
 .modal-field label { font-size: 12px; font-weight: 700; color: #4b5563; margin-bottom: 2px; }
+
 .modal-window .freight-block { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px; background: #f9fafb; border: 1px solid #cbd5e1; padding: 12px; border-radius: 8px; flex: none; }
 .modal-window .counter-box { justify-content: space-between; width: 100%; padding-bottom: 4px; border-bottom: 1px solid #e5e7eb; }
 .modal-window .counter-box:nth-last-child(-n+2) { border-bottom: none; padding-bottom: 0; }
@@ -54,11 +56,15 @@ th[style*="position:sticky"], td[style*="position:sticky"] { background: #fff !i
 .green-check { color: #16a34a; font-weight: bold; }
 input[type="checkbox"] { width: 13px; height: 13px; cursor: pointer; transform: scale(1); margin: 0; }
 .coord-link { color: #0284c7; text-decoration: none; font-weight: bold; }
+.coord-link:hover { text-decoration: underline; }
 
 @media (max-width: 600px) {
   .grid { grid-template-columns: repeat(2, 1fr); }
   table { min-width: 950px; } 
+  .freight-block { justify-content: space-between; }
 }
+
+/* STRICT MOBILE PORTRAIT WRAPPER PREVENTS GRID STRETCHING */
 @media (max-width: 480px) {
   .freight-block, .modal-window .freight-block { display: grid !important; grid-template-columns: 1fr !important; gap: 8px !important; }
 }
