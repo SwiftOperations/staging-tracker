@@ -133,6 +133,7 @@ function getDynamicType(prefix) {
   if(ot) typeParts.push(formatContainer(ot, 'Other'));
   return typeParts.join(', ') || '1 Skid';
 }
+
 function getDynamicQty(prefix) {
   const sk = parseInt($(`#${prefix}_skid`) ? $(`#${prefix}_skid`).value : 0)||0;
   const bx = parseInt($(`#${prefix}_box`) ? $(`#${prefix}_box`).value : 0)||0;
@@ -196,7 +197,7 @@ function openUniversalEditor(table, id) {
   currentEditId = o.id;
   editTargetRecord = { table: table, id: o.id, so: o.so, photo_urls: o.photo_urls || [] };
   
-  const isRet = (o.carrier === 'RETURNED TO STOCK' || o.carrier === 'CONSOLIDATED');
+  const isRet = (table === 'shipped' && (o.carrier === 'RETURNED TO STOCK' || o.carrier === 'CONSOLIDATED'));
   
   if($('#e_so')) $('#e_so').value = o.so; 
   if($('#e_cust')) $('#e_cust').value = o.customer; 
@@ -418,55 +419,139 @@ function openStaticMapPromptWindow(item) {
       $('#mapViewPhotoSection').style.display = 'none';
     }
   }
-  $('#mapViewModal').style.display = 'flex';
+  if($('#mapViewModal')) $('#mapViewModal').style.display = 'flex';
 }
 
-if($('#add')) {
-  $('#add').onclick = async () => {
-    const sk = parseInt($('#c_skid').value)||0, bx = parseInt($('#c_box').value)||0, cr = parseInt($('#c_crate').value)||0, pi = parseInt($('#c_pipe').value)||0, ot = parseInt($('#c_other').value)||0;
-    if(!$('#so').value || !$('#customer').value || !$('#loc').value) return alert("Fields Missing.");
-    
-    let type = []; 
-    if(sk) type.push(formatContainer(sk, 'Skid'));
-    if(bx) type.push(formatContainer(bx, 'Box'));
-    if(cr) type.push(formatContainer(cr, 'Crate'));
-    if(pi) type.push(formatContainer(pi, 'Pipe/Rod'));
-    if(ot) type.push(formatContainer(ot, 'Other'));
-    
-    $('#add').disabled = true;
-    $('#add').textContent = 'Saving...';
-    
-    try {
-      let photoUrls = [];
-      for (let i = 0; i < mainPhotoBlobs.length; i++) {
-        const file = mainPhotoBlobs[i]; 
-        const cleanFileName = file.name.replace(/[^a-zA-Z0-9.]/g, '');
-        const path = `${$('#so').value.trim()}-staging-${Date.now()}-${i}-${cleanFileName}`;
-        const { error: uploadError } = await supabaseClient.storage.from('freight-photos').upload(path, file);
-        if(!uploadError) photoUrls.push(path);
-      }
-    
-      const { error } = await supabaseClient.from('staging').insert([{ so: $('#so').value.trim(), customer: $('#customer').value.trim(), status: $('#status').value, location: $('#loc').value.trim(), coords: $('#coords').value.trim(), weight: $('#weight').value.trim(), staged_by: $('#staged_by').value.trim(), type: type.join(', '), qty: sk+bx+cr+pi+ot, photo_urls: photoUrls }]);
-      
-      if (error) {
-        alert("Database Error: " + error.message + "\n\nIMPORTANT: Add a 'photo_urls' column (Type: text array) to your 'staging' table in Supabase!");
-        $('#add').disabled = false; $('#add').textContent = 'Add'; return;
-      }
-      
-      $('#so').value=''; $('#customer').value=''; $('#loc').value=''; $('#coords').value=''; $('#staged_by').value=''; $('#weight').value=''; $('#c_skid').value=0; $('#c_box').value=0; $('#c_crate').value=0; $('#c_pipe').value=0; $('#c_other').value=0; 
-      mainPhotoBlobs = []; renderMainPhotoStrip();
-      loadCloudData();
-    } catch(e) { alert("System Error: " + e.message); }
-    
-    $('#add').disabled = false;
-    $('#add').textContent = 'Add';
-  };
+function triggerShipModal(id) {
+  const item = appData.staging.find(x => x.id === id);
+  if (!item) return;
+  activeShipTargetItem = item; 
+  if($('#photoPreviewStrip')) $('#photoPreviewStrip').innerHTML = ''; 
+  selectedPhotoBlobs = [];
+  
+  if($('#m_so')) $('#m_so').value = item.so; 
+  if($('#m_cust')) $('#m_cust').value = item.customer; 
+  if($('#m_qty')) $('#m_qty').value = item.type;
+  if($('#m_carrier')) $('#m_carrier').value = ''; 
+  if($('#m_loc')) $('#m_loc').value = item.location; 
+  if($('#m_weight')) $('#m_weight').value = item.weight || '—'; 
+  if($('#m_by')) $('#m_by').value = '';
+  
+  if($('#m_pm_chk')) $('#m_pm_chk').checked = false; 
+  if($('#m_pm_email')) $('#m_pm_email').disabled = true; 
+  if($('#m_pm_email_btn')) $('#m_pm_email_btn').disabled = true;
+  if($('#shipModal')) $('#shipModal').style.display = 'flex';
+}
+function closeShipModal() { if($('#shipModal')) $('#shipModal').style.display = 'none'; loadCloudData(); }
+
+function addPhotoBlob(inputEl) {
+  if(!inputEl.files || inputEl.files.length === 0) return;
+  Array.from(inputEl.files).forEach(f => { if(selectedPhotoBlobs.length < 10) selectedPhotoBlobs.push(f); });
+  renderPhotoStrip('#photoPreviewStrip', selectedPhotoBlobs);
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+async function submitFreightDispatch() {
+  const dispatcher = $('#m_by').value.trim(); const pmEmail = $('#m_pm_email').value.trim(); const pmChecked = $('#m_pm_chk').checked;
+  const carrierVal = $('#m_carrier').value.trim() || 'Unassigned Carrier';
+  if(!dispatcher || (pmChecked && !pmEmail)) return alert("Missing required inputs.");
+  
+  if($('#modalConfirmBtn')) $('#modalConfirmBtn').disabled = true;
+  try {
+    let photoUrls = [];
+    for (let i = 0; i < selectedPhotoBlobs.length; i++) {
+      const file = selectedPhotoBlobs[i]; 
+      const cleanFileName = file.name.replace(/[^a-zA-Z0-9.]/g, '');
+      const path = `${activeShipTargetItem.so}-${Date.now()}-${i}-${cleanFileName}`;
+      await supabaseClient.storage.from('freight-photos').upload(path, file); photoUrls.push(path);
+    }
+    
+    let pmName = pmEmail ? pmEmail.split('@')[0].split('.')[0] : null;
+    if(pmName) pmName = pmName.charAt(0).toUpperCase() + pmName.slice(1);
+    const currentTimeStamp = new Date().toLocaleString();
+
+    const { error: insertError } = await supabaseClient.from('shipped').insert([{
+      so: activeShipTargetItem.so, customer: activeShipTargetItem.customer, type: activeShipTargetItem.type,
+      qty: activeShipTargetItem.qty, carrier: carrierVal, location: activeShipTargetItem.location, coords: activeShipTargetItem.coords,
+      weight: activeShipTargetItem.weight, shipped_by: dispatcher, pmd_email: pmName, photo_urls: photoUrls
+    }]);
+    if (insertError) {
+      alert("Database Error: " + insertError.message);
+      if($('#modalConfirmBtn')) $('#modalConfirmBtn').disabled = false;
+      return;
+    }
+
+    await supabaseClient.from('staging').delete().eq('id', activeShipTargetItem.id);
+    
+    const photoLinks = photoUrls.length > 0 ? `\nAttached Photos:\n${photoUrls.map((p,i)=> `Image ${i+1}: ${SUPABASE_URL}/storage/v1/object/public/freight-photos/${p}`).join('\n')}\n` : '';
+    
+    const cachedSubject = `CONFIRMATION OF SHIPOUT: ${activeShipTargetItem.customer} ${activeShipTargetItem.so} @ ${activeShipTargetItem.type} via ${carrierVal}`;
+    const cachedBody = `Your order has now been shipped! Order details:\n\n` +
+      `----------------------------------------------------------------------\n` +
+      `SO#                   | ${activeShipTargetItem.so}\n` +
+      `Customer              | ${activeShipTargetItem.customer}\n` +
+      `Container(s)          | ${activeShipTargetItem.type}\n` +
+      `Total Weight (In lbs) | ${activeShipTargetItem.weight || '—'}\n` +
+      `Carrier               | ${carrierVal}\n` +
+      `Shipped At            | ${currentTimeStamp}\n` +
+      `Shipped By            | ${dispatcher}\n` +
+      `----------------------------------------------------------------------\n` +
+      photoLinks +
+      `\nFor more shipment details, visit the following link: https://swiftoperations.github.io/staging-tracker/\n\n` +
+      `Thanks\n`;
+
+    closeShipModal();
+    if(pmChecked) { window.location.href = `mailto:${pmEmail}?cc=warehouse1@swiftsupply.ca&subject=${encodeURIComponent(cachedSubject)}&body=${encodeURIComponent(cachedBody)}`; }
+  } catch(e) { alert("Data dispatch error."); } finally { if($('#modalConfirmBtn')) $('#modalConfirmBtn').disabled = false; }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
   bootstrapStandalonePWA(); 
   initOpenStreetMapEngine(); 
   loadCloudData(); 
   setInterval(loadCloudData, 5000); 
+
+  if($('#add')) {
+    $('#add').onclick = async () => {
+      const sk = parseInt($('#c_skid').value)||0, bx = parseInt($('#c_box').value)||0, cr = parseInt($('#c_crate').value)||0, pi = parseInt($('#c_pipe').value)||0, ot = parseInt($('#c_other').value)||0;
+      if(!$('#so').value || !$('#customer').value || !$('#loc').value) return alert("Fields Missing.");
+      
+      let type = []; 
+      if(sk) type.push(formatContainer(sk, 'Skid'));
+      if(bx) type.push(formatContainer(bx, 'Box'));
+      if(cr) type.push(formatContainer(cr, 'Crate'));
+      if(pi) type.push(formatContainer(pi, 'Pipe/Rod'));
+      if(ot) type.push(formatContainer(ot, 'Other'));
+      
+      $('#add').disabled = true;
+      $('#add').textContent = 'Saving...';
+      
+      try {
+        let photoUrls = [];
+        for (let i = 0; i < mainPhotoBlobs.length; i++) {
+          const file = mainPhotoBlobs[i]; 
+          const cleanFileName = file.name.replace(/[^a-zA-Z0-9.]/g, '');
+          const path = `${$('#so').value.trim()}-staging-${Date.now()}-${i}-${cleanFileName}`;
+          const { error: uploadError } = await supabaseClient.storage.from('freight-photos').upload(path, file);
+          if(!uploadError) photoUrls.push(path);
+        }
+      
+        const { error } = await supabaseClient.from('staging').insert([{ so: $('#so').value.trim(), customer: $('#customer').value.trim(), status: $('#status').value, location: $('#loc').value.trim(), coords: $('#coords').value.trim(), weight: $('#weight').value.trim(), staged_by: $('#staged_by').value.trim(), type: type.join(', '), qty: sk+bx+cr+pi+ot, photo_urls: photoUrls }]);
+        
+        if (error) {
+          alert("Database Error: " + error.message + "\n\nIMPORTANT: Add a 'photo_urls' column (Type: text array) to your 'staging' table in Supabase!");
+          $('#add').disabled = false; $('#add').textContent = 'Add'; return;
+        }
+        
+        $('#so').value=''; $('#customer').value=''; $('#loc').value=''; $('#coords').value=''; $('#staged_by').value=''; $('#weight').value=''; $('#c_skid').value=0; $('#c_box').value=0; $('#c_crate').value=0; $('#c_pipe').value=0; $('#c_other').value=0; 
+        mainPhotoBlobs = []; renderMainPhotoStrip();
+        loadCloudData();
+      } catch(e) { alert("System Error: " + e.message); }
+      
+      $('#add').disabled = false;
+      $('#add').textContent = 'Add';
+    };
+  }
+
+  if($('#q')) $('#q').oninput = renderTables;
 });
 </script>
