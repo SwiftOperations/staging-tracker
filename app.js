@@ -453,8 +453,8 @@ window.triggerShipModal = function(id) {
   const item = appData.staging.find(x => x.id === id);
   if (!item) return;
   activeShipTargetItem = item; 
-  if($('#photoPreviewStrip')) $('#photoPreviewStrip').innerHTML = ''; 
   selectedPhotoBlobs = [];
+  window.renderPhotoStrip('#photoPreviewStrip', selectedPhotoBlobs);
   
   if($('#m_so')) $('#m_so').value = item.so; 
   if($('#m_cust')) $('#m_cust').value = item.customer; 
