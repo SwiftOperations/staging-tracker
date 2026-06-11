@@ -12,10 +12,9 @@ let mainPhotoBlobs = [];
 let openMapInstance = null;
 let openMapMarkers = [];
 let hiddenMemory = [];
+let currentCommentTarget = { table: null, id: null };
 
-try {
-  hiddenMemory = JSON.parse(localStorage.getItem('swift_hidden_memory') || '[]');
-} catch(e) {}
+try { hiddenMemory = JSON.parse(localStorage.getItem('swift_hidden_memory') || '[]'); } catch(e) {}
 
 window.bootstrapStandalonePWA = function() {
   const pwaData = {
@@ -29,7 +28,6 @@ window.bootstrapStandalonePWA = function() {
 window.adjustCount = function(id, amt) { if($('#'+id)) $('#'+id).value = Math.max(0, (parseInt($('#'+id).value)||0) + amt); };
 window.adjustEditCount = function(id, amt) { if($('#'+id)) $('#'+id).value = Math.max(0, (parseInt($('#'+id).value)||0) + amt); };
 
-// NEW 1000s Comma Separator Logic
 window.formatWeight = function(input) {
   let value = input.value.replace(/[^0-9.]/g, '');
   let parts = value.split('.');
@@ -80,10 +78,7 @@ window.syncMapPins = function() {
       }
     }
   });
-
-  if (hasPins) {
-    openMapInstance.fitBounds(bounds, { padding: [5, 5], maxZoom: 18 });
-  }
+  if (hasPins) openMapInstance.fitBounds(bounds, { padding: [5, 5], maxZoom: 18 });
 };
 
 window.togglePMEmail = function(isChecked, inputId, btnId) {
@@ -176,7 +171,8 @@ window.renderTables = function() {
         const picBtn = (o.photo_urls && o.photo_urls.length > 0) ? `<button class="btn" style="padding:4px 8px; font-size:12px; margin-right:4px;" onclick="window.openPhotoViewer('${o.id}')">View</button>` : '';
         sBody.insertAdjacentHTML('beforeend', `<tr>
           <td><button class="btn-edit" onclick="window.openUniversalEditor('staging', '${o.id}')">Edit</button></td>
-          <td>${picBtn}</td><td><b>${o.so}</b></td><td>${o.customer}</td><td>${new Date(o.entry_date).toLocaleString()}</td><td>${o.type}</td><td>${o.location}</td><td><small>${geoLink}</small></td><td>${o.weight || '—'}</td><td>${o.status}</td><td>${o.staged_by||'—'}</td>
+          <td>${picBtn}</td><td><b>${o.so}</b></td><td>${o.customer}</td><td>${new Date(o.entry_date).toLocaleString()}</td><td>${o.type}</td><td>${o.location}</td><td><small>${geoLink}</small></td>
+          <td>${o.weight || '—'}</td><td><button class="btn" style="padding:4px 8px; font-size:12px; background:${o.comments ? '#8b5cf6' : '#e5e7eb'}; color:${o.comments ? '#fff' : '#4b5563'};" onclick="window.openCommentModal('staging', '${o.id}')">${o.comments ? 'See' : 'Add'}</button></td><td>${o.status}</td><td>${o.staged_by||'—'}</td>
           <td style="position:sticky;right:0;text-align:center;"><input type="checkbox" onchange="if(this.checked){ window.triggerShipModal('${o.id}'); this.checked=false; }"></td></tr>`);
       });
     }
@@ -195,7 +191,8 @@ window.renderTables = function() {
         shBody.insertAdjacentHTML('beforeend', `<tr ${rowClass}>
           <td><button class="btn-edit" onclick="window.openUniversalEditor('shipped', '${o.id}')">Edit</button></td>
           <td>${picBtn}</td>
-          <td><b>${o.so}</b></td><td>${o.customer}</td><td>${o.type}</td><td>${o.carrier || '—'}</td><td>${o.location}</td><td><small>${geoLink}</small></td><td>${o.weight || '—'}</td><td>${new Date(o.shipped_at).toLocaleString()}</td><td>${o.shipped_by || '—'}</td><td>${o.pmd_email ? o.pmd_email+(isRet?'':'<span class="green-check"> ✓</span>') : '—'}</td></tr>`);
+          <td><b>${o.so}</b></td><td>${o.customer}</td><td>${o.type}</td><td>${o.carrier || '—'}</td><td>${o.location}</td><td><small>${geoLink}</small></td>
+          <td>${o.weight || '—'}</td><td><button class="btn" style="padding:4px 8px; font-size:12px; background:${o.comments ? '#8b5cf6' : '#e5e7eb'}; color:${o.comments ? '#fff' : '#4b5563'};" onclick="window.openCommentModal('shipped', '${o.id}')">${o.comments ? 'See' : 'Add'}</button></td><td>${new Date(o.shipped_at).toLocaleString()}</td><td>${o.shipped_by || '—'}</td><td>${o.pmd_email ? o.pmd_email+(isRet?'':'<span class="green-check"> ✓</span>') : '—'}</td></tr>`);
       });
     }
   }
@@ -224,6 +221,7 @@ window.openUniversalEditor = function(table, id) {
   if($('#e_loc')) $('#e_loc').value = o.location || ''; 
   if($('#e_coords')) $('#e_coords').value = o.coords || ''; 
   if($('#e_weight')) $('#e_weight').value = o.weight || '';
+  if($('#e_comments')) $('#e_comments').value = o.comments || '';
   
   const counts = window.parseContainerString(o.type);
   if($('#e_skid')) $('#e_skid').value = counts.sk; 
@@ -232,7 +230,7 @@ window.openUniversalEditor = function(table, id) {
   if($('#e_pipe')) $('#e_pipe').value = counts.pi; 
   if($('#e_other')) $('#e_other').value = counts.ot;
   
-  const inputsToLock = ['e_so','e_cust','e_loc','e_weight','e_status','e_staged_by','e_carrier','e_shipped_by','e_pm'];
+  const inputsToLock = ['e_so','e_cust','e_loc','e_weight','e_comments','e_status','e_staged_by','e_carrier','e_shipped_by','e_pm'];
   inputsToLock.forEach(i => { if($(`#${i}`)) $(`#${i}`).disabled = isRet; });
   document.querySelectorAll('#editModal .counter-btn').forEach(b => b.disabled = isRet);
   document.querySelectorAll('#editPhotoSection .photo-uploader').forEach(b => b.style.display = isRet ? 'none' : 'block');
@@ -302,7 +300,7 @@ window.submitReturnToStock = async function() {
     const { error: insertError } = await supabaseClient.from('shipped').insert([{
       so: editTargetRecord.so, customer: $('#e_cust').value.trim(), type: window.getDynamicType('e'), qty: window.getDynamicQty('e'),
       carrier: 'RETURNED TO STOCK', location: $('#e_loc').value.trim(), coords: $('#e_coords').value.trim(),
-      weight: $('#e_weight').value.trim(), shipped_by: returnedBy, pmd_email: pickedBy, photo_urls: editTargetRecord.photo_urls
+      weight: $('#e_weight').value.trim(), comments: e.comments, shipped_by: returnedBy, pmd_email: pickedBy, photo_urls: editTargetRecord.photo_urls
     }]); 
     if(insertError) throw insertError;
     
@@ -339,7 +337,7 @@ window.executeConsolidate = async function() {
     const { error: insertError } = await supabaseClient.from('shipped').insert([{
       so: e.so, customer: $('#e_cust').value.trim(), type: window.getDynamicType('e'), qty: window.getDynamicQty('e'),
       carrier: 'CONSOLIDATED', location: $('#e_loc').value.trim(), coords: $('#e_coords').value.trim(),
-      weight: $('#e_weight').value.trim(), shipped_by: $('#e_staged_by').value.trim(), pmd_email: null, photo_urls: editTargetRecord.photo_urls
+      weight: $('#e_weight').value.trim(), comments: e.comments, shipped_by: $('#e_staged_by').value.trim(), pmd_email: null, photo_urls: editTargetRecord.photo_urls
     }]); 
     if(insertError) throw insertError;
     
@@ -374,7 +372,7 @@ window.addEditPhotoBlob = function(inputEl) {
 
 window.saveEditedRecord = async function() {
   const dynamicType = window.getDynamicType('e');
-  const basePayload = { so: $('#e_so').value.trim(), customer: $('#e_cust').value.trim(), location: $('#e_loc').value.trim(), coords: $('#e_coords').value.trim(), weight: $('#e_weight').value.trim(), type: dynamicType, qty: window.getDynamicQty('e') };
+  const basePayload = { so: $('#e_so').value.trim(), customer: $('#e_cust').value.trim(), location: $('#e_loc').value.trim(), coords: $('#e_coords').value.trim(), weight: $('#e_weight').value.trim(), comments: $('#e_comments').value.trim(), type: dynamicType, qty: window.getDynamicQty('e') };
 
   if (editTargetRecord.table === 'staging') {
     const { error } = await supabaseClient.from('staging').update({ ...basePayload, status: $('#e_status').value.trim(), staged_by: $('#e_staged_by').value.trim(), photo_urls: editTargetRecord.photo_urls }).eq('id', currentEditId);
@@ -391,7 +389,7 @@ window.executeShippedUndo = async function() {
   if(!confirm("Are you sure you want to undo this action and return it to Staging?")) return;
   try {
     const { data: currentRecord } = await supabaseClient.from('shipped').select('*').eq('id', editTargetRecord.id).single();
-    const { error } = await supabaseClient.from('staging').insert([{ so: currentRecord.so, customer: currentRecord.customer, type: currentRecord.type, qty: currentRecord.qty, location: currentRecord.location, coords: currentRecord.coords, weight: currentRecord.weight, status: 'Partial', photo_urls: currentRecord.photo_urls }]);
+    const { error } = await supabaseClient.from('staging').insert([{ so: currentRecord.so, customer: currentRecord.customer, type: currentRecord.type, qty: currentRecord.qty, location: currentRecord.location, coords: currentRecord.coords, weight: currentRecord.weight, comments: currentRecord.comments, status: 'Partial', photo_urls: currentRecord.photo_urls }]);
     if (error) { alert("Undo Database Error: " + error.message); return; }
     
     await supabaseClient.from('shipped').delete().eq('id', editTargetRecord.id);
@@ -460,7 +458,6 @@ window.triggerShipModal = function(id) {
   window.togglePMEmail(false, 'm_pm_email', 'm_pm_email_btn');
   if($('#shipModal')) $('#shipModal').style.display = 'flex';
   
-  // Render previously staged photos instantly
   window.renderPhotoStrip('#photoPreviewStrip', selectedPhotoBlobs);
 };
 
@@ -492,14 +489,12 @@ window.renderPhotoStrip = function(containerSel, blobArray) {
   if(!container) return;
   container.innerHTML = '';
   
-  // Safely display previously staged photos in the Dispatch modal
   if (containerSel === '#photoPreviewStrip' && activeShipTargetItem && activeShipTargetItem.photo_urls) {
     activeShipTargetItem.photo_urls.forEach((url, idx) => {
       container.insertAdjacentHTML('beforeend', `<span class="photo-badge">📎 Staged-${idx+1} <span onclick="activeShipTargetItem.photo_urls.splice(${idx},1); window.renderPhotoStrip('${containerSel}', selectedPhotoBlobs)">&times;</span></span>`);
     });
   }
 
-  // Display newly added photos
   blobArray.forEach((f, idx) => {
     const badge = document.createElement('span'); badge.className = 'photo-badge';
     badge.innerHTML = `📎 New-${idx+1} <span onclick="selectedPhotoBlobs.splice(${idx},1); window.renderPhotoStrip('${containerSel}', selectedPhotoBlobs)">&times;</span>`;
@@ -514,7 +509,6 @@ window.submitFreightDispatch = async function() {
   
   if($('#modalConfirmBtn')) $('#modalConfirmBtn').disabled = true;
   try {
-    // Safely inherit old photos before adding the newly uploaded dispatch photos
     let photoUrls = (activeShipTargetItem && activeShipTargetItem.photo_urls) ? [...activeShipTargetItem.photo_urls] : [];
     
     for (let i = 0; i < selectedPhotoBlobs.length; i++) {
@@ -531,7 +525,7 @@ window.submitFreightDispatch = async function() {
     const { error: insertError } = await supabaseClient.from('shipped').insert([{
       so: activeShipTargetItem.so, customer: activeShipTargetItem.customer, type: activeShipTargetItem.type,
       qty: activeShipTargetItem.qty, carrier: carrierVal, location: activeShipTargetItem.location, coords: activeShipTargetItem.coords,
-      weight: activeShipTargetItem.weight, shipped_by: dispatcher, pmd_email: pmName, photo_urls: photoUrls
+      weight: activeShipTargetItem.weight, comments: activeShipTargetItem.comments, shipped_by: dispatcher, pmd_email: pmName, photo_urls: photoUrls
     }]);
     if (insertError) {
       alert("Database Error: " + insertError.message);
@@ -578,9 +572,7 @@ window.submitStagingEntry = async function() {
   $('#add').textContent = 'Saving...';
   
   try {
-    // This MUST safely initialize to an empty array so new entries don't crash
     let photoUrls = []; 
-    
     for (let i = 0; i < mainPhotoBlobs.length; i++) {
       const file = mainPhotoBlobs[i]; 
       const cleanFileName = file.name.replace(/[^a-zA-Z0-9.]/g, '');
@@ -589,20 +581,38 @@ window.submitStagingEntry = async function() {
       if(!uploadError) photoUrls.push(path);
     }
   
-    const { error } = await supabaseClient.from('staging').insert([{ so: $('#so').value.trim(), customer: $('#customer').value.trim(), status: $('#status').value, location: $('#loc').value.trim(), coords: $('#coords').value.trim(), weight: $('#weight').value.trim(), staged_by: $('#staged_by').value.trim(), type: type.join(', '), qty: sk+bx+cr+pi+ot, photo_urls: photoUrls }]);
+    const { error } = await supabaseClient.from('staging').insert([{ so: $('#so').value.trim(), customer: $('#customer').value.trim(), status: $('#status').value, location: $('#loc').value.trim(), coords: $('#coords').value.trim(), weight: $('#weight').value.trim(), comments: $('#comments').value.trim(), staged_by: $('#staged_by').value.trim(), type: type.join(', '), qty: sk+bx+cr+pi+ot, photo_urls: photoUrls }]);
     
     if (error) {
-      alert("Database Error: " + error.message + "\n\nIMPORTANT: Add a 'photo_urls' column (Type: text array) to your 'staging' table in Supabase!");
+      alert("Database Error: " + error.message + "\n\nIMPORTANT: Did you add the 'comments' column to your Supabase tables?");
       $('#add').disabled = false; $('#add').textContent = 'Add'; return;
     }
     
     $('#so').value=''; $('#customer').value=''; $('#loc').value=''; $('#coords').value=''; $('#staged_by').value=''; $('#weight').value=''; $('#c_skid').value=0; $('#c_box').value=0; $('#c_crate').value=0; $('#c_pipe').value=0; $('#c_other').value=0; 
+    if($('#comments')) $('#comments').value='';
     mainPhotoBlobs = []; window.renderMainPhotoStrip();
     window.loadCloudData();
   } catch(e) { alert("System Error: " + e.message); }
   
   $('#add').disabled = false;
   $('#add').textContent = 'Add';
+};
+
+window.openCommentModal = function(table, id) {
+  const o = appData[table].find(x => x.id === id);
+  if(!o) return;
+  currentCommentTarget = { table: table, id: id };
+  if($('#quick_comments')) $('#quick_comments').value = o.comments || '';
+  if($('#commentModal')) $('#commentModal').style.display = 'flex';
+};
+
+window.saveQuickComment = async function() {
+  const newComment = $('#quick_comments').value.trim();
+  const { error } = await supabaseClient.from(currentCommentTarget.table)
+    .update({ comments: newComment }).eq('id', currentCommentTarget.id);
+  if(error) return alert("Error saving comment: " + error.message);
+  if($('#commentModal')) $('#commentModal').style.display = 'none';
+  window.loadCloudData();
 };
 
 function initApp() {
