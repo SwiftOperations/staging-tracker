@@ -66,12 +66,11 @@
     <div id="editPhotoSection" style="display:flex; flex-direction:column; gap:8px;">
       <label style="font-size:12px; font-weight:700; color:#4b5563;">Manage Freight Photos</label>
       <div class="photo-options-grid">
-        <div class="photo-uploader" onclick="document.querySelector('#e_cameraFile').click()">📷 Take Live Photo
-          <input type="file" id="e_cameraFile" accept="image/*" capture="environment" style="display:none" onchange="window.addEditPhotoBlob(this)" />
-        </div>
-        <div class="photo-uploader" onclick="document.querySelector('#e_uploadFile').click()">📁 File Upload
-          <input type="file" id="e_uploadFile" multiple accept="image/*" style="display:none" onchange="window.addEditPhotoBlob(this)" />
-        </div>
+        <div class="photo-uploader" onclick="document.querySelector('#e_cameraFile').click()">📷 Take Live Photo</div>
+        <input type="file" id="e_cameraFile" accept="image/*" capture="environment" style="display:none" onchange="window.addEditPhotoBlob(this)" />
+        
+        <div class="photo-uploader" onclick="document.querySelector('#e_uploadFile').click()">📁 File Upload</div>
+        <input type="file" id="e_uploadFile" multiple accept="image/*" style="display:none" onchange="window.addEditPhotoBlob(this)" />
       </div>
       <div id="editPhotoPreviewStrip" class="photo-strip"></div>
     </div>
