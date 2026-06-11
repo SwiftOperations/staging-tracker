@@ -496,9 +496,18 @@ window.renderPhotoStrip = function(containerSel, blobArray) {
   const container = $(containerSel); 
   if(!container) return;
   container.innerHTML = '';
+  
+  // 1. Pull in the previously staged photos (if any exist)
+  if (containerSel === '#photoPreviewStrip' && activeShipTargetItem && activeShipTargetItem.photo_urls) {
+    activeShipTargetItem.photo_urls.forEach((url, idx) => {
+      container.insertAdjacentHTML('beforeend', `<span class="photo-badge">📎 Staged-${idx+1} <span onclick="activeShipTargetItem.photo_urls.splice(${idx},1); window.renderPhotoStrip('${containerSel}', selectedPhotoBlobs)">&times;</span></span>`);
+    });
+  }
+
+  // 2. Add the newly uploaded photos to the strip
   blobArray.forEach((f, idx) => {
     const badge = document.createElement('span'); badge.className = 'photo-badge';
-    badge.innerHTML = `📎 Img-${idx+1} <span onclick="selectedPhotoBlobs.splice(${idx},1); window.renderPhotoStrip('${containerSel}', selectedPhotoBlobs)">&times;</span>`;
+    badge.innerHTML = `📎 New-${idx+1} <span onclick="selectedPhotoBlobs.splice(${idx},1); window.renderPhotoStrip('${containerSel}', selectedPhotoBlobs)">&times;</span>`;
     container.appendChild(badge);
   });
 };
