@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Shipped Expanded Log — Stable v1.1</title>
+<title>Shipped Expanded Log — Beta v10.8</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<link rel="stylesheet" href="style.css?v=10.7" />
+<link rel="stylesheet" href="style.css?v=10.8" />
 </head>
 <body>
 <datalist id="dl_customers"></datalist>
@@ -25,6 +25,9 @@
   </table></div>
 </div>
 
+<!-- ============================================== -->
+<!-- ALL MODALS INJECTED EXACTLY THE SAME WORLDWIDE -->
+<!-- ============================================== -->
 <div id="returnModal" class="modal-overlay" onclick="if(event.target===this) document.querySelector('#returnModal').style.display='none'">
   <div class="modal-window">
     <button class="modal-close-x" onclick="document.querySelector('#returnModal').style.display='none'">&times;</button>
@@ -75,7 +78,7 @@
       <div id="editPhotoPreviewStrip" class="photo-strip"></div>
     </div>
     
-    <div class="modal-field"><label>SO#</label><input id="e_so" oninput="this.value=this.value.replace(/[^0-9]/g,'')" /></div>
+    <div class="modal-field"><label>SO#</label><input id="e_so" /></div>
     <div class="modal-field"><label>Customer</label>
       <div style="display:flex; width:100%;">
         <input id="e_cust" list="dl_customers" style="border-top-right-radius:0; border-bottom-right-radius:0; border-right:0;" />
@@ -131,6 +134,12 @@
           <button type="button" onclick="window.banishMemory('e_pm')" style="height:42px; width:36px; flex:none; background:#f8fafc; border:1px solid #cbd5e1; border-top-right-radius:8px; border-bottom-right-radius:8px; color:#dc2626; font-weight:bold; font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;">&times;</button>
         </div>
       </div>
+    </div>
+
+    <!-- COMMENTS APPENDED BEFORE BUTTONS -->
+    <div class="modal-field" style="margin-top:4px;">
+      <label>Comments</label>
+      <textarea id="e_comments" rows="3" style="width:100%; border:1px solid #cbd5e1; border-radius:8px; padding:8px 12px; font-family:inherit; font-size:14px; resize:vertical;"></textarea>
     </div>
 
     <div class="modal-actions" style="justify-content: space-between; width:100%; margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap;">
@@ -213,6 +222,22 @@
   </div>
 </div>
 
-<script src="app.js?v=10.7"></script>
+<!-- QUICK COMMENTS MODAL -->
+<div id="commentModal" class="modal-overlay" onclick="if(event.target===this) document.querySelector('#commentModal').style.display='none'">
+  <div class="modal-window" style="max-width: 400px;">
+    <button class="modal-close-x" onclick="document.querySelector('#commentModal').style.display='none'">&times;</button>
+    <h3 style="margin:0;">Comments</h3>
+    <div class="modal-field">
+      <textarea id="quick_comments" rows="4" style="width:100%; border:1px solid #cbd5e1; border-radius:8px; padding:8px 12px; font-family:inherit; font-size:14px; resize:vertical;"></textarea>
+    </div>
+    <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:4px;">
+      <button class="btn" style="background:#9ca3af; padding:8px 16px; border-radius:8px;" onclick="document.querySelector('#commentModal').style.display='none'">Cancel</button>
+      <button class="btn" style="padding:8px 16px; border-radius:8px;" onclick="window.saveQuickComment()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- CACHE BUSTER -->
+<script src="app.js?v=10.8"></script>
 </body>
 </html>
