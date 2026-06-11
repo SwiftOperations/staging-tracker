@@ -32,7 +32,7 @@
   </div>
 
   <div class="card">
-    <input id="q" placeholder="Quick search SO / Location / Customer..." />
+    <input id="q" placeholder="Quick search SO / Location / Customer..." oninput="renderTables()"/>
   </div>
 
   <div class="card" id="entryFormCard">
@@ -86,7 +86,7 @@
   </div>
 
   <div class="card" id="stagingCard">
-    <div class="split"><h3>Staging Entries</h3><button id="expandStaging" class="btn" style="padding:6px 12px">Expand</button></div>
+    <div class="split"><h3>Staging Entries</h3><button id="expandStaging" class="btn" onclick="window.open('stage.html', '_blank')" style="padding:6px 12px">Expand</button></div>
     <div class="tblwrap">
       <div class="tbl-scroller">
         <table id="tblStaging">
@@ -99,7 +99,7 @@
   </div>
 
   <div class="card" id="shippedCard">
-    <div class="split"><h3>Shipped Log</h3><button id="expandShipped" class="btn" style="padding:6px 12px">Expand</button></div>
+    <div class="split"><h3>Shipped Log</h3><button id="expandShipped" class="btn" onclick="window.open('ship.html', '_blank')" style="padding:6px 12px">Expand</button></div>
     <div class="tblwrap">
       <div class="tbl-scroller">
         <table id="tblShipped">
@@ -275,26 +275,6 @@
     <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:8px;">
       <button id="modalConfirmBtn" class="btn" onclick="submitFreightDispatch()">Confirm Dispatch</button>
     </div>
-  </div>
-</div>
-
-<div id="mapViewModal" class="modal-overlay" onclick="if(event.target===this) document.querySelector('#mapViewModal').style.display='none'">
-  <div class="modal-window">
-    <button class="modal-close-x" onclick="document.querySelector('#mapViewModal').style.display='none'">×</button>
-    <h3>Staged Manifest Details</h3>
-    <div id="mapViewPhotoSection" style="display:none; flex-direction:column; gap:4px;">
-      <label style="font-size:12px; font-weight:700; color:#4b5563;">Staged Images</label>
-      <div id="mapViewGalleryStrip" class="photo-strip"></div>
-    </div>
-    <div class="modal-field"><label>SO#</label><input id="v_so" readonly style="background:#f9fafb; border-color:#e5e7eb; color:#6b7280;"/></div>
-    <div class="modal-field"><label>Customer</label><input id="v_cust" readonly style="background:#f9fafb; border-color:#e5e7eb; color:#6b7280;"/></div>
-    <div class="modal-field"><label>Entry Date</label><input id="v_date" readonly style="background:#f9fafb; border-color:#e5e7eb; color:#6b7280;"/></div>
-    <div class="modal-field"><label>Containers</label><input id="v_type" readonly style="background:#f9fafb; border-color:#e5e7eb; color:#6b7280;"/></div>
-    <div class="modal-field"><label>Location</label><input id="v_loc" readonly style="background:#f9fafb; border-color:#e5e7eb; color:#6b7280;"/></div>
-    <div class="modal-field"><label>Coords</label><input id="v_coords" readonly style="background:#f9fafb; border-color:#e5e7eb; color:#6b7280;"/></div>
-    <div class="modal-field"><label>Total Weight (in lbs)</label><input id="v_weight" readonly style="background:#f9fafb; border-color:#e5e7eb; color:#6b7280;"/></div>
-    <div class="modal-field"><label>Status</label><input id="v_status" readonly style="background:#f9fafb; border-color:#e5e7eb; color:#6b7280;"/></div>
-    <div class="modal-field"><label>Staged By</label><input id="v_staged_by" readonly style="background:#f9fafb; border-color:#e5e7eb; color:#6b7280;"/></div>
   </div>
 </div>
 
