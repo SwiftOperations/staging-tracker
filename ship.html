@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Shipped Expanded Log — Stable v1.2</title>
+<title>Shipped Expanded Log — Beta v10.9</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<link rel="stylesheet" href="style.css?v=10.8" />
+<link rel="stylesheet" href="style.css?v=10.9" />
 </head>
 <body>
 <datalist id="dl_customers"></datalist>
@@ -13,7 +13,11 @@
 <datalist id="dl_pastEmails"></datalist>
 
 <div class="wrap">
-  <h2>Shipped Expanded Log</h2>
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; flex-wrap:wrap; gap:12px;">
+    <h2 style="margin:0;">Expanded Log — Beta v10.9</h2>
+    <div id="authStatus"></div>
+  </div>
+
   <div class="actions">
     <button class="btn" onclick="window.print()">Print Manifest Log</button>
     <button class="btn" style="background:#4b5563;" onclick="window.close()">Close Window</button>
@@ -25,9 +29,6 @@
   </table></div>
 </div>
 
-<!-- ============================================== -->
-<!-- ALL MODALS INJECTED EXACTLY THE SAME WORLDWIDE -->
-<!-- ============================================== -->
 <div id="returnModal" class="modal-overlay" onclick="if(event.target===this) document.querySelector('#returnModal').style.display='none'">
   <div class="modal-window">
     <button class="modal-close-x" onclick="document.querySelector('#returnModal').style.display='none'">&times;</button>
@@ -78,7 +79,7 @@
       <div id="editPhotoPreviewStrip" class="photo-strip"></div>
     </div>
     
-    <div class="modal-field"><label>SO#</label><input id="e_so" /></div>
+    <div class="modal-field"><label>SO#</label><input id="e_so" oninput="this.value=this.value.replace(/[^0-9]/g,'')" /></div>
     <div class="modal-field"><label>Customer</label>
       <div style="display:flex; width:100%;">
         <input id="e_cust" list="dl_customers" style="border-top-right-radius:0; border-bottom-right-radius:0; border-right:0;" />
@@ -136,7 +137,6 @@
       </div>
     </div>
 
-    <!-- COMMENTS APPENDED BEFORE BUTTONS -->
     <div class="modal-field" style="margin-top:4px;">
       <label>Comments</label>
       <textarea id="e_comments" rows="3" style="width:100%; border:1px solid #cbd5e1; border-radius:8px; padding:8px 12px; font-family:inherit; font-size:14px; resize:vertical;"></textarea>
@@ -222,7 +222,6 @@
   </div>
 </div>
 
-<!-- QUICK COMMENTS MODAL -->
 <div id="commentModal" class="modal-overlay" onclick="if(event.target===this) document.querySelector('#commentModal').style.display='none'">
   <div class="modal-window" style="max-width: 400px;">
     <button class="modal-close-x" onclick="document.querySelector('#commentModal').style.display='none'">&times;</button>
@@ -231,13 +230,22 @@
       <textarea id="quick_comments" rows="4" style="width:100%; border:1px solid #cbd5e1; border-radius:8px; padding:8px 12px; font-family:inherit; font-size:14px; resize:vertical;"></textarea>
     </div>
     <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:4px;">
-      <button class="btn" style="background:#9ca3af; padding:8px 16px; border-radius:8px;" onclick="document.querySelector('#commentModal').style.display='none'">Cancel</button>
-      <button class="btn" style="padding:8px 16px; border-radius:8px;" onclick="window.saveQuickComment()">Save Changes</button>
+      <button class="btn" style="background:#9ca3af; padding:8px 16px; border-radius:8px;" onclick="document.querySelector('#commentModal').style.display='none'">Close</button>
+      <button id="saveCommentBtn" class="btn" style="padding:8px 16px; border-radius:8px;" onclick="window.saveQuickComment()">Save Changes</button>
     </div>
   </div>
 </div>
 
-<!-- CACHE BUSTER -->
-<script src="app.js?v=10.8"></script>
+<div id="loginModal" class="modal-overlay" onclick="if(event.target===this) document.querySelector('#loginModal').style.display='none'">
+  <div class="modal-window" style="max-width: 350px;">
+    <button class="modal-close-x" onclick="document.querySelector('#loginModal').style.display='none'">&times;</button>
+    <h3 style="margin:0 0 10px 0;">Sign In</h3>
+    <div class="modal-field"><label>E-mail</label><input type="email" id="login_email" placeholder="warehouse@swiftsupply.ca" /></div>
+    <div class="modal-field"><label>Password</label><input type="password" id="login_password" placeholder="••••••••" /></div>
+    <button id="loginBtn" class="btn" style="margin-top:12px; width:100%;" onclick="window.submitLogin()">Sign In</button>
+  </div>
+</div>
+
+<script src="app.js?v=10.9"></script>
 </body>
 </html>
