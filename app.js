@@ -13,6 +13,7 @@ let openMapInstance = null;
 let openMapMarkers = [];
 let hiddenMemory = [];
 let currentCommentTarget = { table: null, id: null };
+let currentUser = null;
 
 try { hiddenMemory = JSON.parse(localStorage.getItem('swift_hidden_memory') || '[]'); } catch(e) {}
 
@@ -158,6 +159,7 @@ window.getDynamicQty = function(prefix) {
 
 window.renderTables = function() {
   const q = $('#q') ? $('#q').value.toLowerCase() : '';
+  const canEdit = !!currentUser;
   const fStaging = appData.staging.filter(o => (o.so||'').toLowerCase().includes(q) || (o.customer||'').toLowerCase().includes(q));
   const fShipped = appData.shipped.filter(o => (o.so||'').toLowerCase().includes(q) || (o.customer||'').toLowerCase().includes(q));
 
@@ -169,11 +171,15 @@ window.renderTables = function() {
       fStaging.slice(0, limitStaging).forEach(o => {
         const geoLink = o.coords ? `<a class="coord-link" href="geo:0,0?q=${encodeURIComponent(o.coords)}" target="_blank">${o.coords}</a>` : '—';
         const picBtn = (o.photo_urls && o.photo_urls.length > 0) ? `<button class="btn" style="padding:4px 8px; font-size:12px; margin-right:4px;" onclick="window.openPhotoViewer('${o.id}')">View</button>` : '';
+        const editBtn = canEdit ? `<button class="btn-edit" onclick="window.openUniversalEditor('staging', '${o.id}')">Edit</button>` : `<span style="color:#9ca3af; font-size:11px;">Read-Only</span>`;
+        const chkBox = canEdit ? `<input type="checkbox" onchange="if(this.checked){ window.triggerShipModal('${o.id}'); this.checked=false; }">` : `<span style="color:#9ca3af;">—</span>`;
+        const commentBtn = o.comments ? `<button class="btn" style="padding:4px 8px; font-size:12px; background:#8b5cf6; color:#fff;" onclick="window.openCommentModal('staging', '${o.id}')">See</button>` : (canEdit ? `<button class="btn" style="padding:4px 8px; font-size:12px; background:#e5e7eb; color:#4b5563;" onclick="window.openCommentModal('staging', '${o.id}')">Add</button>` : `<span style="color:#9ca3af;">—</span>`);
+
         sBody.insertAdjacentHTML('beforeend', `<tr>
-          <td><button class="btn-edit" onclick="window.openUniversalEditor('staging', '${o.id}')">Edit</button></td>
+          <td>${editBtn}</td>
           <td>${picBtn}</td><td><b>${o.so}</b></td><td>${o.customer}</td><td>${new Date(o.entry_date).toLocaleString()}</td><td>${o.type}</td><td>${o.location}</td><td><small>${geoLink}</small></td>
-          <td>${o.weight || '—'}</td><td><button class="btn" style="padding:4px 8px; font-size:12px; background:${o.comments ? '#8b5cf6' : '#e5e7eb'}; color:${o.comments ? '#fff' : '#4b5563'};" onclick="window.openCommentModal('staging', '${o.id}')">${o.comments ? 'See' : 'Add'}</button></td><td>${o.status}</td><td>${o.staged_by||'—'}</td>
-          <td style="position:sticky;right:0;text-align:center;"><input type="checkbox" onchange="if(this.checked){ window.triggerShipModal('${o.id}'); this.checked=false; }"></td></tr>`);
+          <td>${o.weight || '—'}</td><td>${commentBtn}</td><td>${o.status}</td><td>${o.staged_by||'—'}</td>
+          <td style="position:sticky;right:0;text-align:center;">${chkBox}</td></tr>`);
       });
     }
   }
@@ -188,11 +194,14 @@ window.renderTables = function() {
         const isRet = (o.carrier === 'RETURNED TO STOCK' || o.carrier === 'CONSOLIDATED');
         const rowClass = isRet ? 'class="grey-strike"' : '';
         const picBtn = (o.photo_urls && o.photo_urls.length > 0) ? `<button class="btn" style="padding:4px 8px; font-size:12px; margin-right:4px;" onclick="window.openPhotoViewer('${o.id}')">View</button>` : '';
+        const editBtn = canEdit ? `<button class="btn-edit" onclick="window.openUniversalEditor('shipped', '${o.id}')">Edit</button>` : `<span style="color:#9ca3af; font-size:11px;">Read-Only</span>`;
+        const commentBtn = o.comments ? `<button class="btn" style="padding:4px 8px; font-size:12px; background:#8b5cf6; color:#fff;" onclick="window.openCommentModal('shipped', '${o.id}')">See</button>` : (canEdit ? `<button class="btn" style="padding:4px 8px; font-size:12px; background:#e5e7eb; color:#4b5563;" onclick="window.openCommentModal('shipped', '${o.id}')">Add</button>` : `<span style="color:#9ca3af;">—</span>`);
+
         shBody.insertAdjacentHTML('beforeend', `<tr ${rowClass}>
-          <td><button class="btn-edit" onclick="window.openUniversalEditor('shipped', '${o.id}')">Edit</button></td>
+          <td>${editBtn}</td>
           <td>${picBtn}</td>
           <td><b>${o.so}</b></td><td>${o.customer}</td><td>${o.type}</td><td>${o.carrier || '—'}</td><td>${o.location}</td><td><small>${geoLink}</small></td>
-          <td>${o.weight || '—'}</td><td><button class="btn" style="padding:4px 8px; font-size:12px; background:${o.comments ? '#8b5cf6' : '#e5e7eb'}; color:${o.comments ? '#fff' : '#4b5563'};" onclick="window.openCommentModal('shipped', '${o.id}')">${o.comments ? 'See' : 'Add'}</button></td><td>${new Date(o.shipped_at).toLocaleString()}</td><td>${o.shipped_by || '—'}</td><td>${o.pmd_email ? o.pmd_email+(isRet?'':'<span class="green-check"> ✓</span>') : '—'}</td></tr>`);
+          <td>${o.weight || '—'}</td><td>${commentBtn}</td><td>${new Date(o.shipped_at).toLocaleString()}</td><td>${o.shipped_by || '—'}</td><td>${o.pmd_email ? o.pmd_email+(isRet?'':'<span class="green-check"> ✓</span>') : '—'}</td></tr>`);
       });
     }
   }
@@ -602,7 +611,11 @@ window.openCommentModal = function(table, id) {
   const o = appData[table].find(x => x.id === id);
   if(!o) return;
   currentCommentTarget = { table: table, id: id };
-  if($('#quick_comments')) $('#quick_comments').value = o.comments || '';
+  if($('#quick_comments')) {
+    $('#quick_comments').value = o.comments || '';
+    $('#quick_comments').disabled = !currentUser;
+  }
+  if($('#saveCommentBtn')) $('#saveCommentBtn').style.display = currentUser ? 'block' : 'none';
   if($('#commentModal')) $('#commentModal').style.display = 'flex';
 };
 
@@ -615,9 +628,61 @@ window.saveQuickComment = async function() {
   window.loadCloudData();
 };
 
+window.initAuth = async function() {
+  const { data: { session } } = await supabaseClient.auth.getSession();
+  currentUser = session ? session.user : null;
+  window.updateAuthUI();
+
+  supabaseClient.auth.onAuthStateChange((_event, session) => {
+    currentUser = session ? session.user : null;
+    window.updateAuthUI();
+    window.renderTables();
+  });
+};
+
+window.updateAuthUI = function() {
+  if (currentUser) {
+    if($('#authStatus')) $('#authStatus').innerHTML = `<span style="font-size:12px; color:#4b5563; margin-right:8px;">User: <b>${currentUser.email}</b></span> <button class="btn" style="padding:6px 12px; font-size:12px; background:#4b5563;" onclick="window.signOut()">Sign Out</button>`;
+    if($('#entryFormCard')) $('#entryFormCard').style.display = 'block'; 
+  } else {
+    if($('#authStatus')) $('#authStatus').innerHTML = `<button class="btn" style="padding:6px 12px; font-size:12px; margin-right:4px;" onclick="document.querySelector('#loginModal').style.display='flex'">Sign In</button> <button class="btn" style="padding:6px 12px; font-size:12px; background:#0284c7;" onclick="window.requestAccess()">Sign Up</button>`;
+    if($('#entryFormCard')) $('#entryFormCard').style.display = 'none'; 
+  }
+};
+
+window.requestAccess = function() {
+  const subject = encodeURIComponent("Access Request: Swift Staging Tracker");
+  const body = encodeURIComponent("Hello,\n\nI am requesting user access to create and edit entries on the Swift Staging Tracker.\n\nPlease set up an account for me and let me know my login credentials.\n\nThank you.");
+  window.location.href = `mailto:warehouse2@swiftsupply.ca?subject=${subject}&body=${body}`;
+};
+
+window.submitLogin = async function() {
+  const email = $('#login_email').value.trim();
+  const password = $('#login_password').value;
+  if(!email || !password) return alert("Enter email and password.");
+  
+  $('#loginBtn').disabled = true;
+  $('#loginBtn').textContent = 'Signing in...';
+  
+  const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+  
+  $('#loginBtn').disabled = false;
+  $('#loginBtn').textContent = 'Sign In';
+  
+  if(error) { alert("Login Failed: " + error.message); } 
+  else {
+    $('#loginModal').style.display = 'none';
+    $('#login_email').value = '';
+    $('#login_password').value = '';
+  }
+};
+
+window.signOut = async function() { await supabaseClient.auth.signOut(); };
+
 function initApp() {
   window.bootstrapStandalonePWA(); 
   window.initOpenStreetMapEngine(); 
+  window.initAuth();
   window.loadCloudData(); 
   setInterval(window.loadCloudData, 5000); 
 
