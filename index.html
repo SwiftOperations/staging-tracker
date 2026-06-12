@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Swift Staging Tracker — Stable v1.2</title>
+<title>Swift Staging Tracker — Beta v10.9</title>
 <link rel="manifest" href="data:application/manifest+json;charset=utf-8,%7B%22short_name%22%3A%22StagingTracker%22%2C%22name%22%3A%22Swift%20Staging%20Tracker%20Hub%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22https%3A%2F%2Fcdn-icons-png.flaticon.com%2F512%2F3014%2F3014166.png%22%2C%22type%22%3A%22image%22%2C%22sizes%22%3A%22512x512%22%7D%5D%2C%22start_url%22%3A%22.%22%2C%22background_color%22%3A%22%23f6f7f9%22%2C%22theme_color%22%3A%22%23dd4d25%22%2C%22display%22%3A%22standalone%22%2C%22orientation%22%3A%22portrait%22%7D" id="pwa-manifest">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<link rel="stylesheet" href="style.css?v=10.8" />
+<link rel="stylesheet" href="style.css?v=10.9" />
 </head>
 <body>
 <datalist id="dl_customers"></datalist>
@@ -17,7 +17,11 @@
 <datalist id="dl_pastEmails"></datalist>
 
 <div class="wrap">
-  <h1>Swift Staging Tracker — Stable v1.2</h1>
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; flex-wrap:wrap; gap:12px;">
+    <h1 style="margin:0;">Swift Staging Tracker — Beta v10.9</h1>
+    <div id="authStatus"></div>
+  </div>
+
   <div id="err" style="display:none; background:#fee2e2; color:#991b1b; padding:10px; border-radius:10px; margin-bottom:10px"></div>
 
   <div class="grid">
@@ -35,7 +39,7 @@
     <input id="q" placeholder="Quick search SO / Location / Customer..." oninput="window.renderTables()" />
   </div>
 
-  <div class="card" id="entryFormCard">
+  <div class="card" id="entryFormCard" style="display:none;">
     <div class="split"><h3>Enter Staging Information</h3></div>
     <div class="row">
       <div class="photo-options-grid" style="flex: 1 1 180px; margin: 0;">
@@ -60,11 +64,11 @@
       <div id="mainPhotoPreviewStrip" class="photo-strip" style="margin-top:0px;"></div>
       
       <div class="freight-block">
-        <div class="counter-box"><label>Skids</label><div class="counter-controls"><button onclick="window.adjustCount('c_skid',-1)" class="counter-btn">-</button><input id="c_skid" value="0" readonly/><button onclick="window.adjustCount('c_skid',1)" class="counter-btn">+</button></div></div>
-        <div class="counter-box"><label>Boxes</label><div class="counter-controls"><button onclick="window.adjustCount('c_box',-1)" class="counter-btn">-</button><input id="c_box" value="0" readonly/><button onclick="window.adjustCount('c_box',1)" class="counter-btn">+</button></div></div>
-        <div class="counter-box"><label>Crates</label><div class="counter-controls"><button onclick="window.adjustCount('c_crate',-1)" class="counter-btn">-</button><input id="c_crate" value="0" readonly/><button onclick="window.adjustCount('c_crate',1)" class="counter-btn">+</button></div></div>
-        <div class="counter-box"><label>Pipe/Rod</label><div class="counter-controls"><button onclick="window.adjustCount('c_pipe',-1)" class="counter-btn">-</button><input id="c_pipe" value="0" readonly/><button onclick="window.adjustCount('c_pipe',1)" class="counter-btn">+</button></div></div>
-        <div class="counter-box"><label>Other</label><div class="counter-controls"><button onclick="window.adjustCount('c_other',-1)" class="counter-btn">-</button><input id="c_other" value="0" readonly/><button onclick="window.adjustCount('c_other',1)" class="counter-btn">+</button></div></div>
+        <div class="counter-box"><label>Skids</label><div class="counter-controls"><button onclick="window.adjustCount('c_skid',-1)" class="counter-btn">-</button><input id="c_skid" value="0" readonly/><button class="counter-btn" onclick="window.adjustCount('c_skid',1)">+</button></div></div>
+        <div class="counter-box"><label>Boxes</label><div class="counter-controls"><button onclick="window.adjustCount('c_box',-1)" class="counter-btn">-</button><input id="c_box" value="0" readonly/><button class="counter-btn" onclick="window.adjustCount('c_box',1)">+</button></div></div>
+        <div class="counter-box"><label>Crates</label><div class="counter-controls"><button onclick="window.adjustCount('c_crate',-1)" class="counter-btn">-</button><input id="c_crate" value="0" readonly/><button class="counter-btn" onclick="window.adjustCount('c_crate',1)">+</button></div></div>
+        <div class="counter-box"><label>Pipe/Rod</label><div class="counter-controls"><button onclick="window.adjustCount('c_pipe',-1)" class="counter-btn">-</button><input id="c_pipe" value="0" readonly/><button class="counter-btn" onclick="window.adjustCount('c_pipe',1)">+</button></div></div>
+        <div class="counter-box"><label>Other</label><div class="counter-controls"><button onclick="window.adjustCount('c_other',-1)" class="counter-btn">-</button><input id="c_other" value="0" readonly/><button class="counter-btn" onclick="window.adjustCount('c_other',1)">+</button></div></div>
       </div>
       
       <div style="display:flex; flex: 1 1 150px;">
@@ -119,9 +123,6 @@
   </div>
 </div>
 
-<!-- ============================================== -->
-<!-- ALL MODALS INJECTED EXACTLY THE SAME WORLDWIDE -->
-<!-- ============================================== -->
 <div id="returnModal" class="modal-overlay" onclick="if(event.target===this) document.querySelector('#returnModal').style.display='none'">
   <div class="modal-window">
     <button class="modal-close-x" onclick="document.querySelector('#returnModal').style.display='none'">&times;</button>
@@ -230,7 +231,6 @@
       </div>
     </div>
 
-    <!-- COMMENTS APPENDED BEFORE BUTTONS -->
     <div class="modal-field" style="margin-top:4px;">
       <label>Comments</label>
       <textarea id="e_comments" rows="3" style="width:100%; border:1px solid #cbd5e1; border-radius:8px; padding:8px 12px; font-family:inherit; font-size:14px; resize:vertical;"></textarea>
@@ -263,7 +263,7 @@
       <input type="file" id="uploadFile" multiple accept="image/*" style="display:none" onchange="window.addPhotoBlob(this)" />
     </div>
     <div id="photoPreviewStrip" class="photo-strip"></div>
-    <div class="modal-field"><label>SO#</label><input id="m_so" readonly /></div>
+    <div class="modal-field"><label>SO#</label><input id="m_so" readonly oninput="this.value=this.value.replace(/[^0-9]/g,'')"/></div>
     <div class="modal-field"><label>Customer</label><input id="m_cust" readonly /></div>
     <div class="modal-field"><label>Containers</label><input id="m_qty" readonly /></div>
     <div class="modal-field"><label>Carrier</label><input id="m_carrier" placeholder="e.g. Fedex, Manitoulin, Customer Pickup" /></div>
@@ -316,7 +316,6 @@
   </div>
 </div>
 
-<!-- QUICK COMMENTS MODAL -->
 <div id="commentModal" class="modal-overlay" onclick="if(event.target===this) document.querySelector('#commentModal').style.display='none'">
   <div class="modal-window" style="max-width: 400px;">
     <button class="modal-close-x" onclick="document.querySelector('#commentModal').style.display='none'">&times;</button>
@@ -325,12 +324,22 @@
       <textarea id="quick_comments" rows="4" style="width:100%; border:1px solid #cbd5e1; border-radius:8px; padding:8px 12px; font-family:inherit; font-size:14px; resize:vertical;"></textarea>
     </div>
     <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:4px;">
-      <button class="btn" style="background:#9ca3af; padding:8px 16px; border-radius:8px;" onclick="document.querySelector('#commentModal').style.display='none'">Cancel</button>
-      <button class="btn" style="padding:8px 16px; border-radius:8px;" onclick="window.saveQuickComment()">Save Changes</button>
+      <button class="btn" style="background:#9ca3af; padding:8px 16px; border-radius:8px;" onclick="document.querySelector('#commentModal').style.display='none'">Close</button>
+      <button id="saveCommentBtn" class="btn" style="padding:8px 16px; border-radius:8px;" onclick="window.saveQuickComment()">Save Changes</button>
     </div>
   </div>
 </div>
 
-<script src="app.js?v=10.8"></script>
+<div id="loginModal" class="modal-overlay" onclick="if(event.target===this) document.querySelector('#loginModal').style.display='none'">
+  <div class="modal-window" style="max-width: 350px;">
+    <button class="modal-close-x" onclick="document.querySelector('#loginModal').style.display='none'">&times;</button>
+    <h3 style="margin:0 0 10px 0;">Sign In</h3>
+    <div class="modal-field"><label>E-mail</label><input type="email" id="login_email" placeholder="warehouse@swiftsupply.ca" /></div>
+    <div class="modal-field"><label>Password</label><input type="password" id="login_password" placeholder="••••••••" /></div>
+    <button id="loginBtn" class="btn" style="margin-top:12px; width:100%;" onclick="window.submitLogin()">Sign In</button>
+  </div>
+</div>
+
+<script src="app.js?v=10.9"></script>
 </body>
 </html>
