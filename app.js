@@ -430,6 +430,7 @@ window.openBatchConsolidateModal = function(fromSameSo = false) {
     
     const counts = window.parseContainerString(item.type);
     totalSk += counts.sk; totalBx += counts.bx; totalCr += counts.cr; totalPi += counts.pi; totalOt += counts.ot;
+    totalWeight += parseFloat((item.weight || '0').toString().replace(/[^0-9.]/g, '')) || 0;
     if(item.photo_urls) photoUrls.push(...item.photo_urls);
   });
   
