@@ -441,6 +441,7 @@ window.openBatchConsolidateModal = function(fromSameSo = false) {
   $('#bc_so').value = firstItem.so || '';
   $('#bc_cust').value = firstItem.customer || '';
   $('#bc_skid').value = totalSk; $('#bc_box').value = totalBx; $('#bc_crate').value = totalCr; $('#bc_pipe').value = totalPi; $('#bc_other').value = totalOt;
+  $('#bc_weight').value = totalWeight > 0 ? totalWeight.toLocaleString('en-US') : '';
   $('#bc_loc').value = ''; $('#bc_coords').value = ''; $('#bc_comments').value = ''; 
   $('#bc_status').value = 'Partial';
   $('#bc_staged_by').value = currentUser ? (currentUser.email.split('@')[0]) : '';
