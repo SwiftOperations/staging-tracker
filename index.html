@@ -425,8 +425,8 @@
   <div class="modal-window" style="max-width: 350px;">
     <button class="modal-close-x" onclick="document.querySelector('#loginModal').style.display='none'">&times;</button>
     <h3 style="margin:0 0 10px 0;">Sign In</h3>
-    <div class="modal-field"><label>E-mail</label><input type="email" id="login_email" placeholder="warehouse@swiftsupply.ca" /></div>
-    <div class="modal-field"><label>Password</label><input type="password" id="login_password" placeholder="••••••••" /></div>
+    <div class="modal-field"><label>E-mail</label><input type="email" id="login_email" autocomplete="username" placeholder="warehouse@swiftsupply.ca" /></div>
+    <div class="modal-field"><label>Password</label><input type="password" id="login_password" autocomplete="current-password" placeholder="••••••••" /></div>
     <button id="loginBtn" class="btn" style="margin-top:12px; width:100%;" onclick="window.submitLogin()">Sign In</button>
   </div>
 </div>
