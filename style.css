@@ -46,7 +46,8 @@ input:disabled, select:disabled, button:disabled, textarea:disabled { background
 .chk-row { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; }
 .split { display: flex; justify-content: space-between; align-items: center; }
 
-.tblwrap, .table-wrap { border: 1px solid #e6e7eb; border-radius: 12px; overflow: auto; background: #fff; }
+.tblwrap { border: 1px solid #e6e7eb; border-radius: 12px; overflow: hidden; background: #fff; }
+.table-wrap { border: 1px solid #e6e7eb; border-radius: 12px; overflow: auto; background: #fff; max-height: calc(100vh - 140px); }
 .tbl-scroller { max-height: 320px; overflow-x: auto; overflow-y: auto; position: relative; }
 table { width: 100%; border-collapse: separate; border-spacing: 0; min-width: 1250px; }
 thead th { position: sticky; top: 0; background: #fafafa; border-bottom: 1px solid #e6e7eb; font-size: 13px; text-align: left; padding: 10px; z-index: 10; }
