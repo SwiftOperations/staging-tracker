@@ -387,7 +387,7 @@
     </div>
     
     <div class="modal-field"><label>Coords</label><input id="bc_coords" readonly onclick="window.fetchBrowserGPS('bc_coords')" style="background:#fafafa; cursor:pointer;" placeholder="Tap to update coordinates" /></div>
-    
+    <div class="modal-field"><label>Total Weight (in lbs)</label><input id="bc_weight" oninput="window.formatWeight(this)" /></div>
     <div class="modal-field"><label>Status</label>
       <select id="bc_status"><option>Partial</option><option>Ship Today</option><option>Ship Tomorrow</option><option>Ship On Future Date</option><option>Corp Pick (Not Consolidated)</option><option>Customer Pick-Up</option><option>Awaiting Shipping Instructions</option></select>
     </div>
