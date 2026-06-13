@@ -467,7 +467,7 @@ window.executeBatchConsolidate = async function() {
   try {
     const { error: insErr } = await supabaseClient.from('staging').insert([{
       so: $('#bc_so').value.trim(), customer: $('#bc_cust').value.trim(), status: $('#bc_status').value, 
-      location: $('#bc_loc').value.trim(), coords: $('#bc_coords').value.trim(), weight: '', comments: $('#bc_comments').value.trim(), 
+      location: $('#bc_loc').value.trim(), coords: $('#bc_coords').value.trim(), weight: $('#bc_weight').value.trim(), comments: $('#bc_comments').value.trim(), 
       staged_by: $('#bc_staged_by').value.trim() + ' (Consolidated)', type: dynamicType, qty: dynamicQty, photo_urls: photoUrls
     }]);
     if(insErr) throw insErr;
