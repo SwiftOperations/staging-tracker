@@ -60,6 +60,12 @@ input[type="checkbox"] { width: 13px; height: 13px; cursor: pointer; transform: 
 .coord-link:hover { text-decoration: underline; }
 .grey-strike { color: #9ca3af; text-decoration: line-through; }
 
+/* BATCH MODE CSS */
+.batch-mode .hide-in-batch { display: none !important; }
+.batch-mode .show-in-batch { display: table-cell !important; }
+.show-in-batch { display: none; }
+.batch-header-btns button { border: 1px solid #cbd5e1; border-radius: 4px; padding: 2px 4px; cursor: pointer; font-weight: bold; width: 100%; margin-bottom: 2px; }
+
 @media (max-width: 600px) {
   .grid { grid-template-columns: repeat(2, 1fr); }
   table { min-width: 950px; } 
