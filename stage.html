@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Staging Entries Expanded Log — Stable v1.3</title>
+<title>Staging Entries Expanded Log — Beta v10.10</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<link rel="stylesheet" href="style.css?v=10.9" />
+<link rel="stylesheet" href="style.css?v=10.10" />
 </head>
 <body>
 <datalist id="dl_customers"></datalist>
@@ -14,21 +14,36 @@
 
 <div class="wrap">
   <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; flex-wrap:wrap; gap:12px;">
-    <h2 style="margin:0;">Expanded Log — Beta v10.9</h2>
+    <h2 style="margin:0;">Expanded Log — Beta v10.10</h2>
     <div id="authStatus"></div>
   </div>
 
-  <div class="actions">
-    <button class="btn" onclick="window.print()">Print Log</button>
-    <button class="btn" style="background:#4b5563;" onclick="window.close()">Close Window</button>
-    <input id="q" placeholder="Quick filter contents..." oninput="if(typeof window.renderTables === 'function') window.renderTables()"/>
+  <div class="actions" style="justify-content:space-between; flex-wrap:wrap;">
+    <div style="display:flex; gap:8px;">
+      <button class="btn" style="background:#8b5cf6;" onclick="window.toggleBatchMode()">Batch Consolidate</button>
+      <button class="btn" onclick="window.print()">Print Log</button>
+      <button class="btn" style="background:#4b5563;" onclick="window.close()">Close Window</button>
+    </div>
+    <input id="q" placeholder="Quick filter..." style="max-width:250px;" oninput="if(typeof window.renderTables === 'function') window.renderTables()"/>
   </div>
   <div class="table-wrap"><table id="tblStaging">
-    <thead><tr><th>Edit</th><th>Photo(s)</th><th>SO</th><th>Customer</th><th>Entry Date</th><th>Containers</th><th>Location</th><th>Coords</th><th>Total Weight (in lbs)</th><th>Comments</th><th>Status</th><th>Staged By</th><th style="position:sticky;right:0;width:70px;text-align:center;">Shipped</th></tr></thead>
+    <thead><tr>
+      <th class="show-in-batch" style="width:70px; background:#fafafa; padding:4px;">
+        <div class="batch-header-btns" style="display:flex; flex-direction:column; gap:4px; text-align:center;">
+          <button onclick="window.batchSelectAll()" style="font-size:10px; background:#fff; color:#4b5563;">Select All</button>
+          <button onclick="window.batchCancel()" style="font-size:10px; background:#fee2e2; color:#dc2626; border-color:#fca5a5;">Cancel</button>
+          <button onclick="window.openBatchConsolidateModal(false)" style="font-size:10px; background:var(--brand); color:#fff; border-color:var(--brand);">Consolidate</button>
+        </div>
+      </th>
+      <th class="hide-in-batch">Edit</th><th class="hide-in-batch">Photo(s)</th><th>SO</th><th>Customer</th><th>Entry Date</th><th>Containers</th><th>Location</th><th>Coords</th><th>Total Weight (in lbs)</th><th class="hide-in-batch">Comments</th><th>Status</th><th>Staged By</th><th class="hide-in-batch" style="position:sticky;right:0;width:70px;text-align:center;">Shipped</th>
+    </tr></thead>
     <tbody></tbody>
   </table></div>
 </div>
 
+<!-- ============================================== -->
+<!-- ALL MODALS INJECTED EXACTLY THE SAME WORLDWIDE -->
+<!-- ============================================== -->
 <div id="returnModal" class="modal-overlay" onclick="if(event.target===this) document.querySelector('#returnModal').style.display='none'">
   <div class="modal-window">
     <button class="modal-close-x" onclick="document.querySelector('#returnModal').style.display='none'">&times;</button>
@@ -147,7 +162,7 @@
         <button id="editDelBtn" class="btn" style="background:#dc2626; padding: 10px 16px; border-radius: 8px; border: 0; color: #fff; font-weight: 700; cursor: pointer;" onclick="window.deleteCurrentRecord()">Delete</button>
         <button id="editUndoBtn" class="btn" style="background:#4b5563; padding: 10px 16px; border-radius: 8px; border: 0; color: #fff; font-weight: 700; cursor: pointer;" onclick="window.executeShippedUndo()">Undo Shipment Action</button>
         <button id="editReturnBtn" class="btn" style="background:#eab308; color:#222; padding: 10px 16px; border-radius: 8px; border: 0; font-weight:700; cursor:pointer;" onclick="window.triggerReturnModal()">Return to Stock</button>
-        <button id="editConsolidateBtn" class="btn" style="background:#8b5cf6; color:#fff; padding: 10px 16px; border-radius: 8px; border: 0; font-weight:700; cursor:pointer;" onclick="window.executeConsolidate()">Consolidated</button>
+        <button id="editConsolidateBtn" class="btn" style="background:#8b5cf6; color:#fff; padding: 10px 16px; border-radius: 8px; border: 0; font-weight:700; cursor:pointer;" onclick="window.openSameSoModal()">Consolidate</button>
       </span>
       <span style="display:flex; gap:8px; margin-left:auto; flex-wrap: wrap;">
         <button class="btn" style="background:#9ca3af; border-radius: 8px; padding: 10px 16px; border: 0; color:#fff; font-weight:700; cursor:pointer;" onclick="document.querySelector('#editModal').style.display='none'">Cancel</button>
@@ -222,6 +237,78 @@
   </div>
 </div>
 
+<!-- SAME SO MODAL -->
+<div id="sameSoModal" class="modal-overlay" onclick="if(event.target===this) window.sameSoCancel()">
+  <div class="modal-window" style="max-width: 950px;">
+    <button class="modal-close-x" onclick="window.sameSoCancel()">&times;</button>
+    <h3 style="margin:0 0 10px 0;">Consolidate Matching SOs</h3>
+    <div class="table-wrap" style="max-height: 300px; overflow-y: auto;">
+      <table id="tblSameSo">
+        <thead><tr>
+          <th style="width:70px; background:#fafafa; padding:4px;">
+            <div class="batch-header-btns" style="display:flex; flex-direction:column; gap:4px; text-align:center;">
+              <button onclick="window.sameSoSelectAll()" style="font-size:10px; background:#fff; color:#4b5563;">Select All</button>
+              <button onclick="window.sameSoCancel()" style="font-size:10px; background:#fee2e2; color:#dc2626; border-color:#fca5a5;">Cancel</button>
+            </div>
+          </th>
+          <th>SO</th><th>Customer</th><th>Entry Date</th><th>Containers</th><th>Location</th><th>Coords</th><th>Weight</th><th>Status</th><th>Staged By</th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:8px;">
+      <button class="btn" style="background:#8b5cf6;" onclick="window.openBatchConsolidateModal(true)">Consolidate</button>
+    </div>
+  </div>
+</div>
+
+<!-- BATCH CONSOLIDATE MODAL -->
+<div id="batchConsolidateModal" class="modal-overlay" onclick="if(event.target===this) document.querySelector('#batchConsolidateModal').style.display='none'">
+  <div class="modal-window">
+    <button class="modal-close-x" onclick="document.querySelector('#batchConsolidateModal').style.display='none'">&times;</button>
+    <h3 style="margin:0 0 10px 0;">Configure Consolidation</h3>
+    <input type="hidden" id="bc_source" />
+    <input type="hidden" id="bc_photo_urls" />
+    
+    <div class="modal-field"><label>SO#</label><input id="bc_so" readonly style="background:#f9fafb; color:#9ca3af;"/></div>
+    <div class="modal-field"><label>Customer</label><input id="bc_cust" readonly style="background:#f9fafb; color:#9ca3af;"/></div>
+    
+    <label style="font-size:12px; font-weight:700; color:#4b5563; margin-top:8px; margin-bottom:-4px;">Combined Containers (Editable)</label>
+    <div class="freight-block">
+      <div class="counter-box"><label>Skids</label><div class="counter-controls"><button class="counter-btn" onclick="window.adjustEditCount('bc_skid',-1)">-</button><input id="bc_skid" value="0" readonly/><button class="counter-btn" onclick="window.adjustEditCount('bc_skid',1)">+</button></div></div>
+      <div class="counter-box"><label>Boxes</label><div class="counter-controls"><button class="counter-btn" onclick="window.adjustEditCount('bc_box',-1)">-</button><input id="bc_box" value="0" readonly/><button class="counter-btn" onclick="window.adjustEditCount('bc_box',1)">+</button></div></div>
+      <div class="counter-box"><label>Crates</label><div class="counter-controls"><button class="counter-btn" onclick="window.adjustEditCount('bc_crate',-1)">-</button><input id="bc_crate" value="0" readonly/><button class="counter-btn" onclick="window.adjustEditCount('bc_crate',1)">+</button></div></div>
+      <div class="counter-box"><label>Pipe/Rod</label><div class="counter-controls"><button class="counter-btn" onclick="window.adjustEditCount('bc_pipe',-1)">-</button><input id="bc_pipe" value="0" readonly/><button class="counter-btn" onclick="window.adjustEditCount('bc_pipe',1)">+</button></div></div>
+      <div class="counter-box"><label>Other</label><div class="counter-controls"><button class="counter-btn" onclick="window.adjustEditCount('bc_other',-1)">-</button><input id="bc_other" value="0" readonly/><button class="counter-btn" onclick="window.adjustEditCount('bc_other',1)">+</button></div></div>
+    </div>
+
+    <div class="modal-field"><label>Consolidated Location</label>
+      <div style="display:flex; width:100%;">
+        <input id="bc_loc" list="dl_locations" style="border-top-right-radius:0; border-bottom-right-radius:0; border-right:0;" />
+        <button type="button" onclick="window.banishMemory('bc_loc')" style="height:42px; width:36px; flex:none; background:#f8fafc; border:1px solid #cbd5e1; border-top-right-radius:8px; border-bottom-right-radius:8px; color:#dc2626; font-weight:bold; font-size:18px; cursor:pointer;">&times;</button>
+      </div>
+    </div>
+    
+    <div class="modal-field"><label>Coords</label><input id="bc_coords" readonly onclick="window.fetchBrowserGPS('bc_coords')" style="background:#fafafa; cursor:pointer;" placeholder="Tap to update coordinates" /></div>
+    
+    <div class="modal-field"><label>Status</label>
+      <select id="bc_status"><option>Partial</option><option>Ship Today</option><option>Ship Tomorrow</option><option>Ship On Future Date</option><option>Corp Pick (Not Consolidated)</option><option>Customer Pick-Up</option><option>Awaiting Shipping Instructions</option></select>
+    </div>
+    
+    <div class="modal-field"><label>Consolidated By</label>
+      <div style="display:flex; width:100%;">
+        <input id="bc_staged_by" list="dl_stagers" style="border-top-right-radius:0; border-bottom-right-radius:0; border-right:0;" />
+        <button type="button" onclick="window.banishMemory('bc_staged_by')" style="height:42px; width:36px; flex:none; background:#f8fafc; border:1px solid #cbd5e1; border-top-right-radius:8px; border-bottom-right-radius:8px; color:#dc2626; font-weight:bold; font-size:18px; cursor:pointer;">&times;</button>
+      </div>
+    </div>
+    
+    <div class="modal-field"><label>Comments</label><textarea id="bc_comments" rows="2" style="width:100%; border:1px solid #cbd5e1; border-radius:8px; padding:8px 12px; font-family:inherit; resize:vertical;"></textarea></div>
+
+    <button id="btnConfirmBc" class="btn" style="margin-top:12px; width:100%; background:var(--brand);" onclick="window.executeBatchConsolidate()">Confirm Consolidation</button>
+  </div>
+</div>
+
+<!-- QUICK COMMENTS MODAL -->
 <div id="commentModal" class="modal-overlay" onclick="if(event.target===this) document.querySelector('#commentModal').style.display='none'">
   <div class="modal-window" style="max-width: 400px;">
     <button class="modal-close-x" onclick="document.querySelector('#commentModal').style.display='none'">&times;</button>
@@ -236,6 +323,7 @@
   </div>
 </div>
 
+<!-- LOGIN MODAL -->
 <div id="loginModal" class="modal-overlay" onclick="if(event.target===this) document.querySelector('#loginModal').style.display='none'">
   <div class="modal-window" style="max-width: 350px;">
     <button class="modal-close-x" onclick="document.querySelector('#loginModal').style.display='none'">&times;</button>
@@ -246,6 +334,7 @@
   </div>
 </div>
 
-<script src="app.js?v=10.9"></script>
+<!-- CACHE BUSTER -->
+<script src="app.js?v=10.10"></script>
 </body>
 </html>
