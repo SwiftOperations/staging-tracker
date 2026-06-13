@@ -15,6 +15,11 @@ let hiddenMemory = [];
 let currentCommentTarget = { table: null, id: null };
 let currentUser = null;
 
+let isBatchMode = new URLSearchParams(window.location.search).get('batch') === 'true';
+let batchSelectedIds = new Set();
+let isSameSoMode = false;
+let sameSoSelectedIds = new Set();
+
 try { hiddenMemory = JSON.parse(localStorage.getItem('swift_hidden_memory') || '[]'); } catch(e) {}
 
 window.bootstrapStandalonePWA = function() {
@@ -107,8 +112,10 @@ window.loadCloudData = async function() {
       supabaseClient.from('staging').select('*').order('entry_date', { ascending: false }),
       supabaseClient.from('shipped').select('*').order('shipped_at', { ascending: false })
     ]);
-    appData.staging = st.data || []; 
-    appData.shipped = sh.data || [];
+    
+    // Ignore null pulls to prevent desktop background tab wiping
+    if (!st.error && st.data) appData.staging = st.data; 
+    if (!sh.error && sh.data) appData.shipped = sh.data;
     
     const allData = [...appData.staging, ...appData.shipped];
     const filterMem = (arr) => [...new Set(arr.filter(Boolean))].filter(x => !hiddenMemory.includes(x));
@@ -174,12 +181,14 @@ window.renderTables = function() {
         const editBtn = canEdit ? `<button class="btn-edit" onclick="window.openUniversalEditor('staging', '${o.id}')">Edit</button>` : `<span style="color:#9ca3af; font-size:11px;">Read-Only</span>`;
         const chkBox = canEdit ? `<input type="checkbox" onchange="if(this.checked){ window.triggerShipModal('${o.id}'); this.checked=false; }">` : `<span style="color:#9ca3af;">—</span>`;
         const commentBtn = o.comments ? `<button class="btn" style="padding:4px 8px; font-size:12px; background:#8b5cf6; color:#fff;" onclick="window.openCommentModal('staging', '${o.id}')">See</button>` : (canEdit ? `<button class="btn" style="padding:4px 8px; font-size:12px; background:#e5e7eb; color:#4b5563;" onclick="window.openCommentModal('staging', '${o.id}')">Add</button>` : `<span style="color:#9ca3af;">—</span>`);
+        const batchChk = `<input type="checkbox" style="width:16px;height:16px;" onchange="window.toggleBatchSelect('${o.id}', this.checked)" ${batchSelectedIds.has(o.id) ? 'checked' : ''}>`;
 
         sBody.insertAdjacentHTML('beforeend', `<tr>
-          <td>${editBtn}</td>
-          <td>${picBtn}</td><td><b>${o.so}</b></td><td>${o.customer}</td><td>${new Date(o.entry_date).toLocaleString()}</td><td>${o.type}</td><td>${o.location}</td><td><small>${geoLink}</small></td>
-          <td>${o.weight || '—'}</td><td>${commentBtn}</td><td>${o.status}</td><td>${o.staged_by||'—'}</td>
-          <td style="position:sticky;right:0;text-align:center;">${chkBox}</td></tr>`);
+          <td class="show-in-batch" style="text-align:center;">${batchChk}</td>
+          <td class="hide-in-batch">${editBtn}</td>
+          <td class="hide-in-batch">${picBtn}</td><td><b>${o.so}</b></td><td>${o.customer}</td><td>${new Date(o.entry_date).toLocaleString()}</td><td>${o.type}</td><td>${o.location}</td><td><small>${geoLink}</small></td>
+          <td>${o.weight || '—'}</td><td class="hide-in-batch">${commentBtn}</td><td>${o.status}</td><td>${o.staged_by||'—'}</td>
+          <td class="hide-in-batch" style="position:sticky;right:0;text-align:center;">${chkBox}</td></tr>`);
       });
     }
   }
@@ -339,21 +348,138 @@ window.submitReturnToStock = async function() {
   } catch(err) { alert("Return to Stock error: " + err.message); }
 };
 
-window.executeConsolidate = async function() {
-  if(!confirm("Are you sure you want to mark this order as Consolidated?")) return;
-  try {
-    const e = appData.staging.find(x => x.id === currentEditId);
-    const { error: insertError } = await supabaseClient.from('shipped').insert([{
-      so: e.so, customer: $('#e_cust').value.trim(), type: window.getDynamicType('e'), qty: window.getDynamicQty('e'),
-      carrier: 'CONSOLIDATED', location: $('#e_loc').value.trim(), coords: $('#e_coords').value.trim(),
-      weight: $('#e_weight').value.trim(), comments: e.comments, shipped_by: $('#e_staged_by').value.trim(), pmd_email: null, photo_urls: editTargetRecord.photo_urls
-    }]); 
-    if(insertError) throw insertError;
+window.toggleBatchMode = function() {
+  isBatchMode = !isBatchMode;
+  batchSelectedIds.clear();
+  document.body.classList.toggle('batch-mode', isBatchMode);
+  window.renderTables();
+};
+
+window.toggleBatchSelect = function(id, isChecked) {
+  if (isChecked) batchSelectedIds.add(id); else batchSelectedIds.delete(id);
+};
+
+window.batchSelectAll = function() {
+  const q = $('#q') ? $('#q').value.toLowerCase() : '';
+  const fStaging = appData.staging.filter(o => (o.so||'').toLowerCase().includes(q) || (o.customer||'').toLowerCase().includes(q));
+  fStaging.forEach(o => batchSelectedIds.add(o.id));
+  window.renderTables();
+};
+
+window.batchCancel = function() {
+  isBatchMode = false;
+  batchSelectedIds.clear();
+  document.body.classList.remove('batch-mode');
+  window.renderTables();
+};
+
+window.openSameSoModal = function() {
+  if(!currentEditId) return;
+  const target = appData.staging.find(x => x.id === currentEditId);
+  if(!target) return;
+  $('#editModal').style.display = 'none';
+  
+  isSameSoMode = true;
+  sameSoSelectedIds.clear();
+  const matchingItems = appData.staging.filter(x => x.so === target.so);
+  matchingItems.forEach(o => sameSoSelectedIds.add(o.id));
+  
+  const tBody = $('#tblSameSo tbody');
+  tBody.innerHTML = '';
+  matchingItems.forEach(o => {
+    const geoLink = o.coords ? o.coords : '—';
+    tBody.insertAdjacentHTML('beforeend', `<tr style="color:#6b7280;">
+      <td style="text-align:center;"><input type="checkbox" style="width:16px;height:16px;" onchange="window.toggleSameSoSelect('${o.id}', this.checked)" checked></td>
+      <td><b>${o.so}</b></td><td>${o.customer}</td><td>${new Date(o.entry_date).toLocaleString()}</td><td>${o.type}</td><td>${o.location}</td><td><small>${geoLink}</small></td>
+      <td>${o.weight || '—'}</td><td>${o.status}</td><td>${o.staged_by||'—'}</td></tr>`);
+  });
+  $('#sameSoModal').style.display = 'flex';
+};
+
+window.toggleSameSoSelect = function(id, isChecked) {
+  if(isChecked) sameSoSelectedIds.add(id); else sameSoSelectedIds.delete(id);
+};
+
+window.sameSoSelectAll = function() {
+  const target = appData.staging.find(x => x.id === currentEditId);
+  appData.staging.filter(x => x.so === target.so).forEach(o => sameSoSelectedIds.add(o.id));
+  window.openSameSoModal(); 
+};
+
+window.sameSoCancel = function() {
+  isSameSoMode = false;
+  sameSoSelectedIds.clear();
+  $('#sameSoModal').style.display = 'none';
+};
+
+window.openBatchConsolidateModal = function(fromSameSo = false) {
+  const selectedSet = fromSameSo ? sameSoSelectedIds : batchSelectedIds;
+  if(selectedSet.size === 0) return alert("Select at least one order to consolidate.");
+  
+  let firstItem = null;
+  let conflict = false;
+  let totalSk = 0, totalBx = 0, totalCr = 0, totalPi = 0, totalOt = 0;
+  let photoUrls = [];
+  
+  selectedSet.forEach(id => {
+    const item = appData.staging.find(x => x.id === id);
+    if(!item) return;
+    if(!firstItem) firstItem = item;
+    else if(item.so !== firstItem.so || item.customer !== firstItem.customer) conflict = true;
     
-    await supabaseClient.from('staging').delete().eq('id', currentEditId);
-    if($('#editModal')) $('#editModal').style.display='none';
+    const counts = window.parseContainerString(item.type);
+    totalSk += counts.sk; totalBx += counts.bx; totalCr += counts.cr; totalPi += counts.pi; totalOt += counts.ot;
+    if(item.photo_urls) photoUrls.push(...item.photo_urls);
+  });
+  
+  if(conflict) {
+    if(!confirm("Warning: Selected orders have differing SO or Customer names. Do you want to continue to the consolidation screen?")) return;
+  }
+  
+  $('#bc_so').value = firstItem.so || '';
+  $('#bc_cust').value = firstItem.customer || '';
+  $('#bc_skid').value = totalSk; $('#bc_box').value = totalBx; $('#bc_crate').value = totalCr; $('#bc_pipe').value = totalPi; $('#bc_other').value = totalOt;
+  $('#bc_loc').value = ''; $('#bc_coords').value = ''; $('#bc_comments').value = ''; 
+  $('#bc_status').value = 'Partial';
+  $('#bc_staged_by').value = currentUser ? (currentUser.email.split('@')[0]) : '';
+  $('#bc_photo_urls').value = JSON.stringify(photoUrls); 
+  $('#bc_source').value = fromSameSo ? 'sameso' : 'batch';
+  
+  if(fromSameSo) $('#sameSoModal').style.display = 'none';
+  $('#batchConsolidateModal').style.display = 'flex';
+};
+
+window.executeBatchConsolidate = async function() {
+  const fromSameSo = $('#bc_source').value === 'sameso';
+  const selectedSet = fromSameSo ? sameSoSelectedIds : batchSelectedIds;
+  if(selectedSet.size === 0) return;
+  
+  const dynamicType = window.getDynamicType('bc');
+  const dynamicQty = window.getDynamicQty('bc');
+  const photoUrls = JSON.parse($('#bc_photo_urls').value || '[]');
+
+  $('#btnConfirmBc').disabled = true;
+  $('#btnConfirmBc').textContent = 'Consolidating...';
+
+  try {
+    const { error: insErr } = await supabaseClient.from('staging').insert([{
+      so: $('#bc_so').value.trim(), customer: $('#bc_cust').value.trim(), status: $('#bc_status').value, 
+      location: $('#bc_loc').value.trim(), coords: $('#bc_coords').value.trim(), weight: '', comments: $('#bc_comments').value.trim(), 
+      staged_by: $('#bc_staged_by').value.trim() + ' (Consolidated)', type: dynamicType, qty: dynamicQty, photo_urls: photoUrls
+    }]);
+    if(insErr) throw insErr;
+    
+    for(let id of selectedSet) {
+      await supabaseClient.from('staging').delete().eq('id', id);
+    }
+    
+    $('#batchConsolidateModal').style.display = 'none';
+    if(fromSameSo) window.sameSoCancel(); else window.batchCancel();
     window.loadCloudData();
-  } catch(err) { alert("Consolidate error: " + err.message); }
+  } catch(e) { alert("Consolidation error: " + e.message); }
+  
+  $('#btnConfirmBc').disabled = false;
+  $('#btnConfirmBc').textContent = 'Confirm Consolidation';
 };
 
 window.renderEditPhotoStrip = function() {
@@ -593,7 +719,7 @@ window.submitStagingEntry = async function() {
     const { error } = await supabaseClient.from('staging').insert([{ so: $('#so').value.trim(), customer: $('#customer').value.trim(), status: $('#status').value, location: $('#loc').value.trim(), coords: $('#coords').value.trim(), weight: $('#weight').value.trim(), comments: $('#comments').value.trim(), staged_by: $('#staged_by').value.trim(), type: type.join(', '), qty: sk+bx+cr+pi+ot, photo_urls: photoUrls }]);
     
     if (error) {
-      alert("Database Error: " + error.message + "\n\nIMPORTANT: Did you add the 'comments' column to your Supabase tables?");
+      alert("Database Error: " + error.message);
       $('#add').disabled = false; $('#add').textContent = 'Add'; return;
     }
     
@@ -683,6 +809,7 @@ function initApp() {
   window.bootstrapStandalonePWA(); 
   window.initOpenStreetMapEngine(); 
   window.initAuth();
+  if (isBatchMode) document.body.classList.add('batch-mode');
   window.loadCloudData(); 
   setInterval(window.loadCloudData, 5000); 
 
