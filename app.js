@@ -419,6 +419,7 @@ window.openBatchConsolidateModal = function(fromSameSo = false) {
   let firstItem = null;
   let conflict = false;
   let totalSk = 0, totalBx = 0, totalCr = 0, totalPi = 0, totalOt = 0;
+  let totalWeight = 0;
   let photoUrls = [];
   
   selectedSet.forEach(id => {
