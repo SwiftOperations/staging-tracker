@@ -11,7 +11,7 @@ window.toggleBatchSelect = function(id, isChecked) {
 
 window.batchSelectAll = function() {
   const q = $('#q') ? $('#q').value.toLowerCase() : '';
-  const fStaging = appData.staging.filter(o => (o.so||'').toLowerCase().includes(q) || (o.customer||'').toLowerCase().includes(q));
+    const fStaging = appData.staging.filter(o => (o.so||'').toLowerCase().includes(q) || (o.customer||'').toLowerCase().includes(q) || (o.location||'').toLowerCase().includes(q));
   fStaging.forEach(o => batchSelectedIds.add(o.id));
   window.renderTables();
 };
