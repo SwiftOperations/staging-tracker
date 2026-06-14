@@ -251,10 +251,10 @@ window.openOrdersModal = function() {
     groups[so].forEach(o => {
       // Shuffled Date to column 4, and tightened vertical row padding
       tbody.insertAdjacentHTML('beforeend', `
-        <tr class="sub_so_${safeId}" style="display:none; font-size:12px; background:#fff;">
+                <tr class="sub_so_${safeId}" style="display:none; font-size:12px; background:#fff;">
           <td style="padding: 6px 12px 6px 24px; color:#4b5563;">↳ ${o.customer}</td>
-          <td style="padding: 6px 12px;">${o.type}</td>
-          <td style="padding: 6px 12px;">${o.location}</td>
+          <td style="padding: 6px 12px; white-space: nowrap;">${o.type}</td>
+          <td style="padding: 6px 12px; white-space: nowrap;">${o.location}</td>
           <td style="padding: 6px 12px; color:#6b7280; text-align:right; white-space:nowrap;">${new Date(o.entry_date).toLocaleString()}</td>
         </tr>
       `);
