@@ -53,8 +53,9 @@ window.getDynamicQty = function(prefix) {
 window.renderTables = function() {
   const q = $('#q') ? $('#q').value.toLowerCase() : '';
   const canEdit = !!currentUser;
-  const fStaging = appData.staging.filter(o => (o.so||'').toLowerCase().includes(q) || (o.customer||'').toLowerCase().includes(q));
-  const fShipped = appData.shipped.filter(o => (o.so||'').toLowerCase().includes(q) || (o.customer||'').toLowerCase().includes(q));
+    const fStaging = appData.staging.filter(o => (o.so||'').toLowerCase().includes(q) || (o.customer||'').toLowerCase().includes(q) || (o.location||'').toLowerCase().includes(q));
+  const fShipped = appData.shipped.filter(o => (o.so||'').toLowerCase().includes(q) || (o.customer||'').toLowerCase().includes(q) || (o.location||'').toLowerCase().includes(q));
+
 
   if($('#tblStaging')) {
     const sBody = $('#tblStaging').querySelector('tbody'); 
