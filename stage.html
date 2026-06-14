@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Staging Entries Expanded Log — Stable v1.4</title>
+<title>Staging Entries Expanded Log — Beta v10.11</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<link rel="stylesheet" href="style.css?v=10.10" />
+<link rel="stylesheet" href="style.css?v=10.11" />
 </head>
 <body>
 <datalist id="dl_customers"></datalist>
@@ -14,7 +14,7 @@
 
 <div class="wrap">
   <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; flex-wrap:wrap; gap:12px;">
-    <h2 style="margin:0;">Expanded Log — Stable v1.4</h2>
+    <h2 style="margin:0;">Expanded Log — Beta v10.11</h2>
     <div id="authStatus"></div>
   </div>
 
@@ -41,9 +41,6 @@
   </table></div>
 </div>
 
-<!-- ============================================== -->
-<!-- ALL MODALS INJECTED EXACTLY THE SAME WORLDWIDE -->
-<!-- ============================================== -->
 <div id="returnModal" class="modal-overlay" onclick="if(event.target===this) document.querySelector('#returnModal').style.display='none'">
   <div class="modal-window">
     <button class="modal-close-x" onclick="document.querySelector('#returnModal').style.display='none'">&times;</button>
@@ -119,7 +116,6 @@
     </div>
     
     <div class="modal-field"><label>Coords</label><input id="e_coords" readonly onclick="window.fetchBrowserGPS('e_coords')" style="background:#fafafa; cursor:pointer;" placeholder="Tap to update coordinates" /></div>
-    
     <div class="modal-field"><label>Total Weight (in lbs)</label><input id="e_weight" oninput="window.formatWeight(this)" /></div>
     
     <div id="editStagingFields">
@@ -237,7 +233,6 @@
   </div>
 </div>
 
-<!-- SAME SO MODAL -->
 <div id="sameSoModal" class="modal-overlay" onclick="if(event.target===this) window.sameSoCancel()">
   <div class="modal-window" style="max-width: 950px;">
     <button class="modal-close-x" onclick="window.sameSoCancel()">&times;</button>
@@ -262,7 +257,6 @@
   </div>
 </div>
 
-<!-- BATCH CONSOLIDATE MODAL -->
 <div id="batchConsolidateModal" class="modal-overlay" onclick="if(event.target===this) document.querySelector('#batchConsolidateModal').style.display='none'">
   <div class="modal-window">
     <button class="modal-close-x" onclick="document.querySelector('#batchConsolidateModal').style.display='none'">&times;</button>
@@ -308,7 +302,6 @@
   </div>
 </div>
 
-<!-- QUICK COMMENTS MODAL -->
 <div id="commentModal" class="modal-overlay" onclick="if(event.target===this) document.querySelector('#commentModal').style.display='none'">
   <div class="modal-window" style="max-width: 400px;">
     <button class="modal-close-x" onclick="document.querySelector('#commentModal').style.display='none'">&times;</button>
@@ -323,7 +316,6 @@
   </div>
 </div>
 
-<!-- LOGIN MODAL -->
 <div id="loginModal" class="modal-overlay" onclick="if(event.target===this) document.querySelector('#loginModal').style.display='none'">
   <div class="modal-window" style="max-width: 350px;">
     <button class="modal-close-x" onclick="document.querySelector('#loginModal').style.display='none'">&times;</button>
@@ -334,7 +326,12 @@
   </div>
 </div>
 
-<!-- CACHE BUSTER -->
-<script src="app.js?v=10.10"></script>
+<script src="config.js?v=10.11"></script>
+<script src="auth.js?v=10.11"></script>
+<script src="ui.js?v=10.11"></script>
+<script src="operations.js?v=10.11"></script>
+<script src="batch.js?v=10.11"></script>
+<script src="media.js?v=10.11"></script>
+<script src="app.js?v=10.11"></script>
 </body>
 </html>
