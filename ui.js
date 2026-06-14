@@ -236,28 +236,31 @@ window.openOrdersModal = function() {
     groups[key].push(o);
   });
   
-  Object.keys(groups).forEach(so => {
-    groups[so].sort((a,b) => new Date(a.entry_date) - new Date(b.entry_date));
+    Object.keys(groups).forEach(so => {
+    // Sort descending (newest entries first)
+    groups[so].sort((a,b) => new Date(b.entry_date) - new Date(a.entry_date));
     const safeId = so.replace(/[^a-zA-Z0-9]/g, '_');
     
     tbody.insertAdjacentHTML('beforeend', `
       <tr style="cursor:pointer; background:#f1f5f9;" onclick="window.toggleOrderGroup('${safeId}')">
-        <td><b><span id="icon_so_${safeId}">+</span> ${so}</b></td>
-        <td colspan="3" style="text-align:right; font-size:12px; color:#6b7280;">${groups[so].length} Staging Entry(s)</td>
+        <td style="padding: 8px 12px;"><b><span id="icon_so_${safeId}">+</span> ${so}</b></td>
+        <td colspan="3" style="text-align:right; font-size:12px; color:#6b7280; padding: 8px 12px;">${groups[so].length} Staging Entry(s)</td>
       </tr>
     `);
     
     groups[so].forEach(o => {
+      // Shuffled Date to column 4, and tightened vertical row padding
       tbody.insertAdjacentHTML('beforeend', `
         <tr class="sub_so_${safeId}" style="display:none; font-size:12px; background:#fff;">
-          <td style="padding-left:24px; color:#4b5563;">↳ ${new Date(o.entry_date).toLocaleString()}</td>
-          <td>${o.customer}</td>
-          <td>${o.type}</td>
-          <td>${o.location}</td>
+          <td style="padding: 6px 12px 6px 24px; color:#4b5563;">↳ ${o.customer}</td>
+          <td style="padding: 6px 12px;">${o.type}</td>
+          <td style="padding: 6px 12px;">${o.location}</td>
+          <td style="padding: 6px 12px; color:#6b7280; text-align:right; white-space:nowrap;">${new Date(o.entry_date).toLocaleString()}</td>
         </tr>
       `);
     });
   });
+
   
   $('#ordersModal').style.display = 'flex';
 };
