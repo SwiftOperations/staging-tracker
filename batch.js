@@ -125,6 +125,7 @@ window.executeBatchConsolidate = async function() {
     for(let id of selectedSet) {
       await supabaseClient.from('staging').delete().eq('id', id);
     }
+    window.logAction('staging', `Batch Consolidated ${selectedSet.size} entries into new SO: ${$('#bc_so').value.trim()}`);
     
     $('#batchConsolidateModal').style.display = 'none';
     if(fromSameSo) window.sameSoCancel(); else window.batchCancel();
