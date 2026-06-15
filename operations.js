@@ -210,6 +210,7 @@ window.submitStagingEntry = async function() {
       alert("Database Error: " + error.message);
       $('#add').disabled = false; $('#add').textContent = 'Add'; return;
     }
+    window.logAction('staging', `Added new entry for SO: ${$('#so').value.trim()}`);
     
     $('#so').value=''; $('#customer').value=''; $('#loc').value=''; $('#coords').value=''; $('#staged_by').value=''; $('#weight').value=''; $('#c_skid').value=0; $('#c_box').value=0; $('#c_crate').value=0; $('#c_pipe').value=0; $('#c_other').value=0; 
     if($('#comments')) $('#comments').value='';
