@@ -289,7 +289,9 @@ window.openChangelogModal = async function(table) {
   if(!$('#changelogModal')) return;
   $('#changelogTitle').textContent = table === 'staging' ? 'Staging Entries Changelog' : 'Shipped Log Changelog';
   const tbody = $('#tblChangelog tbody');
-  tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:12px;">Loading changes...</td></tr>';
+  
+  // Adjusted colspan from 3 down to 2
+  tbody.innerHTML = '<tr><td colspan="2" style="text-align:center; padding:12px;">Loading changes...</td></tr>';
   $('#changelogModal').style.display = 'flex';
   
   try {
@@ -300,20 +302,20 @@ window.openChangelogModal = async function(table) {
     tbody.innerHTML = '';
     
     if(!data || data.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; color:#6b7280; padding:12px;">No changes logged yet.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="2" style="text-align:center; color:#6b7280; padding:12px;">No changes logged yet.</td></tr>';
       return;
     }
     
     data.forEach(log => {
+      // User column removed, and user_email pushed directly into the action string
       tbody.insertAdjacentHTML('beforeend', `
         <tr style="border-bottom: 1px solid #f0f1f3;">
           <td style="color:#6b7280; font-size:12px; white-space:nowrap; padding:8px;">${new Date(log.created_at).toLocaleString()}</td>
-          <td style="font-weight:bold; color:#0284c7; font-size:12px; padding:8px;">${log.user_email}</td>
-          <td style="font-size:13px; padding:8px;">${log.action}</td>
+          <td style="font-size:13px; padding:8px;"><span style="font-weight:bold; color:#0284c7;">[${log.user_email}]</span> ${log.action}</td>
         </tr>
       `);
     });
   } catch(e) {
-    tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; color:red; padding:12px;">Error: ${e.message}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="2" style="text-align:center; color:red; padding:12px;">Error: ${e.message}</td></tr>`;
   }
 };
