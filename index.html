@@ -119,7 +119,13 @@
   </div>
 
   <div class="card" id="shippedCard">
-    <div class="split"><h3>Shipped Log</h3><button id="expandShipped" class="btn" onclick="window.open('ship.html', '_blank')" style="padding:6px 12px">Expand</button></div>
+    <div class="split">
+      <h3>Shipped Log</h3>
+      <div>
+        <button class="btn" style="background:#0ea5e9; padding:6px 12px; margin-right:4px;" onclick="window.openChangelogModal('shipped')">Changelog</button>
+        <button id="expandShipped" class="btn" onclick="window.open('ship.html', '_blank')" style="padding:6px 12px">Expand</button>
+      </div>
+    </div>
     <div class="tblwrap">
       <div class="tbl-scroller">
         <table id="tblShipped">
