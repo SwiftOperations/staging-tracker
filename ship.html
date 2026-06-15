@@ -221,6 +221,19 @@
   </div>
 </div>
 
+<div id="changelogModal" class="modal-overlay" onclick="if(event.target===this) document.querySelector('#changelogModal').style.display='none'">
+  <div class="modal-window" style="max-width: 700px;">
+    <button class="modal-close-x" onclick="document.querySelector('#changelogModal').style.display='none'">&times;</button>
+    <h3 id="changelogTitle" style="margin:0 0 10px 0;">Changelog</h3>
+    <div class="table-wrap" style="max-height: 400px; overflow-y: auto;">
+      <table id="tblChangelog" style="min-width: 100%;">
+        <thead><tr><th style="width:160px; background:#fafafa; padding:8px;">Date/Time</th><th style="width:140px; background:#fafafa; padding:8px;">User</th><th style="background:#fafafa; padding:8px;">Action Details</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
 <div id="commentModal" class="modal-overlay" onclick="if(event.target===this) document.querySelector('#commentModal').style.display='none'">
   <div class="modal-window" style="max-width: 400px;">
     <button class="modal-close-x" onclick="document.querySelector('#commentModal').style.display='none'">&times;</button>
