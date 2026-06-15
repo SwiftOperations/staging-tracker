@@ -54,6 +54,7 @@ window.addEditPhotoBlob = function(inputEl) {
     if(!error) { 
       if(!editTargetRecord.photo_urls) editTargetRecord.photo_urls = [];
       editTargetRecord.photo_urls.push(path); 
+      window.logAction(editTargetRecord.table, `Added new photo to SO: ${editTargetRecord.so}`);
       window.renderEditPhotoStrip(); 
     }
   });
