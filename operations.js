@@ -227,6 +227,8 @@ window.saveQuickComment = async function() {
   const { error } = await supabaseClient.from(currentCommentTarget.table)
     .update({ comments: newComment }).eq('id', currentCommentTarget.id);
   if(error) return alert("Error saving comment: " + error.message);
+  const o = appData[currentCommentTarget.table].find(x => x.id === currentCommentTarget.id);
+  if(o) window.logAction(currentCommentTarget.table, `Added/Edited comment for SO: ${o.so}`);
   if($('#commentModal')) $('#commentModal').style.display = 'none';
   window.loadCloudData();
 };
