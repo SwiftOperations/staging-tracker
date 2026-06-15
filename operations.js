@@ -65,6 +65,8 @@ window.submitReturnToStock = async function() {
     if(insertError) throw insertError;
     
     await supabaseClient.from('staging').delete().eq('id', currentEditId);
+    window.logAction('staging', `Returned to Stock SO: ${editTargetRecord.so}`);
+    window.logAction('shipped', `Added Return to Stock log for SO: ${editTargetRecord.so}`);
 
     const photoLinks = editTargetRecord.photo_urls.length > 0 ? `\nAttached Photos:\n${editTargetRecord.photo_urls.map((p,i)=> `Image ${i+1}: ${SUPABASE_URL}/storage/v1/object/public/freight-photos/${p}`).join('\n')}\n` : '';
 
