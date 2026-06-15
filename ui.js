@@ -275,3 +275,45 @@ window.toggleOrderGroup = function(safeId) {
    rows.forEach(r => r.style.display = isHidden ? 'table-row' : 'none');
    if(icon) icon.textContent = isHidden ? '-' : '+';
 };
+
+window.logAction = async function(table, actionDesc) {
+  const userEmail = currentUser ? currentUser.email.split('@')[0] : 'Guest';
+  try {
+    await supabaseClient.from('changelog').insert([{
+      table_name: table, action: actionDesc, user_email: userEmail
+    }]);
+  } catch(e) { console.error("Changelog log failed:", e); }
+};
+
+window.openChangelogModal = async function(table) {
+  if(!$('#changelogModal')) return;
+  $('#changelogTitle').textContent = table === 'staging' ? 'Staging Entries Changelog' : 'Shipped Log Changelog';
+  const tbody = $('#tblChangelog tbody');
+  tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:12px;">Loading changes...</td></tr>';
+  $('#changelogModal').style.display = 'flex';
+  
+  try {
+    const { data, error } = await supabaseClient.from('changelog')
+      .select('*').eq('table_name', table).order('created_at', { ascending: false }).limit(75);
+      
+    if(error) throw error;
+    tbody.innerHTML = '';
+    
+    if(!data || data.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; color:#6b7280; padding:12px;">No changes logged yet.</td></tr>';
+      return;
+    }
+    
+    data.forEach(log => {
+      tbody.insertAdjacentHTML('beforeend', `
+        <tr style="border-bottom: 1px solid #f0f1f3;">
+          <td style="color:#6b7280; font-size:12px; white-space:nowrap; padding:8px;">${new Date(log.created_at).toLocaleString()}</td>
+          <td style="font-weight:bold; color:#0284c7; font-size:12px; padding:8px;">${log.user_email}</td>
+          <td style="font-size:13px; padding:8px;">${log.action}</td>
+        </tr>
+      `);
+    });
+  } catch(e) {
+    tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; color:red; padding:12px;">Error: ${e.message}</td></tr>`;
+  }
+};
