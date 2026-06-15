@@ -116,6 +116,8 @@ window.executeShippedUndo = async function() {
     if (error) { alert("Undo Database Error: " + error.message); return; }
     
     await supabaseClient.from('shipped').delete().eq('id', editTargetRecord.id);
+    window.logAction('shipped', `Undo Shipment Action for SO: ${currentRecord.so}`);
+    window.logAction('staging', `Restored to Staging via Undo for SO: ${currentRecord.so}`);
     if($('#editModal')) $('#editModal').style.display = 'none'; 
     window.loadCloudData();
   } catch(e) { alert("Undo error: " + e.message); }
