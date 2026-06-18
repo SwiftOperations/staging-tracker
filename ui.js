@@ -338,3 +338,18 @@ window.showNotification = function(message) {
     setTimeout(() => toast.remove(), 300);
   }, 3000);
 };
+
+window.toggleMenu = function(e) {
+  e.stopPropagation(); 
+  const content = e.currentTarget.nextElementSibling;
+  content.classList.toggle('show-menu');
+};
+
+// Close the dropdown if the user clicks anywhere else on the screen
+document.addEventListener('click', function(e) {
+  if (!e.target.matches('.hamburger-btn')) {
+    document.querySelectorAll('.dropdown-content.show-menu').forEach(menu => {
+      menu.classList.remove('show-menu');
+    });
+  }
+});
