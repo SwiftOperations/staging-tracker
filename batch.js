@@ -152,6 +152,9 @@ window.executeBatchConsolidate = async function() {
     $('#batchConsolidateModal').style.display = 'none';
     if(fromSameSo) window.sameSoCancel(); else window.batchCancel();
     window.loadCloudData();
+    
+    // Hooks back into the report cycle
+    if(window.activeReportMode) { window.reportIndex++; window.saveReportState(); setTimeout(window.renderNextReportItem, 600); }
   } catch(e) { alert("Consolidation error: " + e.message); }
   
   $('#btnConfirmBc').disabled = false;
