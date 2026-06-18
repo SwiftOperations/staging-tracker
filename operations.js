@@ -42,6 +42,12 @@ window.deleteCurrentRecord = async function() {
     if($('#editModal')) $('#editModal').style.display = 'none';
     if(typeof window.showNotification === 'function') window.showNotification('Record Deleted Permanently');
     window.loadCloudData();
+    
+    // Hooks back into the report cycle
+    if(window.activeReportMode) { window.reportIndex++; window.saveReportState(); setTimeout(window.renderNextReportItem, 600); }
+  } else {
+    // If they cancel the confirm popup, safely return them to the report.
+    if(window.activeReportMode) window.renderNextReportItem();
   }
 };
 
