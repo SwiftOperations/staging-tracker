@@ -277,6 +277,7 @@ window.saveQuickComment = async function() {
   if(error) return alert("Error saving comment: " + error.message);
   const o = appData[currentCommentTarget.table].find(x => x.id === currentCommentTarget.id);
   if(o) window.logAction(currentCommentTarget.table, `Added/Edited comment for SO: ${o.so}`);
+  if(typeof window.showNotification === 'function') window.showNotification('Comment Saved');
   if($('#commentModal')) $('#commentModal').style.display = 'none';
   window.loadCloudData();
 };
