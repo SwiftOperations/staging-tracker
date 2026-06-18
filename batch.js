@@ -16,6 +16,27 @@ window.batchSelectAll = function() {
   window.renderTables();
 };
 
+window.batchUnselectAll = function() {
+  batchSelectedIds.clear();
+  window.renderTables();
+};
+
+window.batchDelete = async function() {
+  if (batchSelectedIds.size === 0) return alert("Select at least one entry to delete.");
+  if (!confirm(`Are you sure you want to PERMANENTLY delete ${batchSelectedIds.size} selected entries?`)) return;
+
+  try {
+    for (let id of batchSelectedIds) {
+      const target = appData.staging.find(x => x.id === id);
+      if (target) window.logAction('staging', `Batch Deleted entry for SO: ${target.so}`);
+      await supabaseClient.from('staging').delete().eq('id', id);
+    }
+    if (typeof window.showNotification === 'function') window.showNotification(`Successfully deleted ${batchSelectedIds.size} entries.`);
+    window.batchCancel();
+    window.loadCloudData();
+  } catch(e) { alert("Batch delete error: " + e.message); }
+};
+
 window.batchCancel = function() {
   isBatchMode = false;
   batchSelectedIds.clear();
