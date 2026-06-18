@@ -190,6 +190,7 @@ window.submitFreightDispatch = async function() {
     await supabaseClient.from('staging').delete().eq('id', activeShipTargetItem.id);
     window.logAction('staging', `Ship Confirmed SO: ${activeShipTargetItem.so}`);
     window.logAction('shipped', `Added via Ship Confirm: SO: ${activeShipTargetItem.so}`);
+    if(typeof window.showNotification === 'function') window.showNotification('Freight Dispatched Successfully');
     
     const photoLinks = photoUrls.length > 0 ? `\nAttached Photos:\n${photoUrls.map((p,i)=> `Image ${i+1}: ${SUPABASE_URL}/storage/v1/object/public/freight-photos/${p}`).join('\n')}\n` : '';
     
