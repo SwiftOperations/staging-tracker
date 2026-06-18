@@ -281,3 +281,141 @@ window.saveQuickComment = async function() {
   if($('#commentModal')) $('#commentModal').style.display = 'none';
   window.loadCloudData();
 };
+
+// --- STAGING VERIFICATION REPORT ENGINE ---
+window.activeReportMode = false;
+window.reportQueue = [];
+window.reportIndex = 0;
+
+window.startStagingReport = function() {
+  const saved = localStorage.getItem('swift_report_state');
+  if(saved) {
+    try {
+      const state = JSON.parse(saved);
+      if(state.queue && state.queue.length > 0 && state.index < state.queue.length) {
+        if($('#reportResumeModal')) $('#reportResumeModal').style.display = 'flex';
+        return;
+      }
+    } catch(e) {}
+  }
+  window.initStagingReport();
+};
+
+window.resumeStagingReport = function() {
+  const state = JSON.parse(localStorage.getItem('swift_report_state'));
+  window.reportQueue = state.queue;
+  window.reportIndex = state.index;
+  window.activeReportMode = true;
+  if($('#reportResumeModal')) $('#reportResumeModal').style.display = 'none';
+  window.renderNextReportItem();
+};
+
+window.initStagingReport = function() {
+  const aisleRegex = /^[A-Z]-\d{2}-[A-F]-[12]$/i;
+  let sorted = [...appData.staging].sort((a, b) => {
+    const aAisle = aisleRegex.test(a.location||'');
+    const bAisle = aisleRegex.test(b.location||'');
+    if (aAisle && !bAisle) return -1;
+    if (!aAisle && bAisle) return 1;
+    return (a.location||'').localeCompare(b.location||'');
+  });
+  
+  window.reportQueue = sorted.map(x => x.id);
+  window.reportIndex = 0;
+  window.activeReportMode = true;
+  window.saveReportState();
+  if($('#reportResumeModal')) $('#reportResumeModal').style.display = 'none';
+  window.renderNextReportItem();
+};
+
+window.saveReportState = function() {
+  localStorage.setItem('swift_report_state', JSON.stringify({queue: window.reportQueue, index: window.reportIndex}));
+};
+
+window.renderNextReportItem = function() {
+  if(!window.activeReportMode) return;
+  document.querySelectorAll('.modal-overlay').forEach(m => m.style.display = 'none'); 
+  
+  if (window.reportIndex >= window.reportQueue.length) {
+    alert("Staging Verification Report Complete!");
+    window.activeReportMode = false;
+    localStorage.removeItem('swift_report_state');
+    return;
+  }
+
+  const itemId = window.reportQueue[window.reportIndex];
+  const item = appData.staging.find(x => x.id === itemId);
+  
+  if (!item) {
+    window.reportIndex++; window.saveReportState(); return window.renderNextReportItem();
+  }
+
+  if($('#rep_loc')) $('#rep_loc').textContent = item.location || 'No Location';
+  if($('#rep_so')) $('#rep_so').textContent = item.so;
+  if($('#rep_cust')) $('#rep_cust').textContent = item.customer;
+  if($('#rep_date')) $('#rep_date').textContent = new Date(item.entry_date).toLocaleString();
+  if($('#rep_qty')) $('#rep_qty').textContent = item.type;
+  if($('#rep_status')) $('#rep_status').textContent = item.status;
+  if($('#rep_by')) $('#rep_by').textContent = item.staged_by || '—';
+  
+  if($('#rep_comment_box')) {
+    if(item.comments && item.comments.trim() !== '') {
+      $('#rep_comment_box').style.display = 'block';
+      $('#rep_comments_text').value = item.comments;
+    } else { $('#rep_comment_box').style.display = 'none'; }
+  }
+  
+  if($('#rep_progress')) $('#rep_progress').textContent = `${window.reportIndex + 1} of ${window.reportQueue.length}`;
+  if($('#reportMainModal')) $('#reportMainModal').style.display = 'flex';
+};
+
+window.reportHandleYes = function() {
+  window.reportIndex++; window.saveReportState(); window.renderNextReportItem();
+};
+
+window.reportHandleNo = function() {
+  if($('#reportMainModal')) $('#reportMainModal').style.display = 'none';
+  if($('#reportNoModal')) $('#reportNoModal').style.display = 'flex';
+};
+
+window.reportAction = function(action) {
+  const itemId = window.reportQueue[window.reportIndex];
+  if($('#reportNoModal')) $('#reportNoModal').style.display = 'none';
+  
+  if(action === 'settle') {
+    window.reportIndex++; window.saveReportState(); window.renderNextReportItem();
+  } 
+  else if (action === 'change') {
+    if($('#report_new_loc')) $('#report_new_loc').value = '';
+    if($('#reportChangeLocModal')) $('#reportChangeLocModal').style.display = 'flex';
+  } 
+  else {
+    // Inject the item data securely into the universal master state
+    window.openUniversalEditor('staging', itemId);
+    if($('#editModal')) $('#editModal').style.display = 'none'; // Keep the main editor hidden
+    
+    if (action === 'delete') window.deleteCurrentRecord();
+    else if (action === 'return') window.triggerReturnModal();
+    else if (action === 'consolidate') window.openSameSoModal();
+  }
+};
+
+window.reportSubmitNewLocation = async function() {
+  const newLoc = $('#report_new_loc').value.trim();
+  if(!newLoc) return alert("Enter a valid location.");
+  
+  const targetId = window.reportQueue[window.reportIndex];
+  const target = appData.staging.find(x => x.id === targetId);
+  
+  $('#reportChangeLocModal').style.display = 'none';
+  try {
+    const { error } = await supabaseClient.from('staging').update({ location: newLoc }).eq('id', targetId);
+    if(error) throw error;
+    
+    window.logAction('staging', `Report Fix: Changed Location for SO ${target.so} to ${newLoc}`);
+    if(typeof window.showNotification === 'function') window.showNotification('Location Updated');
+    
+    window.reportIndex++; window.saveReportState(); window.loadCloudData();
+    setTimeout(window.renderNextReportItem, 600);
+  } catch(e) { alert("Error updating location: " + e.message); window.renderNextReportItem(); }
+};
