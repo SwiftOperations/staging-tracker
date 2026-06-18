@@ -94,7 +94,7 @@ input[type="checkbox"] { width: 13px; height: 13px; cursor: pointer; transform: 
 .hamburger-btn { background: none; border: none; font-size: 24px; cursor: pointer; color: #4b5563; padding: 4px 8px; border-radius: 6px; }
 .hamburger-btn:hover { background: #e5e7eb; }
 .dropdown-content { display: none; position: absolute; left: 0; background-color: #fff; min-width: 220px; box-shadow: 0px 8px 16px rgba(0,0,0,0.15); border-radius: 8px; z-index: 2000; border: 1px solid #e5e7eb; overflow: hidden; top: 100%; margin-top: 5px; }
-.dropdown:focus-within .dropdown-content { display: block; }
+.dropdown-content.show-menu { display: block; }
 .dropdown-content a { color: #334155; padding: 12px 16px; text-decoration: none; display: block; font-size: 14px; border-bottom: 1px solid #f0f1f3; }
 .dropdown-content a:last-child { border-bottom: none; }
 .dropdown-content a:hover { background-color: #f8fafc; color: var(--brand); }
