@@ -39,8 +39,8 @@ window.deleteCurrentRecord = async function() {
   if(confirm("Are you sure you want to PERMANENTLY delete this record?")) {
     await supabaseClient.from(editTargetRecord.table).delete().eq('id', currentEditId);
     window.logAction(editTargetRecord.table, `Deleted entry for SO: ${editTargetRecord.so}`);
-    window.logAction(editTargetRecord.table, `Edited record fields for SO: ${$('#e_so').value.trim()}`);
     if($('#editModal')) $('#editModal').style.display = 'none';
+    if(typeof window.showNotification === 'function') window.showNotification('Record Deleted Permanently');
     window.loadCloudData();
   }
 };
