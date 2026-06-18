@@ -126,6 +126,7 @@ window.executeBatchConsolidate = async function() {
       await supabaseClient.from('staging').delete().eq('id', id);
     }
     window.logAction('staging', `Batch Consolidated ${selectedSet.size} entries into new SO: ${$('#bc_so').value.trim()}`);
+    if(typeof window.showNotification === 'function') window.showNotification('Batch Consolidation Successful');
     
     $('#batchConsolidateModal').style.display = 'none';
     if(fromSameSo) window.sameSoCancel(); else window.batchCancel();
