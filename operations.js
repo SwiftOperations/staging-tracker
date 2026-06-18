@@ -97,6 +97,9 @@ window.submitReturnToStock = async function() {
     if($('#returnModal')) $('#returnModal').style.display='none';
     window.loadCloudData();
     if(pmChecked) { window.location.href = `mailto:${pmEmail}?cc=warehouse1@swiftsupply.ca&subject=${encodeURIComponent(cachedSubject)}&body=${encodeURIComponent(cachedBody)}`; }
+    
+    // Hooks back into the report cycle
+    if(window.activeReportMode) { window.reportIndex++; window.saveReportState(); setTimeout(window.renderNextReportItem, 600); }
   } catch(err) { alert("Return to Stock error: " + err.message); }
 };
 
