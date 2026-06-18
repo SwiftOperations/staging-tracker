@@ -85,7 +85,7 @@ input[type="checkbox"] { width: 13px; height: 13px; cursor: pointer; transform: 
 }
 
 /* FLOATING NOTIFICATIONS (TOASTS) */
-#toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
+#toast-container { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 9999; display: flex; flex-direction: column; gap: 10px; pointer-events: none; align-items: center; width: 100%; }
 .toast-msg { background: #334155; color: #fff; padding: 12px 20px; border-radius: 8px; font-size: 13px; font-weight: 700; box-shadow: 0 4px 12px rgba(0,0,0,0.15); opacity: 0; transform: translateY(-20px); transition: all 0.3s ease; }
 .toast-msg.show { opacity: 1; transform: translateY(0); }
 
