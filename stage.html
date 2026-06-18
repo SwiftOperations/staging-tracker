@@ -42,10 +42,12 @@
     <thead><tr>
       <th class="show-in-batch" style="width:70px; background:#fafafa; padding:4px;">
         <div class="batch-header-btns" style="display:flex; flex-direction:column; gap:4px; text-align:center;">
-          <button onclick="window.batchSelectAll()" style="font-size:10px; background:#fff; color:#4b5563;">Select All</button>
-          <button onclick="window.batchCancel()" style="font-size:10px; background:#fee2e2; color:#dc2626; border-color:#fca5a5;">Cancel</button>
-          <button onclick="window.openBatchConsolidateModal(false)" style="font-size:10px; background:var(--brand); color:#fff; border-color:var(--brand);">Consolidate</button>
-        </div>
+                <button onclick="window.batchSelectAll()" style="font-size:10px; background:#fff; color:#4b5563;">Select All</button>
+                <button onclick="window.batchUnselectAll()" style="font-size:10px; background:#fff; color:#4b5563;">Unselect</button>
+                <button onclick="window.openBatchConsolidateModal(false)" style="font-size:10px; background:#8b5cf6; color:#fff; border-color:#8b5cf6;">Consolidate</button>
+                <button onclick="window.batchDelete()" style="font-size:10px; background:#dc2626; color:#fff; border-color:#dc2626;">Delete</button>
+                <button onclick="window.batchCancel()" style="font-size:10px; background:#e5e7eb; color:#4b5563; border-color:#cbd5e1;">Cancel</button>
+              </div>
       </th>
       <th class="hide-in-batch">Edit</th><th class="hide-in-batch">Photo(s)</th><th>SO</th><th>Customer</th><th>Entry Date</th><th>Containers</th><th>Location</th><th>Coords</th><th>Total Weight (in lbs)</th><th class="hide-in-batch">Comments</th><th>Status</th><th>Staged By</th><th class="hide-in-batch" style="position:sticky;right:0;width:70px;text-align:center;">Shipped</th>
     </tr></thead>
