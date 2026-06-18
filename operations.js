@@ -184,6 +184,18 @@ window.submitStagingEntry = async function() {
   const sk = parseInt($('#c_skid').value)||0, bx = parseInt($('#c_box').value)||0, cr = parseInt($('#c_crate').value)||0, pi = parseInt($('#c_pipe').value)||0, ot = parseInt($('#c_other').value)||0;
   if(!$('#so').value || !$('#customer').value || !$('#loc').value) return alert("Fields Missing.");
   
+  const totalQty = sk + bx + cr + pi + ot;
+  if (totalQty === 0) return alert("Error: You must add at least 1 container to confirm this entry.");
+  
+  const locValue = $('#loc').value.trim();
+  const aisleRegex = /^[A-Z]-\d{2}-[A-F]-[12]$/i;
+  if (aisleRegex.test(locValue)) {
+    const isOccupied = appData.staging.some(x => (x.location || '').toLowerCase() === locValue.toLowerCase());
+    if (isOccupied) {
+      if (!confirm(`Conflict Warning: Aisle location ${locValue.toUpperCase()} is already occupied. Do you want to proceed and place them together?`)) return;
+    }
+  }
+  
   let type = []; 
   if(sk) type.push(window.formatContainer(sk, 'Skid'));
   if(bx) type.push(window.formatContainer(bx, 'Box'));
@@ -204,13 +216,15 @@ window.submitStagingEntry = async function() {
       if(!uploadError) photoUrls.push(path);
     }
   
-    const { error } = await supabaseClient.from('staging').insert([{ so: $('#so').value.trim(), customer: $('#customer').value.trim(), status: $('#status').value, location: $('#loc').value.trim(), coords: $('#coords').value.trim(), weight: $('#weight').value.trim(), comments: $('#comments').value.trim(), staged_by: $('#staged_by').value.trim(), type: type.join(', '), qty: sk+bx+cr+pi+ot, photo_urls: photoUrls }]);
+    const { error } = await supabaseClient.from('staging').insert([{ so: $('#so').value.trim(), customer: $('#customer').value.trim(), status: $('#status').value, location: locValue, coords: $('#coords').value.trim(), weight: $('#weight').value.trim(), comments: $('#comments').value.trim(), staged_by: $('#staged_by').value.trim(), type: type.join(', '), qty: totalQty, photo_urls: photoUrls }]);
     
     if (error) {
       alert("Database Error: " + error.message);
       $('#add').disabled = false; $('#add').textContent = 'Add'; return;
     }
+    
     window.logAction('staging', `Added new entry for SO: ${$('#so').value.trim()}`);
+    if(typeof window.showNotification === 'function') window.showNotification('Staging Entry Added');
     
     $('#so').value=''; $('#customer').value=''; $('#loc').value=''; $('#coords').value=''; $('#staged_by').value=''; $('#weight').value=''; $('#c_skid').value=0; $('#c_box').value=0; $('#c_crate').value=0; $('#c_pipe').value=0; $('#c_other').value=0; 
     if($('#comments')) $('#comments').value='';
