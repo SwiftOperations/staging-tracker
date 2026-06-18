@@ -94,20 +94,51 @@ window.submitReturnToStock = async function() {
 };
 
 window.saveEditedRecord = async function() {
+  const dynamicQty = window.getDynamicQty('e');
+  if (dynamicQty === 0) return alert("Error: You must have at least 1 container to save this record.");
+  
+  const locValue = $('#e_loc').value.trim();
+  const aisleRegex = /^[A-Z]-\d{2}-[A-F]-[12]$/i;
+  if (editTargetRecord.table === 'staging' && aisleRegex.test(locValue)) {
+    const isOccupied = appData.staging.some(x => x.id !== currentEditId && (x.location || '').toLowerCase() === locValue.toLowerCase());
+    if (isOccupied) {
+      if (!confirm(`Conflict Warning: Aisle location ${locValue.toUpperCase()} is already occupied. Do you want to proceed and place them together?`)) return;
+    }
+  }
+
   const dynamicType = window.getDynamicType('e');
-  const basePayload = { so: $('#e_so').value.trim(), customer: $('#e_cust').value.trim(), location: $('#e_loc').value.trim(), coords: $('#e_coords').value.trim(), weight: $('#e_weight').value.trim(), comments: $('#e_comments').value.trim(), type: dynamicType, qty: window.getDynamicQty('e') };
+  const basePayload = { so: $('#e_so').value.trim(), customer: $('#e_cust').value.trim(), location: locValue, coords: $('#e_coords').value.trim(), weight: $('#e_weight').value.trim(), comments: $('#e_comments').value.trim(), type: dynamicType, qty: dynamicQty };
+
+  // Generate detailed changelog strings
+  const oldRec = appData[editTargetRecord.table].find(x => x.id === currentEditId) || {};
+  let changes = [];
+  if ((oldRec.location || '') !== basePayload.location) changes.push(`Location (${oldRec.location || 'Blank'} ➔ ${basePayload.location})`);
+  if ((oldRec.weight || '') !== basePayload.weight) changes.push(`Weight (${oldRec.weight || 'Blank'} ➔ ${basePayload.weight})`);
+  if ((oldRec.coords || '') !== basePayload.coords) changes.push(`Coords updated`);
+  if ((oldRec.comments || '') !== basePayload.comments) changes.push(`Comments updated`);
+  if ((oldRec.type || '') !== basePayload.type) changes.push(`Containers updated`);
 
   if (editTargetRecord.table === 'staging') {
-    const { error } = await supabaseClient.from('staging').update({ ...basePayload, status: $('#e_status').value.trim(), staged_by: $('#e_staged_by').value.trim(), photo_urls: editTargetRecord.photo_urls }).eq('id', currentEditId);
+    const newStatus = $('#e_status').value.trim();
+    if ((oldRec.status || '') !== newStatus) changes.push(`Status (${oldRec.status || 'Blank'} ➔ ${newStatus})`);
+    
+    const { error } = await supabaseClient.from('staging').update({ ...basePayload, status: newStatus, staged_by: $('#e_staged_by').value.trim(), photo_urls: editTargetRecord.photo_urls }).eq('id', currentEditId);
     if(error) { alert("Database Error: " + error.message); return; }
   } else {
-    const { error } = await supabaseClient.from('shipped').update({ ...basePayload, carrier: $('#e_carrier').value.trim(), shipped_by: $('#e_shipped_by').value.trim(), pmd_email: $('#e_pm').value.trim() || null, photo_urls: editTargetRecord.photo_urls }).eq('id', currentEditId);
+    const newCarrier = $('#e_carrier').value.trim();
+    if ((oldRec.carrier || '') !== newCarrier) changes.push(`Carrier (${oldRec.carrier || 'Blank'} ➔ ${newCarrier})`);
+    
+    const { error } = await supabaseClient.from('shipped').update({ ...basePayload, carrier: newCarrier, shipped_by: $('#e_shipped_by').value.trim(), pmd_email: $('#e_pm').value.trim() || null, photo_urls: editTargetRecord.photo_urls }).eq('id', currentEditId);
     if(error) { alert("Database Error: " + error.message); return; }
   }
+  
+  let changeString = changes.length > 0 ? changes.join(', ') : 'No tracked fields changed';
+  window.logAction(editTargetRecord.table, `Edited SO ${basePayload.so}: ${changeString}`);
+  
   if($('#editModal')) $('#editModal').style.display = 'none'; 
+  if(typeof window.showNotification === 'function') window.showNotification('Record Updated Successfully');
   window.loadCloudData();
 };
-
 window.executeShippedUndo = async function() {
   if(!confirm("Are you sure you want to undo this action and return it to Staging?")) return;
   try {
