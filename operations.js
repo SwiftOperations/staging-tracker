@@ -230,7 +230,13 @@ window.submitStagingEntry = async function() {
   const totalQty = sk + bx + cr + pi + ot;
   if (totalQty === 0) return alert("Error: You must add at least 1 container to confirm this entry.");
   
-  const locValue = $('#loc').value.trim();
+ const locValue = $('#loc').value.trim();
+  const soVal = $('#so').value.trim();
+
+  // INJECT CONFLICT CHECK HERE
+  const proceed = await window.checkSoConflict(soVal, null);
+  if(!proceed) return;
+
   const aisleRegex = /^[A-Z]-\d{2}-[A-F]-[12]$/i;
   if (aisleRegex.test(locValue)) {
     const isOccupied = appData.staging.some(x => (x.location || '').toLowerCase() === locValue.toLowerCase());
