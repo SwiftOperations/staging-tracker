@@ -229,6 +229,7 @@ window.openOrdersModal = function() {
   const tbody = $('#tblOrders tbody');
   if(!tbody) return;
   tbody.innerHTML = '';
+  if($('#searchOrdersModal')) $('#searchOrdersModal').value = '';
   
   const groups = {};
   appData.staging.forEach(o => {
@@ -237,22 +238,21 @@ window.openOrdersModal = function() {
     groups[key].push(o);
   });
   
-    Object.keys(groups).forEach(so => {
-    // Sort descending (newest entries first)
+  Object.keys(groups).forEach(so => {
     groups[so].sort((a,b) => new Date(b.entry_date) - new Date(a.entry_date));
     const safeId = so.replace(/[^a-zA-Z0-9]/g, '_');
+    const allCustomers = groups[so].map(x => x.customer).join(' ');
     
     tbody.insertAdjacentHTML('beforeend', `
-      <tr style="cursor:pointer; background:#f1f5f9;" onclick="window.toggleOrderGroup('${safeId}')">
-        <td style="padding: 8px 12px;"><b><span id="icon_so_${safeId}">+</span> ${so}</b></td>
+      <tr class="group-header-row" data-so="${so}" data-cust="${allCustomers}" data-safeid="${safeId}" style="cursor:pointer; background:#f1f5f9;" onclick="window.toggleOrderGroup('${safeId}')">
+        <td style="padding: 8px 12px;"><span id="icon_so_${safeId}">+</span> <a class="so-link" onclick="event.stopPropagation(); window.openOrderHistory('${so}')"><b>${so}</b></a></td>
         <td colspan="3" style="text-align:right; font-size:12px; color:#6b7280; padding: 8px 12px;">${groups[so].length} Staging Entry(s)</td>
       </tr>
     `);
     
     groups[so].forEach(o => {
-      // Shuffled Date to column 4, and tightened vertical row padding
       tbody.insertAdjacentHTML('beforeend', `
-                <tr class="sub_so_${safeId}" style="display:none; font-size:12px; background:#fff;">
+        <tr class="sub_so_${safeId}" style="display:none; font-size:12px; background:#fff;">
           <td style="padding: 6px 12px 6px 24px; color:#4b5563;">↳ ${o.customer}</td>
           <td style="padding: 6px 12px; white-space: nowrap;">${o.type}</td>
           <td style="padding: 6px 12px; white-space: nowrap;">${o.location}</td>
@@ -261,9 +261,22 @@ window.openOrdersModal = function() {
       `);
     });
   });
-
   
   $('#ordersModal').style.display = 'flex';
+};
+
+window.filterOrdersModal = function() {
+  const q = $('#searchOrdersModal').value.toLowerCase();
+  document.querySelectorAll('.group-header-row').forEach(tr => {
+    const match = tr.getAttribute('data-so').toLowerCase().includes(q) || tr.getAttribute('data-cust').toLowerCase().includes(q);
+    tr.style.display = match ? 'table-row' : 'none';
+    const safeId = tr.getAttribute('data-safeid');
+    if(!match) {
+      document.querySelectorAll('.sub_so_' + safeId).forEach(r => r.style.display = 'none');
+      const icon = document.getElementById('icon_so_' + safeId);
+      if(icon) icon.textContent = '+';
+    }
+  });
 };
 
 window.toggleOrderGroup = function(safeId) {
