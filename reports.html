@@ -193,6 +193,68 @@
   </div>
 </div>
 
+<!-- ORDER HISTORY MODAL -->
+<div id="orderHistoryModal" class="modal-overlay" onclick="if(event.target===this) document.querySelector('#orderHistoryModal').style.display='none'">
+  <div class="modal-window" style="max-width: 550px;">
+    <button class="modal-close-x" onclick="document.querySelector('#orderHistoryModal').style.display='none'">&times;</button>
+    <h3 style="margin:0 0 10px 0;">Order History: <span id="history_so_title" style="color:var(--brand);"></span></h3>
+    <div id="history_content" style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:8px; padding:12px; min-height:100px;"></div>
+  </div>
+</div>
+
+<!-- SO CONFLICT MODAL -->
+<div id="soConflictModal" class="modal-overlay">
+  <div class="modal-window" style="max-width: 550px;">
+    <h3 style="margin:0 0 10px 0; color:#dc2626;">SO Conflict Detected</h3>
+    <p style="font-size:13px; color:#4b5563; margin-top:0;">SO <b><span id="conflict_so_title"></span></b> already exists in active Staging. Review the history below to ensure this is not a duplicate entry.</p>
+    <div id="conflict_content" style="background:#fcfcfc; border:1px solid #cbd5e1; border-radius:8px; padding:12px; min-height:100px; margin-bottom:12px;"></div>
+    <div class="modal-actions" style="display:flex; gap:8px; justify-content:flex-end;">
+      <button id="conflictCancelBtn" class="btn" style="background:#64748b;">Cancel Action</button>
+      <button id="conflictProceedBtn" class="btn" style="background:#10b981;">Proceed Anyway</button>
+    </div>
+  </div>
+</div>
+
+<!-- SPLIT PROMPT MODAL -->
+<div id="splitPromptModal" class="modal-overlay" onclick="if(event.target===this) document.querySelector('#splitPromptModal').style.display='none'">
+  <div class="modal-window" style="max-width: 350px;">
+    <button class="modal-close-x" onclick="document.querySelector('#splitPromptModal').style.display='none'">&times;</button>
+    <h3 style="margin:0 0 10px 0;">Split Order</h3>
+    <div class="modal-field"><label>How many splits are required?</label>
+      <input type="number" id="split_count_input" value="2" min="2" max="10" />
+    </div>
+    <button class="btn" style="margin-top:12px; width:100%; background:#8b5cf6;" onclick="window.submitSplitCount()">Start Splitting</button>
+  </div>
+</div>
+
+<!-- CONFIGURE SPLITTING MODAL -->
+<div id="configureSplitModal" class="modal-overlay">
+  <div class="modal-window">
+    <button class="modal-close-x" onclick="document.querySelector('#configureSplitModal').style.display='none'">&times;</button>
+    <h3 id="splitConfigTitle" style="margin:0 0 10px 0;">Configure Split</h3>
+    <div class="modal-field"><label>SO#</label><input id="sp_so" readonly style="background:#f9fafb;" /></div>
+    <div class="modal-field"><label>Customer</label><input id="sp_cust" readonly style="background:#f9fafb;" /></div>
+    
+    <label style="font-size:12px; font-weight:700; color:#4b5563; margin-top:8px; margin-bottom:-4px;">Split Containers</label>
+    <div class="freight-block">
+      <div class="counter-box"><label>Skids</label><div class="counter-controls"><button class="counter-btn" onclick="window.adjustEditCount('sp_skid',-1)">-</button><input id="sp_skid" value="0" readonly/><button class="counter-btn" onclick="window.adjustEditCount('sp_skid',1)">+</button></div></div>
+      <div class="counter-box"><label>Boxes</label><div class="counter-controls"><button class="counter-btn" onclick="window.adjustEditCount('sp_box',-1)">-</button><input id="sp_box" value="0" readonly/><button class="counter-btn" onclick="window.adjustEditCount('sp_box',1)">+</button></div></div>
+      <div class="counter-box"><label>Crates</label><div class="counter-controls"><button class="counter-btn" onclick="window.adjustEditCount('sp_crate',-1)">-</button><input id="sp_crate" value="0" readonly/><button class="counter-btn" onclick="window.adjustEditCount('sp_crate',1)">+</button></div></div>
+      <div class="counter-box"><label>Pipe/Rod</label><div class="counter-controls"><button class="counter-btn" onclick="window.adjustEditCount('sp_pipe',-1)">-</button><input id="sp_pipe" value="0" readonly/><button class="counter-btn" onclick="window.adjustEditCount('sp_pipe',1)">+</button></div></div>
+      <div class="counter-box"><label>Other</label><div class="counter-controls"><button class="counter-btn" onclick="window.adjustEditCount('sp_other',-1)">-</button><input id="sp_other" value="0" readonly/><button class="counter-btn" onclick="window.adjustEditCount('sp_other',1)">+</button></div></div>
+    </div>
+
+    <div class="modal-field"><label>Split Location</label><input id="sp_loc" list="dl_locations" /></div>
+    <div class="modal-field"><label>Coords</label><input id="sp_coords" readonly onclick="window.fetchBrowserGPS('sp_coords')" style="background:#fafafa; cursor:pointer;" placeholder="Tap to update coordinates" /></div>
+    <div class="modal-field"><label>Total Weight (in lbs)</label><input id="sp_weight" oninput="window.formatWeight(this)" /></div>
+    <div class="modal-field"><label>Status</label><select id="sp_status"><option>Partial</option><option>Ship Today</option><option>Ship Tomorrow</option><option>Ship On Future Date</option><option>Corp Pick (Not Consolidated)</option><option>Customer Pick-Up</option><option>Awaiting Shipping Instructions</option></select></div>
+    <div class="modal-field"><label>Split By</label><input id="sp_staged_by" list="dl_stagers" /></div>
+    <div class="modal-field"><label>Comments</label><textarea id="sp_comments" rows="2" style="width:100%; border:1px solid #cbd5e1; border-radius:8px; padding:8px 12px; font-family:inherit; resize:vertical;"></textarea></div>
+
+    <button class="btn" style="margin-top:12px; width:100%; background:var(--brand);" onclick="window.saveConfigureSplit()">Save & Next</button>
+  </div>
+</div>
+
 <script src="config.js?v=10.13"></script>
 <script src="auth.js?v=10.13"></script>
 <script src="ui.js?v=10.13"></script>
