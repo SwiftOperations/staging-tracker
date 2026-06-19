@@ -73,7 +73,7 @@ window.renderTables = function() {
         sBody.insertAdjacentHTML('beforeend', `<tr>
           <td class="show-in-batch" style="text-align:center;">${batchChk}</td>
           <td class="hide-in-batch">${editBtn}</td>
-          <td class="hide-in-batch">${picBtn}</td><td><b>${o.so}</b></td><td>${o.customer}</td><td>${new Date(o.entry_date).toLocaleString()}</td><td>${o.type}</td><td>${o.location}</td><td><small>${geoLink}</small></td>
+          <td class="hide-in-batch">${picBtn}</td><td><a class="so-link" onclick="event.stopPropagation(); window.openOrderHistory('${o.so}')"><b>${o.so}</b></a></td><td>${o.customer}</td><td>${new Date(o.entry_date).toLocaleString()}</td><td>${o.type}</td><td>${o.location}</td><td><small>${geoLink}</small></td>
           <td>${o.weight || '—'}</td><td class="hide-in-batch">${commentBtn}</td><td>${o.status}</td><td>${o.staged_by||'—'}</td>
           <td class="hide-in-batch" style="position:sticky;right:0;text-align:center;">${chkBox}</td></tr>`);
       });
@@ -96,7 +96,7 @@ window.renderTables = function() {
         shBody.insertAdjacentHTML('beforeend', `<tr ${rowClass}>
           <td>${editBtn}</td>
           <td>${picBtn}</td>
-          <td><b>${o.so}</b></td><td>${o.customer}</td><td>${o.type}</td><td>${o.carrier || '—'}</td><td>${o.location}</td><td><small>${geoLink}</small></td>
+          <td><a class="so-link" onclick="event.stopPropagation(); window.openOrderHistory('${o.so}')"><b>${o.so}</b></a></td><td>${o.customer}</td><td>${o.type}</td><td>${o.carrier || '—'}</td><td>${o.location}</td><td><small>${geoLink}</small></td>
           <td>${o.weight || '—'}</td><td>${commentBtn}</td><td>${new Date(o.shipped_at).toLocaleString()}</td><td>${o.shipped_by || '—'}</td><td>${o.pmd_email ? o.pmd_email+(isRet?'':'<span class="green-check"> ✓</span>') : '—'}</td></tr>`);
       });
     }
