@@ -11,7 +11,7 @@ window.toggleBatchSelect = function(id, isChecked) {
 
 window.batchSelectAll = function() {
   const q = $('#q') ? $('#q').value.toLowerCase() : '';
-    const fStaging = appData.staging.filter(o => (o.so||'').toLowerCase().includes(q) || (o.customer||'').toLowerCase().includes(q) || (o.location||'').toLowerCase().includes(q));
+  const fStaging = appData.staging.filter(o => (o.so||'').toLowerCase().includes(q) || (o.customer||'').toLowerCase().includes(q) || (o.location||'').toLowerCase().includes(q));
   fStaging.forEach(o => batchSelectedIds.add(o.id));
   window.renderTables();
 };
@@ -153,7 +153,6 @@ window.executeBatchConsolidate = async function() {
     if(fromSameSo) window.sameSoCancel(); else window.batchCancel();
     window.loadCloudData();
     
-    // Hooks back into the report cycle
     if(window.activeReportMode) { window.reportIndex++; window.saveReportState(); setTimeout(window.renderNextReportItem, 600); }
   } catch(e) { alert("Consolidation error: " + e.message); }
   
