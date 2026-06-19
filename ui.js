@@ -56,7 +56,6 @@ window.renderTables = function() {
   const fStaging = appData.staging.filter(o => (o.so||'').toLowerCase().includes(q) || (o.customer||'').toLowerCase().includes(q) || (o.location||'').toLowerCase().includes(q));
   const fShipped = appData.shipped.filter(o => (o.so||'').toLowerCase().includes(q) || (o.customer||'').toLowerCase().includes(q) || (o.location||'').toLowerCase().includes(q));
 
-
   if($('#tblStaging')) {
     const sBody = $('#tblStaging').querySelector('tbody'); 
     if(sBody) {
@@ -152,6 +151,7 @@ window.openUniversalEditor = function(table, id) {
     if($('#editUndoBtn')) $('#editUndoBtn').style.display = 'none'; 
     if($('#editReturnBtn')) $('#editReturnBtn').style.display = 'block'; 
     if($('#editConsolidateBtn')) $('#editConsolidateBtn').style.display = 'block';
+    if($('#editSplitBtn')) $('#editSplitBtn').style.display = 'block';
     if($('#editSaveBtn')) $('#editSaveBtn').style.display = 'block';
     if($('#e_status')) $('#e_status').value = o.status; 
     if($('#e_staged_by')) $('#e_staged_by').value = o.staged_by || '';
@@ -162,6 +162,7 @@ window.openUniversalEditor = function(table, id) {
     if($('#editUndoBtn')) $('#editUndoBtn').style.display = 'block'; 
     if($('#editReturnBtn')) $('#editReturnBtn').style.display = 'none'; 
     if($('#editConsolidateBtn')) $('#editConsolidateBtn').style.display = 'none';
+    if($('#editSplitBtn')) $('#editSplitBtn').style.display = 'none';
     if($('#editSaveBtn')) $('#editSaveBtn').style.display = isRet ? 'none' : 'block';
     if($('#e_carrier')) $('#e_carrier').value = o.carrier || ''; 
     if($('#e_shipped_by')) $('#e_shipped_by').value = o.shipped_by || ''; 
@@ -303,7 +304,6 @@ window.openChangelogModal = async function(table) {
   $('#changelogTitle').textContent = table === 'staging' ? 'Staging Entries Changelog' : 'Shipped Log Changelog';
   const tbody = $('#tblChangelog tbody');
   
-  // Adjusted colspan from 3 down to 2
   tbody.innerHTML = '<tr><td colspan="2" style="text-align:center; padding:12px;">Loading changes...</td></tr>';
   $('#changelogModal').style.display = 'flex';
   
@@ -320,7 +320,6 @@ window.openChangelogModal = async function(table) {
     }
     
     data.forEach(log => {
-      // User column removed, and user_email pushed directly into the action string
       tbody.insertAdjacentHTML('beforeend', `
         <tr style="border-bottom: 1px solid #f0f1f3;">
           <td style="color:#6b7280; font-size:12px; white-space:nowrap; padding:8px;">${new Date(log.created_at).toLocaleString()}</td>
@@ -358,7 +357,6 @@ window.toggleMenu = function(e) {
   content.classList.toggle('show-menu');
 };
 
-// Close the dropdown if the user clicks anywhere else on the screen
 document.addEventListener('click', function(e) {
   if (!e.target.matches('.hamburger-btn')) {
     document.querySelectorAll('.dropdown-content.show-menu').forEach(menu => {
