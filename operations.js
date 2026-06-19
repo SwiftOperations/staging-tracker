@@ -155,6 +155,9 @@ window.saveEditedRecord = async function() {
   if($('#editModal')) $('#editModal').style.display = 'none'; 
   if(typeof window.showNotification === 'function') window.showNotification('Record Updated Successfully');
   window.loadCloudData();
+
+  // Automatically continue the report cycle if an edit was made during a report
+  if(window.activeReportMode) { window.reportIndex++; window.saveReportState(); setTimeout(window.renderNextReportItem, 600); }
 };
 window.executeShippedUndo = async function() {
   if(!confirm("Are you sure you want to undo this action and return it to Staging?")) return;
