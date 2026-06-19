@@ -535,6 +535,7 @@ window.renderSplitConfig = function() {
 window.saveConfigureSplit = async function() {
   const dynamicQty = window.getDynamicQty('sp');
   if (dynamicQty === 0) return alert("Error: You must add at least 1 container to confirm this split.");
+  if (!$('#sp_loc').value.trim()) return alert("Error: You must assign a Location for this split.");
   
   const payload = {
     so: $('#sp_so').value.trim(), customer: $('#sp_cust').value.trim(), location: $('#sp_loc').value.trim(),
