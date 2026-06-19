@@ -43,10 +43,8 @@ window.deleteCurrentRecord = async function() {
     if(typeof window.showNotification === 'function') window.showNotification('Record Deleted Permanently');
     window.loadCloudData();
     
-    // Hooks back into the report cycle
     if(window.activeReportMode) { window.reportIndex++; window.saveReportState(); setTimeout(window.renderNextReportItem, 600); }
   } else {
-    // If they cancel the confirm popup, safely return them to the report.
     if(window.activeReportMode) window.renderNextReportItem();
   }
 };
@@ -98,7 +96,6 @@ window.submitReturnToStock = async function() {
     window.loadCloudData();
     if(pmChecked) { window.location.href = `mailto:${pmEmail}?cc=warehouse1@swiftsupply.ca&subject=${encodeURIComponent(cachedSubject)}&body=${encodeURIComponent(cachedBody)}`; }
     
-    // Hooks back into the report cycle
     if(window.activeReportMode) { window.reportIndex++; window.saveReportState(); setTimeout(window.renderNextReportItem, 600); }
   } catch(err) { alert("Return to Stock error: " + err.message); }
 };
@@ -124,9 +121,8 @@ window.saveEditedRecord = async function() {
   }
 
   const dynamicType = window.getDynamicType('e');
-  const basePayload = { so: $('#e_so').value.trim(), customer: $('#e_cust').value.trim(), location: locValue, coords: $('#e_coords').value.trim(), weight: $('#e_weight').value.trim(), comments: $('#e_comments').value.trim(), type: dynamicType, qty: dynamicQty };
+  const basePayload = { so: soVal, customer: $('#e_cust').value.trim(), location: locValue, coords: $('#e_coords').value.trim(), weight: $('#e_weight').value.trim(), comments: $('#e_comments').value.trim(), type: dynamicType, qty: dynamicQty };
 
-  // Generate detailed changelog strings
   const oldRec = appData[editTargetRecord.table].find(x => x.id === currentEditId) || {};
   let changes = [];
   if ((oldRec.location || '') !== basePayload.location) changes.push(`Location (${oldRec.location || 'Blank'} ➔ ${basePayload.location})`);
@@ -155,18 +151,18 @@ window.saveEditedRecord = async function() {
   if($('#editModal')) $('#editModal').style.display = 'none'; 
   if(typeof window.showNotification === 'function') window.showNotification('Record Updated Successfully');
   window.loadCloudData();
-
-  // Automatically continue the report cycle if an edit was made during a report
+  
   if(window.activeReportMode) { window.reportIndex++; window.saveReportState(); setTimeout(window.renderNextReportItem, 600); }
 };
+
 window.executeShippedUndo = async function() {
   if(!confirm("Are you sure you want to undo this action and return it to Staging?")) return;
   try {
     const { data: currentRecord } = await supabaseClient.from('shipped').select('*').eq('id', editTargetRecord.id).single();
     
-    // INJECT CONFLICT CHECK HERE
     const proceed = await window.checkSoConflict(currentRecord.so, null);
     if(!proceed) return;
+
     const { error } = await supabaseClient.from('staging').insert([{ so: currentRecord.so, customer: currentRecord.customer, type: currentRecord.type, qty: currentRecord.qty, location: currentRecord.location, coords: currentRecord.coords, weight: currentRecord.weight, comments: currentRecord.comments, status: 'Partial', photo_urls: currentRecord.photo_urls }]);
     if (error) { alert("Undo Database Error: " + error.message); return; }
     
@@ -244,10 +240,9 @@ window.submitStagingEntry = async function() {
   const totalQty = sk + bx + cr + pi + ot;
   if (totalQty === 0) return alert("Error: You must add at least 1 container to confirm this entry.");
   
- const locValue = $('#loc').value.trim();
   const soVal = $('#so').value.trim();
+  const locValue = $('#loc').value.trim();
 
-  // INJECT CONFLICT CHECK HERE
   const proceed = await window.checkSoConflict(soVal, null);
   if(!proceed) return;
 
@@ -274,19 +269,19 @@ window.submitStagingEntry = async function() {
     for (let i = 0; i < mainPhotoBlobs.length; i++) {
       const file = mainPhotoBlobs[i]; 
       const cleanFileName = file.name.replace(/[^a-zA-Z0-9.]/g, '');
-      const path = `${$('#so').value.trim()}-staging-${Date.now()}-${i}-${cleanFileName}`;
+      const path = `${soVal}-staging-${Date.now()}-${i}-${cleanFileName}`;
       const { error: uploadError } = await supabaseClient.storage.from('freight-photos').upload(path, file);
       if(!uploadError) photoUrls.push(path);
     }
   
-    const { error } = await supabaseClient.from('staging').insert([{ so: $('#so').value.trim(), customer: $('#customer').value.trim(), status: $('#status').value, location: locValue, coords: $('#coords').value.trim(), weight: $('#weight').value.trim(), comments: $('#comments').value.trim(), staged_by: $('#staged_by').value.trim(), type: type.join(', '), qty: totalQty, photo_urls: photoUrls }]);
+    const { error } = await supabaseClient.from('staging').insert([{ so: soVal, customer: $('#customer').value.trim(), status: $('#status').value, location: locValue, coords: $('#coords').value.trim(), weight: $('#weight').value.trim(), comments: $('#comments').value.trim(), staged_by: $('#staged_by').value.trim(), type: type.join(', '), qty: totalQty, photo_urls: photoUrls }]);
     
     if (error) {
       alert("Database Error: " + error.message);
       $('#add').disabled = false; $('#add').textContent = 'Add'; return;
     }
     
-    window.logAction('staging', `Added new entry for SO: ${$('#so').value.trim()}`);
+    window.logAction('staging', `Added new entry for SO: ${soVal}`);
     if(typeof window.showNotification === 'function') window.showNotification('Staging Entry Added');
     
     $('#so').value=''; $('#customer').value=''; $('#loc').value=''; $('#coords').value=''; $('#staged_by').value=''; $('#weight').value=''; $('#c_skid').value=0; $('#c_box').value=0; $('#c_crate').value=0; $('#c_pipe').value=0; $('#c_other').value=0; 
@@ -311,7 +306,130 @@ window.saveQuickComment = async function() {
   window.loadCloudData();
 };
 
-// --- STAGING VERIFICATION REPORT ENGINE ---
+// ==========================================
+// ORDER HISTORY & CONFLICT RESOLUTION ENGINE
+// ==========================================
+window.openOrderHistory = async function(so) {
+  if(!$('#orderHistoryModal')) return;
+  $('#history_so_title').textContent = so;
+  $('#history_content').innerHTML = '<div style="text-align:center; padding:20px; color:#6b7280;">Loading history...</div>';
+  $('#orderHistoryModal').style.display = 'flex';
+
+  try {
+    const { data, error } = await supabaseClient.from('changelog').select('*').ilike('action', `%${so}%`).order('created_at', { ascending: false });
+    if(error) throw error;
+    if(!data || data.length === 0) {
+      $('#history_content').innerHTML = '<div style="text-align:center; padding:20px; color:#6b7280;">No history found for this SO.</div>';
+      return;
+    }
+    let html = '<ul style="text-align:left; padding-left:20px; margin:0; font-size:13px; color:#334155; max-height: 400px; overflow-y: auto;">';
+    data.forEach(log => { html += `<li style="margin-bottom:10px;"><b>${new Date(log.created_at).toLocaleString()}</b> <span style="color:#0284c7;">[${log.user_email}]</span><br/>${log.action}</li>`; });
+    html += '</ul>';
+    $('#history_content').innerHTML = html;
+  } catch (e) { $('#history_content').innerHTML = `<span style="color:red;">Error: ${e.message}</span>`; }
+};
+
+window.checkSoConflict = function(so, currentId = null) {
+  return new Promise(resolve => {
+    const exists = appData.staging.some(x => x.so === so && x.id !== currentId);
+    if (!exists) return resolve(true);
+
+    $('#conflict_so_title').textContent = so;
+    $('#conflict_content').innerHTML = '<div style="text-align:center; padding:10px; color:#6b7280;">Loading history...</div>';
+    $('#soConflictModal').style.display = 'flex';
+
+    supabaseClient.from('changelog').select('*').ilike('action', `%${so}%`).order('created_at', { ascending: false }).then(({data, error}) => {
+      if(error || !data || data.length === 0) {
+        $('#conflict_content').innerHTML = '<span style="color:#6b7280; padding:10px;">No previous history found.</span>';
+      } else {
+        let html = '<ul style="text-align:left; padding-left:20px; margin:0; font-size:13px; color:#4b5563; max-height:200px; overflow-y:auto;">';
+        data.forEach(log => { html += `<li style="margin-bottom:8px;"><b>${new Date(log.created_at).toLocaleString()}</b> [${log.user_email}]<br/>${log.action}</li>`; });
+        html += '</ul>';
+        $('#conflict_content').innerHTML = html;
+      }
+    });
+
+    $('#conflictCancelBtn').onclick = () => { $('#soConflictModal').style.display = 'none'; resolve(false); };
+    $('#conflictProceedBtn').onclick = () => { $('#soConflictModal').style.display = 'none'; resolve(true); };
+  });
+};
+
+// ==========================================
+// SPLIT ORDER ENGINE
+// ==========================================
+window.splitEngine = { targetId: null, total: 0, current: 0, dataArray: [], sourceItem: null };
+
+window.openSplitPrompt = function() {
+  window.splitEngine.targetId = window.activeReportMode ? window.reportQueue[window.reportIndex] : currentEditId;
+  $('#split_count_input').value = 2;
+  if($('#editModal')) $('#editModal').style.display = 'none';
+  $('#splitPromptModal').style.display = 'flex';
+};
+
+window.submitSplitCount = function() {
+  const count = parseInt($('#split_count_input').value);
+  if(isNaN(count) || count < 2) return alert("Must select at least 2 splits.");
+  
+  window.splitEngine.total = count;
+  window.splitEngine.current = 1;
+  window.splitEngine.dataArray = [];
+  window.splitEngine.sourceItem = appData.staging.find(x => x.id === window.splitEngine.targetId);
+  
+  $('#splitPromptModal').style.display = 'none';
+  window.renderSplitConfig();
+};
+
+window.renderSplitConfig = function() {
+  const item = window.splitEngine.sourceItem;
+  $('#splitConfigTitle').textContent = `Configure Split (${window.splitEngine.current} of ${window.splitEngine.total})`;
+  $('#sp_so').value = item.so;
+  $('#sp_cust').value = item.customer;
+  
+  $('#sp_skid').value = 0; $('#sp_box').value = 0; $('#sp_crate').value = 0; $('#sp_pipe').value = 0; $('#sp_other').value = 0;
+  $('#sp_loc').value = ''; $('#sp_coords').value = ''; $('#sp_weight').value = ''; $('#sp_comments').value = '';
+  $('#sp_status').value = 'Partial';
+  $('#sp_staged_by').value = currentUser ? currentUser.email.split('@')[0] : '';
+  
+  $('#configureSplitModal').style.display = 'flex';
+};
+
+window.saveConfigureSplit = async function() {
+  const dynamicQty = window.getDynamicQty('sp');
+  if (dynamicQty === 0) return alert("Error: You must add at least 1 container to confirm this split.");
+  if (!$('#sp_loc').value.trim()) return alert("Error: You must assign a Location for this split.");
+  
+  const payload = {
+    so: $('#sp_so').value.trim(), customer: $('#sp_cust').value.trim(), location: $('#sp_loc').value.trim(),
+    coords: $('#sp_coords').value.trim(), weight: $('#sp_weight').value.trim(), status: $('#sp_status').value.trim(),
+    comments: $('#sp_comments').value.trim(), staged_by: $('#sp_staged_by').value.trim() + ' (Split)',
+    type: window.getDynamicType('sp'), qty: dynamicQty, photo_urls: window.splitEngine.sourceItem.photo_urls || []
+  };
+  
+  window.splitEngine.dataArray.push(payload);
+  window.splitEngine.current++;
+  
+  if (window.splitEngine.current > window.splitEngine.total) {
+    $('#configureSplitModal').style.display = 'none';
+    try {
+      const { error: insErr } = await supabaseClient.from('staging').insert(window.splitEngine.dataArray);
+      if(insErr) throw insErr;
+      await supabaseClient.from('staging').delete().eq('id', window.splitEngine.targetId);
+      
+      window.logAction('staging', `Split Order SO ${payload.so} into ${window.splitEngine.total} separate entries.`);
+      if(typeof window.showNotification === 'function') window.showNotification(`Order Split Successfully`);
+      window.loadCloudData();
+      
+      if(window.activeReportMode) { window.reportIndex++; window.saveReportState(); setTimeout(window.renderNextReportItem, 600); }
+    } catch(e) { alert("Split Error: " + e.message); }
+  } else {
+    $('#configureSplitModal').style.display = 'none';
+    setTimeout(window.renderSplitConfig, 200);
+  }
+};
+
+// ==========================================
+// STAGING VERIFICATION REPORT ENGINE
+// ==========================================
 window.activeReportMode = false;
 window.reportQueue = [];
 window.reportIndex = 0;
@@ -418,10 +536,12 @@ window.reportAction = function(action) {
     if($('#report_new_loc')) $('#report_new_loc').value = '';
     if($('#reportChangeLocModal')) $('#reportChangeLocModal').style.display = 'flex';
   } 
+  else if (action === 'split') {
+    window.openSplitPrompt();
+  }
   else {
-    // Inject the item data securely into the universal master state
     window.openUniversalEditor('staging', itemId);
-    if($('#editModal')) $('#editModal').style.display = 'none'; // Keep the main editor hidden
+    if($('#editModal')) $('#editModal').style.display = 'none'; 
     
     if (action === 'delete') window.deleteCurrentRecord();
     else if (action === 'return') window.triggerReturnModal();
@@ -447,121 +567,4 @@ window.reportSubmitNewLocation = async function() {
     window.reportIndex++; window.saveReportState(); window.loadCloudData();
     setTimeout(window.renderNextReportItem, 600);
   } catch(e) { alert("Error updating location: " + e.message); window.renderNextReportItem(); }
-};
-
-// --- ORDER HISTORY & CONFLICT RESOLUTION ---
-window.openOrderHistory = async function(so) {
-  if(!$('#orderHistoryModal')) return;
-  $('#history_so_title').textContent = so;
-  $('#history_content').innerHTML = '<div style="text-align:center; padding:20px; color:#6b7280;">Loading history...</div>';
-  $('#orderHistoryModal').style.display = 'flex';
-
-  try {
-    const { data, error } = await supabaseClient.from('changelog').select('*').ilike('action', `%${so}%`).order('created_at', { ascending: false });
-    if(error) throw error;
-    if(!data || data.length === 0) {
-      $('#history_content').innerHTML = '<div style="text-align:center; padding:20px; color:#6b7280;">No history found for this SO.</div>';
-      return;
-    }
-    let html = '<ul style="text-align:left; padding-left:20px; margin:0; font-size:13px; color:#334155; max-height: 400px; overflow-y: auto;">';
-    data.forEach(log => { html += `<li style="margin-bottom:10px;"><b>${new Date(log.created_at).toLocaleString()}</b> <span style="color:#0284c7;">[${log.user_email}]</span><br/>${log.action}</li>`; });
-    html += '</ul>';
-    $('#history_content').innerHTML = html;
-  } catch (e) { $('#history_content').innerHTML = `<span style="color:red;">Error: ${e.message}</span>`; }
-};
-
-window.checkSoConflict = function(so, currentId = null) {
-  return new Promise(resolve => {
-    const exists = appData.staging.some(x => x.so === so && x.id !== currentId);
-    if (!exists) return resolve(true);
-
-    $('#conflict_so_title').textContent = so;
-    $('#conflict_content').innerHTML = 'Loading history...';
-    $('#soConflictModal').style.display = 'flex';
-
-    supabaseClient.from('changelog').select('*').ilike('action', `%${so}%`).order('created_at', { ascending: false }).then(({data, error}) => {
-      if(error || !data || data.length === 0) {
-        $('#conflict_content').innerHTML = '<span style="color:#6b7280; padding:10px;">No previous history found.</span>';
-      } else {
-        let html = '<ul style="text-align:left; padding-left:20px; font-size:13px; color:#4b5563; max-height:200px; overflow-y:auto;">';
-        data.forEach(log => { html += `<li style="margin-bottom:8px;"><b>${new Date(log.created_at).toLocaleString()}</b> [${log.user_email}]<br/>${log.action}</li>`; });
-        html += '</ul>';
-        $('#conflict_content').innerHTML = html;
-      }
-    });
-
-    $('#conflictCancelBtn').onclick = () => { $('#soConflictModal').style.display = 'none'; resolve(false); };
-    $('#conflictProceedBtn').onclick = () => { $('#soConflictModal').style.display = 'none'; resolve(true); };
-  });
-};
-
-// --- SPLIT ORDER ENGINE ---
-window.splitEngine = { targetId: null, total: 0, current: 0, dataArray: [], sourceItem: null };
-
-window.openSplitPrompt = function() {
-  window.splitEngine.targetId = window.activeReportMode ? window.reportQueue[window.reportIndex] : currentEditId;
-  $('#split_count_input').value = 2;
-  $('#editModal').style.display = 'none';
-  $('#splitPromptModal').style.display = 'flex';
-};
-
-window.submitSplitCount = function() {
-  const count = parseInt($('#split_count_input').value);
-  if(isNaN(count) || count < 2) return alert("Must select at least 2 splits.");
-  
-  window.splitEngine.total = count;
-  window.splitEngine.current = 1;
-  window.splitEngine.dataArray = [];
-  window.splitEngine.sourceItem = appData.staging.find(x => x.id === window.splitEngine.targetId);
-  
-  $('#splitPromptModal').style.display = 'none';
-  window.renderSplitConfig();
-};
-
-window.renderSplitConfig = function() {
-  const item = window.splitEngine.sourceItem;
-  $('#splitConfigTitle').textContent = `Configure Split (${window.splitEngine.current} of ${window.splitEngine.total})`;
-  $('#sp_so').value = item.so;
-  $('#sp_cust').value = item.customer;
-  
-  $('#sp_skid').value = 0; $('#sp_box').value = 0; $('#sp_crate').value = 0; $('#sp_pipe').value = 0; $('#sp_other').value = 0;
-  $('#sp_loc').value = ''; $('#sp_coords').value = ''; $('#sp_weight').value = ''; $('#sp_comments').value = '';
-  $('#sp_status').value = 'Partial';
-  $('#sp_staged_by').value = currentUser ? currentUser.email.split('@')[0] : '';
-  
-  $('#configureSplitModal').style.display = 'flex';
-};
-
-window.saveConfigureSplit = async function() {
-  const dynamicQty = window.getDynamicQty('sp');
-  if (dynamicQty === 0) return alert("Error: You must add at least 1 container to confirm this split.");
-  if (!$('#sp_loc').value.trim()) return alert("Error: You must assign a Location for this split.");
-  
-  const payload = {
-    so: $('#sp_so').value.trim(), customer: $('#sp_cust').value.trim(), location: $('#sp_loc').value.trim(),
-    coords: $('#sp_coords').value.trim(), weight: $('#sp_weight').value.trim(), status: $('#sp_status').value.trim(),
-    comments: $('#sp_comments').value.trim(), staged_by: $('#sp_staged_by').value.trim() + ' (Split)',
-    type: window.getDynamicType('sp'), qty: dynamicQty, photo_urls: window.splitEngine.sourceItem.photo_urls || []
-  };
-  
-  window.splitEngine.dataArray.push(payload);
-  window.splitEngine.current++;
-  
-  if (window.splitEngine.current > window.splitEngine.total) {
-    $('#configureSplitModal').style.display = 'none';
-    try {
-      const { error: insErr } = await supabaseClient.from('staging').insert(window.splitEngine.dataArray);
-      if(insErr) throw insErr;
-      await supabaseClient.from('staging').delete().eq('id', window.splitEngine.targetId);
-      
-      window.logAction('staging', `Split Order SO ${payload.so} into ${window.splitEngine.total} separate entries.`);
-      if(typeof window.showNotification === 'function') window.showNotification(`Order Split Successfully`);
-      window.loadCloudData();
-      
-      if(window.activeReportMode) { window.reportIndex++; window.saveReportState(); setTimeout(window.renderNextReportItem, 600); }
-    } catch(e) { alert("Split Error: " + e.message); }
-  } else {
-    $('#configureSplitModal').style.display = 'none';
-    setTimeout(window.renderSplitConfig, 200);
-  }
 };
