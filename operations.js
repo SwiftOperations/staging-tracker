@@ -108,6 +108,13 @@ window.saveEditedRecord = async function() {
   if (dynamicQty === 0) return alert("Error: You must have at least 1 container to save this record.");
   
   const locValue = $('#e_loc').value.trim();
+  const soVal = $('#e_so').value.trim();
+
+  if (editTargetRecord.table === 'staging') {
+    const proceed = await window.checkSoConflict(soVal, currentEditId);
+    if(!proceed) return;
+  }
+  
   const aisleRegex = /^[A-Z]-\d{2}-[A-F]-[12]$/i;
   if (editTargetRecord.table === 'staging' && aisleRegex.test(locValue)) {
     const isOccupied = appData.staging.some(x => x.id !== currentEditId && (x.location || '').toLowerCase() === locValue.toLowerCase());
