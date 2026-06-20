@@ -66,7 +66,7 @@ tr:hover td { background: #f8fafc; }
 .dropdown-content a { color: #334155; padding: 14px 18px; text-decoration: none; display: block; border-bottom: 1px solid #f1f5f9; font-size: 14px; font-weight: 600; }
 .dropdown-content a:hover { background: #f8fafc; color: var(--brand); padding-left: 22px; transition: 0.2s; }
 
-.freight-block { display: grid; grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); gap: 10px; margin-bottom: 14px; }
+.freight-block { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; margin-bottom: 14px; }
 .counter-box { display: flex; flex-direction: column; gap: 6px; }
 .counter-box label { font-size: 11px; font-weight: 800; color: #64748b; text-align: center; text-transform: uppercase; }
 .counter-controls { display: flex; align-items: center; background: #fff; border: 1px solid #cbd5e1; border-radius: 10px; overflow: hidden; }
