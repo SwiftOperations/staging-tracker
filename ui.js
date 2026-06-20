@@ -207,7 +207,6 @@ window.triggerShipModal = function(id) {
   activeShipTargetItem = item; 
   if($('#photoPreviewStrip')) $('#photoPreviewStrip').innerHTML = ''; 
   selectedPhotoBlobs = [];
-  
   if($('#m_so')) $('#m_so').value = item.so; 
   if($('#m_cust')) $('#m_cust').value = item.customer; 
   if($('#m_qty')) $('#m_qty').value = item.type;
@@ -215,11 +214,9 @@ window.triggerShipModal = function(id) {
   if($('#m_loc')) $('#m_loc').value = item.location; 
   if($('#m_weight')) $('#m_weight').value = item.weight || '—'; 
   if($('#m_by')) $('#m_by').value = '';
-  
   if($('#m_pm_chk')) $('#m_pm_chk').checked = false; 
   window.togglePMEmail(false, 'm_pm_email', 'm_pm_email_btn');
   if($('#shipModal')) $('#shipModal').style.display = 'flex';
-  
   window.renderPhotoStrip('#photoPreviewStrip', selectedPhotoBlobs);
 };
 
@@ -262,7 +259,6 @@ window.openOrdersModal = function() {
       `);
     });
   });
-  
   $('#ordersModal').style.display = 'flex';
 };
 
@@ -285,70 +281,19 @@ window.toggleOrderGroup = function(safeId) {
    const icon = document.getElementById('icon_so_' + safeId);
    let isHidden = false;
    if(rows.length > 0) isHidden = rows[0].style.display === 'none';
-   
    rows.forEach(r => r.style.display = isHidden ? 'table-row' : 'none');
    if(icon) icon.textContent = isHidden ? '-' : '+';
-};
-
-window.logAction = async function(table, actionDesc) {
-  const userEmail = currentUser ? currentUser.email.split('@')[0] : 'Guest';
-  try {
-    await supabaseClient.from('changelog').insert([{
-      table_name: table, action: actionDesc, user_email: userEmail
-    }]);
-  } catch(e) { console.error("Changelog log failed:", e); }
-};
-
-window.openChangelogModal = async function(table) {
-  if(!$('#changelogModal')) return;
-  $('#changelogTitle').textContent = table === 'staging' ? 'Staging Entries Changelog' : 'Shipped Log Changelog';
-  const tbody = $('#tblChangelog tbody');
-  
-  tbody.innerHTML = '<tr><td colspan="2" style="text-align:center; padding:12px;">Loading changes...</td></tr>';
-  $('#changelogModal').style.display = 'flex';
-  
-  try {
-    const { data, error } = await supabaseClient.from('changelog')
-      .select('*').eq('table_name', table).order('created_at', { ascending: false }).limit(75);
-      
-    if(error) throw error;
-    tbody.innerHTML = '';
-    
-    if(!data || data.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="2" style="text-align:center; color:#6b7280; padding:12px;">No changes logged yet.</td></tr>';
-      return;
-    }
-    
-    data.forEach(log => {
-      tbody.insertAdjacentHTML('beforeend', `
-        <tr style="border-bottom: 1px solid #f0f1f3;">
-          <td style="color:#6b7280; font-size:12px; white-space:nowrap; padding:8px;">${new Date(log.created_at).toLocaleString()}</td>
-          <td style="font-size:13px; padding:8px;"><span style="font-weight:bold; color:#0284c7;">[${log.user_email}]</span> ${log.action}</td>
-        </tr>
-      `);
-    });
-  } catch(e) {
-    tbody.innerHTML = `<tr><td colspan="2" style="text-align:center; color:red; padding:12px;">Error: ${e.message}</td></tr>`;
-  }
 };
 
 window.showNotification = function(message) {
   let container = $('#toast-container');
   if (!container) {
-    container = document.createElement('div');
-    container.id = 'toast-container';
-    document.body.appendChild(container);
+    container = document.createElement('div'); container.id = 'toast-container'; document.body.appendChild(container);
   }
-  const toast = document.createElement('div');
-  toast.className = 'toast-msg';
-  toast.textContent = message;
+  const toast = document.createElement('div'); toast.className = 'toast-msg'; toast.textContent = message;
   container.appendChild(toast);
-  
   requestAnimationFrame(() => toast.classList.add('show'));
-  setTimeout(() => {
-    toast.classList.remove('show');
-    setTimeout(() => toast.remove(), 300);
-  }, 3000);
+  setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 300); }, 3000);
 };
 
 window.toggleMenu = function(e) {
@@ -359,8 +304,6 @@ window.toggleMenu = function(e) {
 
 document.addEventListener('click', function(e) {
   if (!e.target.matches('.hamburger-btn')) {
-    document.querySelectorAll('.dropdown-content.show-menu').forEach(menu => {
-      menu.classList.remove('show-menu');
-    });
+    document.querySelectorAll('.dropdown-content.show-menu').forEach(menu => { menu.classList.remove('show-menu'); });
   }
 });
