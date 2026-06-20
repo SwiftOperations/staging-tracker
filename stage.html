@@ -2,20 +2,16 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Staging Entries Expanded Log — v1.0</title>
+<title>Staging Entries Expanded Log — v1.1</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<link rel="stylesheet" href="style.css?v=10.11" />
+<link rel="stylesheet" href="style.css?v=1.1" />
 </head>
 <body>
-<datalist id="dl_customers"></datalist>
-<datalist id="dl_locations"></datalist>
-<datalist id="dl_stagers"></datalist>
-<datalist id="dl_pastEmails"></datalist>
+<datalist id="dl_customers"></datalist><datalist id="dl_locations"></datalist><datalist id="dl_stagers"></datalist><datalist id="dl_pastEmails"></datalist>
 
 <div class="wrap">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; flex-wrap:wrap; gap:12px;">
-    <div class="dropdown">
-      <button class="hamburger-btn" onclick="window.toggleMenu(event)">☰</button>
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; flex-wrap:wrap; gap:12px;">
+    <div class="dropdown"><button class="hamburger-btn" onclick="window.toggleMenu(event)">☰</button>
       <div class="dropdown-content">
         <a href="index.html"><b>Index</b> (Dashboard)</a>
         <a href="stage.html" class="indented">↳ Staging Entries Log</a>
@@ -23,94 +19,42 @@
         <a href="reports.html"><b>Reports</b></a>
       </div>
     </div>
-    <h2 style="margin:0; flex: 1 1 auto;">Staging Entries Expanded Log — v1.0</h2>
+    <h2 style="margin:0; flex: 1 1 auto;">Staging Entries Expanded Log — v1.1</h2>
     <div id="authStatus"></div>
   </div>
 
-  <div class="actions" style="justify-content:space-between; flex-wrap:wrap;">
-    <div style="display:flex; gap:8px;">
-      <button class="btn" style="background:#8b5cf6;" onclick="window.toggleBatchMode()">Batch Mode</button>
-      <button class="btn" style="background:#0ea5e9;" onclick="window.openChangelogModal('staging')">Changelog</button>
-      <button class="btn" onclick="window.print()">Print Log</button>
-      <button class="btn" style="background:#4b5563;" onclick="window.close()">Close Window</button>
+  <div class="card" id="stagingCard">
+    <div class="split"><h3>Staging Entries</h3>
+      <div><button class="btn" style="background:#8b5cf6; padding:6px 12px; margin-right:4px;" onclick="window.open('stage.html?batch=true', '_self')">Batch Mode</button><button class="btn" style="background:#0ea5e9; padding:6px 12px;" onclick="window.openChangelogModal('staging')">Changelog</button></div>
     </div>
-    <input id="q" autocomplete="off" spellcheck="false" placeholder="Quick filter..." style="max-width:250px;" oninput="if(typeof window.renderTables === 'function') window.renderTables()"/>
+    <div class="tblwrap"><div class="tbl-scroller" style="max-height:80vh;"><table id="tblStaging">
+      <thead><tr>
+        <th class="show-in-batch" style="width:70px; background:#fafafa; padding:4px;"><div class="batch-header-btns" style="display:flex; flex-direction:column; gap:4px; text-align:center;"><button onclick="window.batchSelectAll()" style="font-size:10px; background:#fff; color:#4b5563;">Select All</button><button onclick="window.batchUnselectAll()" style="font-size:10px; background:#fff; color:#4b5563;">Unselect</button><button onclick="window.openBatchConsolidateModal(false)" style="font-size:10px; background:#8b5cf6; color:#fff; border-color:#8b5cf6;">Consolidate</button><button onclick="window.batchDelete()" style="font-size:10px; background:#dc2626; color:#fff; border-color:#dc2626;">Delete</button><button onclick="window.batchCancel()" style="font-size:10px; background:#e5e7eb; color:#4b5563; border-color:#cbd5e1;">Cancel</button></div></th>
+        <th class="hide-in-batch">Edit</th><th class="hide-in-batch">Photo(s)</th><th>SO</th><th>Customer</th><th>Entry Date</th><th>Containers</th><th>Location</th><th>Coords</th><th>Weight</th><th class="hide-in-batch">Comments</th><th>Status</th><th>Staged By</th><th class="hide-in-batch" style="position:sticky;right:0;width:70px;text-align:center;">Shipped</th>
+      </tr></thead><tbody></tbody>
+    </table></div></div>
   </div>
-  <div class="table-wrap"><table id="tblStaging">
-    <thead><tr>
-      <th class="show-in-batch" style="width:70px; background:#fafafa; padding:4px;">
-        <div class="batch-header-btns" style="display:flex; flex-direction:column; gap:4px; text-align:center;">
-                <button onclick="window.batchSelectAll()" style="font-size:10px; background:#fff; color:#4b5563;">Select All</button>
-                <button onclick="window.batchUnselectAll()" style="font-size:10px; background:#fff; color:#4b5563;">Unselect</button>
-                <button onclick="window.openBatchConsolidateModal(false)" style="font-size:10px; background:#8b5cf6; color:#fff; border-color:#8b5cf6;">Consolidate</button>
-                <button onclick="window.batchDelete()" style="font-size:10px; background:#dc2626; color:#fff; border-color:#dc2626;">Delete</button>
-                <button onclick="window.batchCancel()" style="font-size:10px; background:#e5e7eb; color:#4b5563; border-color:#cbd5e1;">Cancel</button>
-              </div>
-      </th>
-      <th class="hide-in-batch">Edit</th><th class="hide-in-batch">Photo(s)</th><th>SO</th><th>Customer</th><th>Entry Date</th><th>Containers</th><th>Location</th><th>Coords</th><th>Total Weight (in lbs)</th><th class="hide-in-batch">Comments</th><th>Status</th><th>Staged By</th><th class="hide-in-batch" style="position:sticky;right:0;width:70px;text-align:center;">Shipped</th>
-    </tr></thead>
-    <tbody></tbody>
-  </table></div>
 </div>
 
 <div id="returnModal" class="modal-overlay" onclick="if(event.target===this) document.querySelector('#returnModal').style.display='none'">
   <div class="modal-window">
     <button class="modal-close-x" onclick="document.querySelector('#returnModal').style.display='none'">&times;</button>
     <h3>Return to Stock</h3>
-    <p style="font-size:13px; color:#4b5563; margin-top:0; margin-bottom:8px;">Are you sure you want to return this order to stock?</p>
-    
-    <div class="modal-field"><label>Picked By</label>
-      <div style="display:flex; width:100%;">
-        <input id="r_picked_by" list="dl_stagers" placeholder="Shortname" style="border-top-right-radius:0; border-bottom-right-radius:0; border-right:0;" />
-        <button type="button" onclick="window.banishMemory('r_picked_by')" style="height:42px; width:36px; flex:none; background:#f8fafc; border:1px solid #cbd5e1; border-top-right-radius:8px; border-bottom-right-radius:8px; color:#dc2626; font-weight:bold; font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;">&times;</button>
-      </div>
-    </div>
-    <div class="modal-field"><label>Returned By</label>
-      <div style="display:flex; width:100%;">
-        <input id="r_returned_by" list="dl_stagers" placeholder="Shortname" style="border-top-right-radius:0; border-bottom-right-radius:0; border-right:0;" />
-        <button type="button" onclick="window.banishMemory('r_returned_by')" style="height:42px; width:36px; flex:none; background:#f8fafc; border:1px solid #cbd5e1; border-top-right-radius:8px; border-bottom-right-radius:8px; color:#dc2626; font-weight:bold; font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;">&times;</button>
-      </div>
-    </div>
-    
-    <div class="modal-field"><label>Reason for Return to Stock</label><input id="r_reason" placeholder="Enter reason..." /></div>
-    <div class="chk-row" style="margin-top:4px;"><input type="checkbox" id="r_pm_chk" onchange="window.togglePMEmail(this.checked, 'r_pm_email', 'r_pm_email_btn')"/><label>Confirm return to PM via e-mail</label></div>
-    
-    <div class="modal-field">
-      <div style="display:flex; width:100%;">
-        <input id="r_pm_email" list="dl_pastEmails" placeholder="PM E-mail" disabled style="border-top-right-radius:0; border-bottom-right-radius:0; border-right:0;" />
-        <button type="button" id="r_pm_email_btn" disabled onclick="window.banishMemory('r_pm_email')" style="height:42px; width:36px; flex:none; background:#f8fafc; border:1px solid #cbd5e1; border-top-right-radius:8px; border-bottom-right-radius:8px; color:#dc2626; font-weight:bold; font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;">&times;</button>
-      </div>
-    </div>
-    
-    <div class="modal-actions" style="margin-top:8px;"><button class="btn" style="background:#dc2626; width:100%; border:0; padding:10px 16px; border-radius:8px; color:#fff; font-weight:bold; cursor:pointer;" onclick="window.submitReturnToStock()">Confirm Return</button></div>
+    <div class="modal-field"><label>Picked By</label><div style="display:flex; width:100%;"><input id="r_picked_by" list="dl_stagers" style="border-top-right-radius:0; border-bottom-right-radius:0; border-right:0;" /><button type="button" onclick="window.banishMemory('r_picked_by')" style="height:42px; width:36px; flex:none; background:#f8fafc; border:1px solid #cbd5e1; border-top-right-radius:8px; border-bottom-right-radius:8px; color:#dc2626; font-weight:bold; font-size:18px; cursor:pointer; padding:0;">&times;</button></div></div>
+    <div class="modal-field"><label>Returned By</label><div style="display:flex; width:100%;"><input id="r_returned_by" list="dl_stagers" style="border-top-right-radius:0; border-bottom-right-radius:0; border-right:0;" /><button type="button" onclick="window.banishMemory('r_returned_by')" style="height:42px; width:36px; flex:none; background:#f8fafc; border:1px solid #cbd5e1; border-top-right-radius:8px; border-bottom-right-radius:8px; color:#dc2626; font-weight:bold; font-size:18px; cursor:pointer; padding:0;">&times;</button></div></div>
+    <div class="modal-field"><label>Reason</label><input id="r_reason" /></div>
+    <div class="chk-row" style="margin-top:4px;"><input type="checkbox" id="r_pm_chk" onchange="window.togglePMEmail(this.checked, 'r_pm_email', 'r_pm_email_btn')"/><label>Confirm via e-mail</label></div>
+    <div class="modal-field"><div style="display:flex; width:100%;"><input id="r_pm_email" list="dl_pastEmails" disabled style="border-top-right-radius:0; border-bottom-right-radius:0; border-right:0;" /><button type="button" id="r_pm_email_btn" disabled onclick="window.banishMemory('r_pm_email')" style="height:42px; width:36px; flex:none; background:#f8fafc; border:1px solid #cbd5e1; border-top-right-radius:8px; border-bottom-right-radius:8px; color:#dc2626; font-weight:bold; font-size:18px; cursor:pointer; padding:0;">&times;</button></div></div>
+    <button class="btn" style="background:#dc2626; width:100%; margin-top:8px;" onclick="window.submitReturnToStock()">Confirm</button>
   </div>
 </div>
 
 <div id="editModal" class="modal-overlay" onclick="if(event.target===this) document.querySelector('#editModal').style.display='none'">
   <div class="modal-window">
-    <button class="modal-close-x" onclick="document.querySelector('#editModal').style.display='none'">&times;</button>
-    <h3 id="editModalTitle">Edit Record</h3>
-    
-    <div id="editPhotoSection" style="display:flex; flex-direction:column; gap:8px;">
-      <label style="font-size:12px; font-weight:700; color:#4b5563;">Manage Freight Photos</label>
-      <div class="photo-options-grid">
-        <div class="photo-uploader" onclick="document.querySelector('#e_cameraFile').click()">📷 Take Live Photo</div>
-        <input type="file" id="e_cameraFile" accept="image/*" capture="environment" style="display:none" onchange="window.addEditPhotoBlob(this)" />
-        
-        <div class="photo-uploader" onclick="document.querySelector('#e_uploadFile').click()">📁 File Upload</div>
-        <input type="file" id="e_uploadFile" multiple accept="image/*" style="display:none" onchange="window.addEditPhotoBlob(this)" />
-      </div>
-      <div id="editPhotoPreviewStrip" class="photo-strip"></div>
-    </div>
-    
+    <button class="modal-close-x" onclick="document.querySelector('#editModal').style.display='none'">&times;</button><h3 id="editModalTitle">Edit Record</h3>
+    <div id="editPhotoSection" style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:12px; font-weight:700;">Manage Photos</label><div class="photo-options-grid"><div class="photo-uploader" onclick="document.querySelector('#e_cameraFile').click()">📷 Take Photo</div><input type="file" id="e_cameraFile" accept="image/*" capture="environment" style="display:none" onchange="window.addEditPhotoBlob(this)" /><div class="photo-uploader" onclick="document.querySelector('#e_uploadFile').click()">📁 Upload</div><input type="file" id="e_uploadFile" multiple accept="image/*" style="display:none" onchange="window.addEditPhotoBlob(this)" /></div><div id="editPhotoPreviewStrip" class="photo-strip"></div></div>
     <div class="modal-field"><label>SO#</label><input id="e_so" /></div>
-    <div class="modal-field"><label>Customer</label>
-      <div style="display:flex; width:100%;">
-        <input id="e_cust" list="dl_customers" style="border-top-right-radius:0; border-bottom-right-radius:0; border-right:0;" />
-        <button type="button" onclick="window.banishMemory('e_cust')" style="height:42px; width:36px; flex:none; background:#f8fafc; border:1px solid #cbd5e1; border-top-right-radius:8px; border-bottom-right-radius:8px; color:#dc2626; font-weight:bold; font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;">&times;</button>
-      </div>
-    </div>
-    
+    <div class="modal-field"><label>Customer</label><div style="display:flex; width:100%;"><input id="e_cust" list="dl_customers" style="border-top-right-radius:0; border-bottom-right-radius:0; border-right:0;" /><button type="button" onclick="window.banishMemory('e_cust')" style="height:42px; width:36px; flex:none; background:#f8fafc; border:1px solid #cbd5e1; border-top-right-radius:8px; border-bottom-right-radius:8px; color:#dc2626; font-weight:bold; font-size:18px; cursor:pointer; padding:0;">&times;</button></div></div>
     <label style="font-size:12px; font-weight:700; color:#4b5563; margin-bottom:-4px;">Container Quantities</label>
     <div class="freight-block">
       <div class="counter-box"><label>Skids</label><div class="counter-controls"><button class="counter-btn" onclick="window.adjustEditCount('e_skid',-1)">-</button><input id="e_skid" value="0" readonly/><button class="counter-btn" onclick="window.adjustEditCount('e_skid',1)">+</button></div></div>
@@ -119,168 +63,46 @@
       <div class="counter-box"><label>Pipe/Rod</label><div class="counter-controls"><button class="counter-btn" onclick="window.adjustEditCount('e_pipe',-1)">-</button><input id="e_pipe" value="0" readonly/><button class="counter-btn" onclick="window.adjustEditCount('e_pipe',1)">+</button></div></div>
       <div class="counter-box"><label>Other</label><div class="counter-controls"><button class="counter-btn" onclick="window.adjustEditCount('e_other',-1)">-</button><input id="e_other" value="0" readonly/><button class="counter-btn" onclick="window.adjustEditCount('e_other',1)">+</button></div></div>
     </div>
-
-    <div class="modal-field"><label>Location</label>
-      <div style="display:flex; width:100%;">
-        <input id="e_loc" list="dl_locations" style="border-top-right-radius:0; border-bottom-right-radius:0; border-right:0;" />
-        <button type="button" onclick="window.banishMemory('e_loc')" style="height:42px; width:36px; flex:none; background:#f8fafc; border:1px solid #cbd5e1; border-top-right-radius:8px; border-bottom-right-radius:8px; color:#dc2626; font-weight:bold; font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;">&times;</button>
-      </div>
-    </div>
-    
+    <div class="modal-field"><label>Location</label><div style="display:flex; width:100%;"><input id="e_loc" list="dl_locations" style="border-top-right-radius:0; border-bottom-right-radius:0; border-right:0;" /><button type="button" onclick="window.banishMemory('e_loc')" style="height:42px; width:36px; flex:none; background:#f8fafc; border:1px solid #cbd5e1; border-top-right-radius:8px; border-bottom-right-radius:8px; color:#dc2626; font-weight:bold; font-size:18px; cursor:pointer; padding:0;">&times;</button></div></div>
     <div class="modal-field"><label>Coords</label><input id="e_coords" readonly onclick="window.fetchBrowserGPS('e_coords')" style="background:#fafafa; cursor:pointer;" placeholder="Tap to update coordinates" /></div>
     <div class="modal-field"><label>Total Weight (in lbs)</label><input id="e_weight" oninput="window.formatWeight(this)" /></div>
-    
-    <div id="editStagingFields">
-      <div class="modal-field"><label>Shipping Status</label>
-        <select id="e_status">
-          <option>Partial</option><option>Ship Today</option><option>Ship Tomorrow</option><option>Ship On Future Date</option><option>Corp Pick (Not Consolidated)</option><option>Customer Pick-Up</option><option>Awaiting Shipping Instructions</option>
-        </select>
-      </div>
-      <div class="modal-field"><label>Staged By</label>
-        <div style="display:flex; width:100%;">
-          <input id="e_staged_by" list="dl_stagers" style="border-top-right-radius:0; border-bottom-right-radius:0; border-right:0;" />
-          <button type="button" onclick="window.banishMemory('e_staged_by')" style="height:42px; width:36px; flex:none; background:#f8fafc; border:1px solid #cbd5e1; border-top-right-radius:8px; border-bottom-right-radius:8px; color:#dc2626; font-weight:bold; font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;">&times;</button>
-        </div>
-      </div>
-    </div>
-    
-    <div id="editShippedFields" style="display:none;">
-      <div class="modal-field"><label>Carrier</label><input id="e_carrier" /></div>
-      <div class="modal-field"><label>Shipped By</label>
-        <div style="display:flex; width:100%;">
-          <input id="e_shipped_by" list="dl_stagers" style="border-top-right-radius:0; border-bottom-right-radius:0; border-right:0;" />
-          <button type="button" onclick="window.banishMemory('e_shipped_by')" style="height:42px; width:36px; flex:none; background:#f8fafc; border:1px solid #cbd5e1; border-top-right-radius:8px; border-bottom-right-radius:8px; color:#dc2626; font-weight:bold; font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;">&times;</button>
-        </div>
-      </div>
-      <div class="modal-field"><label>PM Verified Shortname</label>
-        <div style="display:flex; width:100%;">
-          <input id="e_pm" list="dl_pastEmails" style="border-top-right-radius:0; border-bottom-right-radius:0; border-right:0;" />
-          <button type="button" onclick="window.banishMemory('e_pm')" style="height:42px; width:36px; flex:none; background:#f8fafc; border:1px solid #cbd5e1; border-top-right-radius:8px; border-bottom-right-radius:8px; color:#dc2626; font-weight:bold; font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;">&times;</button>
-        </div>
-      </div>
-    </div>
-
-    <div class="modal-field" style="margin-top:4px;">
-      <label>Comments</label>
-      <textarea id="e_comments" rows="3" style="width:100%; border:1px solid #cbd5e1; border-radius:8px; padding:8px 12px; font-family:inherit; font-size:14px; resize:vertical;"></textarea>
-    </div>
-
+    <div id="editStagingFields"><div class="modal-field"><label>Shipping Status</label><select id="e_status"><option>Partial</option><option>Ship Today</option><option>Ship Tomorrow</option><option>Ship On Future Date</option><option>Corp Pick</option><option>Customer Pick-Up</option><option>Awaiting Instructions</option></select></div><div class="modal-field"><label>Staged By</label><div style="display:flex; width:100%;"><input id="e_staged_by" list="dl_stagers" style="border-top-right-radius:0; border-bottom-right-radius:0; border-right:0;" /><button type="button" onclick="window.banishMemory('e_staged_by')" style="height:42px; width:36px; flex:none; background:#f8fafc; border:1px solid #cbd5e1; border-top-right-radius:8px; border-bottom-right-radius:8px; color:#dc2626; font-weight:bold; font-size:18px; cursor:pointer; padding:0;">&times;</button></div></div></div>
+    <div id="editShippedFields" style="display:none;"><div class="modal-field"><label>Carrier</label><input id="e_carrier" /></div><div class="modal-field"><label>Shipped By</label><div style="display:flex; width:100%;"><input id="e_shipped_by" list="dl_stagers" style="border-top-right-radius:0; border-bottom-right-radius:0; border-right:0;" /><button type="button" onclick="window.banishMemory('e_shipped_by')" style="height:42px; width:36px; flex:none; background:#f8fafc; border:1px solid #cbd5e1; border-top-right-radius:8px; border-bottom-right-radius:8px; color:#dc2626; font-weight:bold; font-size:18px; cursor:pointer; padding:0;">&times;</button></div></div><div class="modal-field"><label>PM Verified Shortname</label><div style="display:flex; width:100%;"><input id="e_pm" list="dl_pastEmails" style="border-top-right-radius:0; border-bottom-right-radius:0; border-right:0;" /><button type="button" onclick="window.banishMemory('e_pm')" style="height:42px; width:36px; flex:none; background:#f8fafc; border:1px solid #cbd5e1; border-top-right-radius:8px; border-bottom-right-radius:8px; color:#dc2626; font-weight:bold; font-size:18px; cursor:pointer; padding:0;">&times;</button></div></div></div>
+    <div class="modal-field" style="margin-top:4px;"><label>Comments</label><textarea id="e_comments" rows="3" style="width:100%; border:1px solid #cbd5e1; border-radius:8px; padding:8px 12px; font-family:inherit; resize:vertical;"></textarea></div>
     <div class="modal-actions" style="justify-content: space-between; width:100%; margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap;">
       <span style="display:flex; gap:8px; flex-wrap: wrap;">
-        <button id="editDelBtn" class="btn" style="background:#dc2626; padding: 10px 16px; border-radius: 8px; border: 0; color: #fff; font-weight: 700; cursor: pointer;" onclick="window.deleteCurrentRecord()">Delete</button>
-        <button id="editUndoBtn" class="btn" style="background:#4b5563; padding: 10px 16px; border-radius: 8px; border: 0; color: #fff; font-weight: 700; cursor: pointer;" onclick="window.executeShippedUndo()">Undo Shipment Action</button>
-        <button id="editReturnBtn" class="btn" style="background:#eab308; color:#222; padding: 10px 16px; border-radius: 8px; border: 0; font-weight:700; cursor:pointer;" onclick="window.triggerReturnModal()">Return to Stock</button>
-        <button id="editConsolidateBtn" class="btn" style="background:#8b5cf6; color:#fff; padding: 10px 16px; border-radius: 8px; border: 0; font-weight:700; cursor:pointer;" onclick="window.openSameSoModal()">Consolidate</button>
-        <button id="editSplitBtn" class="btn" style="background:#0ea5e9; color:#fff; padding: 10px 16px; border-radius: 8px; border: 0; font-weight:700; cursor:pointer;" onclick="window.openSplitPrompt()">Split Order</button>
+        <button id="editDelBtn" class="btn" style="background:#dc2626; padding: 10px 16px; border-radius: 8px; color: #fff;" onclick="window.deleteCurrentRecord()">Delete</button>
+        <button id="editUndoBtn" class="btn" style="background:#4b5563; padding: 10px 16px; border-radius: 8px; color: #fff;" onclick="window.executeShippedUndo()">Undo</button>
+        <button id="editReturnBtn" class="btn" style="background:#eab308; color:#222; padding: 10px 16px; border-radius: 8px;" onclick="window.triggerReturnModal()">Return</button>
+        <button id="editConsolidateBtn" class="btn" style="background:#8b5cf6; padding: 10px 16px; border-radius: 8px;" onclick="window.openSameSoModal()">Consolidate</button>
+        <button id="editSplitBtn" class="btn" style="background:#0ea5e9; padding: 10px 16px; border-radius: 8px;" onclick="window.openSplitPrompt()">Split Order</button>
       </span>
       <span style="display:flex; gap:8px; margin-left:auto; flex-wrap: wrap;">
-        <button class="btn" style="background:#9ca3af; border-radius: 8px; padding: 10px 16px; border: 0; color:#fff; font-weight:700; cursor:pointer;" onclick="document.querySelector('#editModal').style.display='none'">Cancel</button>
-        <button id="editSaveBtn" class="btn" style="background:#e04f26; border-radius: 8px; padding: 10px 16px; border: 0; color:#fff; font-weight:700; cursor:pointer;" onclick="window.saveEditedRecord()">Save Changes</button>
+        <button class="btn" style="background:#9ca3af; border-radius: 8px; padding: 10px 16px;" onclick="document.querySelector('#editModal').style.display='none'">Cancel</button>
+        <button id="editSaveBtn" class="btn" style="background:#e04f26; border-radius: 8px; padding: 10px 16px;" onclick="window.saveEditedRecord()">Save</button>
       </span>
     </div>
   </div>
 </div>
 
 <div id="shipModal" class="modal-overlay" onclick="if(event.target===this) window.closeShipModal()">
-  <div class="modal-window">
-    <button class="modal-close-x" onclick="window.closeShipModal()">&times;</button>
-    <h3>Confirm Freight Dispatch</h3>
-    <div class="photo-options-grid">
-      <div class="photo-uploader" onclick="document.querySelector('#cameraFile').click()">📷 Take Live Photo</div>
-      <input type="file" id="cameraFile" accept="image/*" capture="environment" style="display:none" onchange="window.addPhotoBlob(this)" />
-      
-      <div class="photo-uploader" onclick="document.querySelector('#uploadFile').click()">📁 File Upload</div>
-      <input type="file" id="uploadFile" multiple accept="image/*" style="display:none" onchange="window.addPhotoBlob(this)" />
-    </div>
-    <div id="photoPreviewStrip" class="photo-strip"></div>
-    <div class="modal-field"><label>SO#</label><input id="m_so" readonly /></div>
-    <div class="modal-field"><label>Customer</label><input id="m_cust" readonly /></div>
-    <div class="modal-field"><label>Containers</label><input id="m_qty" readonly /></div>
-    <div class="modal-field"><label>Carrier</label><input id="m_carrier" placeholder="e.g. Fedex, Manitoulin, Customer Pickup" /></div>
-    <div class="modal-field"><label>Location</label><input id="m_loc" readonly /></div>
-    <div class="modal-field"><label>Total Weight (in lbs)</label><input id="m_weight" readonly /></div>
-    <div class="modal-field"><label>Shipped By</label>
-      <div style="display:flex; width:100%;">
-        <input id="m_by" list="dl_stagers" style="border-top-right-radius:0; border-bottom-right-radius:0; border-right:0;" />
-        <button type="button" onclick="window.banishMemory('m_by')" style="height:42px; width:36px; flex:none; background:#f8fafc; border:1px solid #cbd5e1; border-top-right-radius:8px; border-bottom-right-radius:8px; color:#dc2626; font-weight:bold; font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;">&times;</button>
-      </div>
-    </div>
-    <div class="chk-row"><input type="checkbox" id="m_pm_chk" onchange="window.togglePMEmail(this.checked, 'm_pm_email', 'm_pm_email_btn')"/><label>E-mail PM Verification</label></div>
-    <div class="modal-field">
-      <div style="display:flex; width:100%;">
-        <input id="m_pm_email" list="dl_pastEmails" disabled style="border-top-right-radius:0; border-bottom-right-radius:0; border-right:0;" />
-        <button type="button" id="m_pm_email_btn" disabled onclick="window.banishMemory('m_pm_email')" style="height:42px; width:36px; flex:none; background:#f8fafc; border:1px solid #cbd5e1; border-top-right-radius:8px; border-bottom-right-radius:8px; color:#dc2626; font-weight:bold; font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;">&times;</button>
-      </div>
-    </div>
-    <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:8px;">
-      <button id="modalConfirmBtn" class="btn" onclick="window.submitFreightDispatch()">Confirm Dispatch</button>
-    </div>
-  </div>
+  <div class="modal-window"><button class="modal-close-x" onclick="window.closeShipModal()">&times;</button><h3>Confirm Dispatch</h3><div class="photo-options-grid"><div class="photo-uploader" onclick="document.querySelector('#cameraFile').click()">📷 Photo</div><input type="file" id="cameraFile" accept="image/*" capture="environment" style="display:none" onchange="window.addPhotoBlob(this)" /><div class="photo-uploader" onclick="document.querySelector('#uploadFile').click()">📁 Upload</div><input type="file" id="uploadFile" multiple accept="image/*" style="display:none" onchange="window.addPhotoBlob(this)" /></div><div id="photoPreviewStrip" class="photo-strip"></div><div class="modal-field"><label>SO#</label><input id="m_so" readonly /></div><div class="modal-field"><label>Customer</label><input id="m_cust" readonly /></div><div class="modal-field"><label>Containers</label><input id="m_qty" readonly /></div><div class="modal-field"><label>Carrier</label><input id="m_carrier" /></div><div class="modal-field"><label>Location</label><input id="m_loc" readonly /></div><div class="modal-field"><label>Total Weight</label><input id="m_weight" readonly /></div><div class="modal-field"><label>Shipped By</label><div style="display:flex; width:100%;"><input id="m_by" list="dl_stagers" style="border-top-right-radius:0; border-bottom-right-radius:0; border-right:0;" /><button type="button" onclick="window.banishMemory('m_by')" style="height:42px; width:36px; flex:none; background:#f8fafc; border:1px solid #cbd5e1; border-top-right-radius:8px; border-bottom-right-radius:8px; color:#dc2626; font-weight:bold; font-size:18px; cursor:pointer; padding:0;">&times;</button></div></div><div class="chk-row"><input type="checkbox" id="m_pm_chk" onchange="window.togglePMEmail(this.checked, 'm_pm_email', 'm_pm_email_btn')"/><label>E-mail PM Verification</label></div><div class="modal-field"><div style="display:flex; width:100%;"><input id="m_pm_email" list="dl_pastEmails" disabled style="border-top-right-radius:0; border-bottom-right-radius:0; border-right:0;" /><button type="button" id="m_pm_email_btn" disabled onclick="window.banishMemory('m_pm_email')" style="height:42px; width:36px; flex:none; background:#f8fafc; border:1px solid #cbd5e1; border-top-right-radius:8px; border-bottom-right-radius:8px; color:#dc2626; font-weight:bold; font-size:18px; cursor:pointer; padding:0;">&times;</button></div></div><div style="display:flex; gap:8px; justify-content:flex-end; margin-top:8px;"><button id="modalConfirmBtn" class="btn" onclick="window.submitFreightDispatch()">Confirm Dispatch</button></div></div>
 </div>
 
-<div id="mapViewModal" class="modal-overlay" onclick="if(event.target===this) document.querySelector('#mapViewModal').style.display='none'">
-  <div class="modal-window">
-    <button class="modal-close-x" onclick="document.querySelector('#mapViewModal').style.display='none'">&times;</button>
-    <h3>Staged Manifest Details</h3>
-    <div id="mapViewPhotoSection" style="display:none; flex-direction:column; gap:4px;">
-      <label style="font-size:12px; font-weight:700; color:#4b5563;">Staged Images</label>
-      <div id="mapViewGalleryStrip" class="photo-strip"></div>
-    </div>
-    <div class="modal-field"><label>SO#</label><input id="v_so" readonly style="background:#f9fafb; border-color:#e5e7eb; color:#6b7280;"/></div>
-    <div class="modal-field"><label>Customer</label><input id="v_cust" readonly style="background:#f9fafb; border-color:#e5e7eb; color:#6b7280;"/></div>
-    <div class="modal-field"><label>Entry Date</label><input id="v_date" readonly style="background:#f9fafb; border-color:#e5e7eb; color:#6b7280;"/></div>
-    <div class="modal-field"><label>Containers</label><input id="v_type" readonly style="background:#f9fafb; border-color:#e5e7eb; color:#6b7280;"/></div>
-    <div class="modal-field"><label>Location</label><input id="v_loc" readonly style="background:#f9fafb; border-color:#e5e7eb; color:#6b7280;"/></div>
-    <div class="modal-field"><label>Coords</label><input id="v_coords" readonly style="background:#f9fafb; border-color:#e5e7eb; color:#6b7280;"/></div>
-    <div class="modal-field"><label>Total Weight (in lbs)</label><input id="v_weight" readonly style="background:#f9fafb; border-color:#e5e7eb; color:#6b7280;"/></div>
-    <div class="modal-field"><label>Status</label><input id="v_status" readonly style="background:#f9fafb; border-color:#e5e7eb; color:#6b7280;"/></div>
-    <div class="modal-field"><label>Staged By</label><input id="v_staged_by" readonly style="background:#f9fafb; border-color:#e5e7eb; color:#6b7280;"/></div>
-  </div>
-</div>
-
-<div id="viewModal" class="modal-overlay" onclick="if(event.target===this) document.querySelector('#viewModal').style.display='none'">
-  <div class="modal-window" style="max-width: 500px;">
-    <button class="modal-close-x" onclick="document.querySelector('#viewModal').style.display='none'">&times;</button>
-    <h3 style="margin:0 0 10px 0;">Staged Freight Photos</h3>
-    <div id="modalPhotoGallery" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:12px; padding: 4px 0;"></div>
-  </div>
-</div>
+<div id="mapViewModal" class="modal-overlay" onclick="if(event.target===this) document.querySelector('#mapViewModal').style.display='none'"><div class="modal-window"><button class="modal-close-x" onclick="document.querySelector('#mapViewModal').style.display='none'">&times;</button><h3>Manifest Details</h3><div id="mapViewPhotoSection" style="display:none; flex-direction:column; gap:4px;"><label style="font-size:12px; font-weight:700;">Staged Images</label><div id="mapViewGalleryStrip" class="photo-strip"></div></div><div class="modal-field"><label>SO#</label><input id="v_so" readonly style="background:#f9fafb; border-color:#e5e7eb; color:#6b7280;"/></div><div class="modal-field"><label>Customer</label><input id="v_cust" readonly style="background:#f9fafb; border-color:#e5e7eb; color:#6b7280;"/></div><div class="modal-field"><label>Entry Date</label><input id="v_date" readonly style="background:#f9fafb; border-color:#e5e7eb; color:#6b7280;"/></div><div class="modal-field"><label>Containers</label><input id="v_type" readonly style="background:#f9fafb; border-color:#e5e7eb; color:#6b7280;"/></div><div class="modal-field"><label>Location</label><input id="v_loc" readonly style="background:#f9fafb; border-color:#e5e7eb; color:#6b7280;"/></div><div class="modal-field"><label>Coords</label><input id="v_coords" readonly style="background:#f9fafb; border-color:#e5e7eb; color:#6b7280;"/></div><div class="modal-field"><label>Total Weight</label><input id="v_weight" readonly style="background:#f9fafb; border-color:#e5e7eb; color:#6b7280;"/></div><div class="modal-field"><label>Status</label><input id="v_status" readonly style="background:#f9fafb; border-color:#e5e7eb; color:#6b7280;"/></div><div class="modal-field"><label>Staged By</label><input id="v_staged_by" readonly style="background:#f9fafb; border-color:#e5e7eb; color:#6b7280;"/></div></div></div>
+<div id="viewModal" class="modal-overlay" onclick="if(event.target===this) document.querySelector('#viewModal').style.display='none'"><div class="modal-window" style="max-width: 500px;"><button class="modal-close-x" onclick="document.querySelector('#viewModal').style.display='none'">&times;</button><h3 style="margin:0 0 10px 0;">Staged Photos</h3><div id="modalPhotoGallery" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:12px; padding: 4px 0;"></div></div></div>
 
 <div id="sameSoModal" class="modal-overlay" onclick="if(event.target===this) window.sameSoCancel()">
-  <div class="modal-window" style="max-width: 950px;">
-    <button class="modal-close-x" onclick="window.sameSoCancel()">&times;</button>
-    <h3 style="margin:0 0 10px 0;">Consolidate Matching SOs</h3>
-    <div class="table-wrap" style="max-height: 300px; overflow-y: auto;">
-      <table id="tblSameSo">
-        <thead><tr>
-          <th style="width:70px; background:#fafafa; padding:4px;">
-            <div class="batch-header-btns" style="display:flex; flex-direction:column; gap:4px; text-align:center;">
-              <button onclick="window.sameSoSelectAll()" style="font-size:10px; background:#fff; color:#4b5563;">Select All</button>
-              <button onclick="window.sameSoCancel()" style="font-size:10px; background:#fee2e2; color:#dc2626; border-color:#fca5a5;">Cancel</button>
-            </div>
-          </th>
-          <th>SO</th><th>Customer</th><th>Entry Date</th><th>Containers</th><th>Location</th><th>Coords</th><th>Weight</th><th>Status</th><th>Staged By</th>
-        </tr></thead>
-        <tbody></tbody>
-      </table>
-    </div>
-    <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:8px;">
-      <button class="btn" style="background:#8b5cf6;" onclick="window.openBatchConsolidateModal(true)">Consolidate</button>
-    </div>
-  </div>
+  <div class="modal-window" style="max-width: 950px;"><button class="modal-close-x" onclick="window.sameSoCancel()">&times;</button><h3 style="margin:0 0 10px 0;">Consolidate Matching SOs</h3><div class="table-wrap" style="max-height: 300px; overflow-y: auto;"><table id="tblSameSo"><thead><tr><th style="width:70px; background:#fafafa; padding:4px;"><div class="batch-header-btns" style="display:flex; flex-direction:column; gap:4px; text-align:center;"><button onclick="window.sameSoSelectAll()" style="font-size:10px; background:#fff; color:#4b5563;">Select All</button><button onclick="window.sameSoCancel()" style="font-size:10px; background:#fee2e2; color:#dc2626; border-color:#fca5a5;">Cancel</button></div></th><th>SO</th><th>Customer</th><th>Entry Date</th><th>Containers</th><th>Location</th><th>Coords</th><th>Weight</th><th>Status</th><th>Staged By</th></tr></thead><tbody></tbody></table></div><div style="display:flex; justify-content:flex-end; gap:8px; margin-top:8px;"><button class="btn" style="background:#8b5cf6;" onclick="window.openBatchConsolidateModal(true)">Consolidate</button></div></div>
 </div>
 
 <div id="batchConsolidateModal" class="modal-overlay" onclick="if(event.target===this) document.querySelector('#batchConsolidateModal').style.display='none'">
   <div class="modal-window">
     <button class="modal-close-x" onclick="document.querySelector('#batchConsolidateModal').style.display='none'">&times;</button>
     <h3 style="margin:0 0 10px 0;">Configure Consolidation</h3>
-    <input type="hidden" id="bc_source" />
-    <input type="hidden" id="bc_photo_urls" />
-    
-    <div class="modal-field"><label>SO#</label><input id="bc_so" /></div>
-    <div class="modal-field"><label>Customer</label><input id="bc_cust" readonly style="background:#f9fafb; color:#9ca3af;"/></div>
-    
-    <label style="font-size:12px; font-weight:700; color:#4b5563; margin-top:8px; margin-bottom:-4px;">Combined Containers (Editable)</label>
+    <input type="hidden" id="bc_source" /><input type="hidden" id="bc_photo_urls" />
+    <div class="modal-field"><label>SO#</label><input id="bc_so" /></div><div class="modal-field"><label>Customer</label><input id="bc_cust" readonly style="background:#f9fafb; color:#9ca3af;"/></div>
+    <label style="font-size:12px; font-weight:700; color:#4b5563; margin-top:8px; margin-bottom:-4px;">Combined Containers</label>
     <div class="freight-block">
       <div class="counter-box"><label>Skids</label><div class="counter-controls"><button class="counter-btn" onclick="window.adjustEditCount('bc_skid',-1)">-</button><input id="bc_skid" value="0" readonly/><button class="counter-btn" onclick="window.adjustEditCount('bc_skid',1)">+</button></div></div>
       <div class="counter-box"><label>Boxes</label><div class="counter-controls"><button class="counter-btn" onclick="window.adjustEditCount('bc_box',-1)">-</button><input id="bc_box" value="0" readonly/><button class="counter-btn" onclick="window.adjustEditCount('bc_box',1)">+</button></div></div>
@@ -288,138 +110,26 @@
       <div class="counter-box"><label>Pipe/Rod</label><div class="counter-controls"><button class="counter-btn" onclick="window.adjustEditCount('bc_pipe',-1)">-</button><input id="bc_pipe" value="0" readonly/><button class="counter-btn" onclick="window.adjustEditCount('bc_pipe',1)">+</button></div></div>
       <div class="counter-box"><label>Other</label><div class="counter-controls"><button class="counter-btn" onclick="window.adjustEditCount('bc_other',-1)">-</button><input id="bc_other" value="0" readonly/><button class="counter-btn" onclick="window.adjustEditCount('bc_other',1)">+</button></div></div>
     </div>
-
-    <div class="modal-field"><label>Consolidated Location</label>
-      <div style="display:flex; width:100%;">
-        <input id="bc_loc" list="dl_locations" style="border-top-right-radius:0; border-bottom-right-radius:0; border-right:0;" />
-        <button type="button" onclick="window.banishMemory('bc_loc')" style="height:42px; width:36px; flex:none; background:#f8fafc; border:1px solid #cbd5e1; border-top-right-radius:8px; border-bottom-right-radius:8px; color:#dc2626; font-weight:bold; font-size:18px; cursor:pointer;">&times;</button>
-      </div>
-    </div>
-    
+    <div class="modal-field"><label>Consolidated Location</label><div style="display:flex; width:100%;"><input id="bc_loc" list="dl_locations" style="border-top-right-radius:0; border-bottom-right-radius:0; border-right:0;" /><button type="button" onclick="window.banishMemory('bc_loc')" style="height:42px; width:36px; flex:none; background:#f8fafc; border:1px solid #cbd5e1; border-top-right-radius:8px; border-bottom-right-radius:8px; color:#dc2626; font-weight:bold; font-size:18px; cursor:pointer;">&times;</button></div></div>
     <div class="modal-field"><label>Coords</label><input id="bc_coords" readonly onclick="window.fetchBrowserGPS('bc_coords')" style="background:#fafafa; cursor:pointer;" placeholder="Tap to update coordinates" /></div>
-    <div class="modal-field"><label>Total Weight (in lbs)</label><input id="bc_weight" oninput="window.formatWeight(this)" /></div>
-    <div class="modal-field"><label>Status</label>
-      <select id="bc_status"><option>Partial</option><option>Ship Today</option><option>Ship Tomorrow</option><option>Ship On Future Date</option><option>Corp Pick (Not Consolidated)</option><option>Customer Pick-Up</option><option>Awaiting Shipping Instructions</option></select>
-    </div>
-    
-    <div class="modal-field"><label>Consolidated By</label>
-      <div style="display:flex; width:100%;">
-        <input id="bc_staged_by" list="dl_stagers" style="border-top-right-radius:0; border-bottom-right-radius:0; border-right:0;" />
-        <button type="button" onclick="window.banishMemory('bc_staged_by')" style="height:42px; width:36px; flex:none; background:#f8fafc; border:1px solid #cbd5e1; border-top-right-radius:8px; border-bottom-right-radius:8px; color:#dc2626; font-weight:bold; font-size:18px; cursor:pointer;">&times;</button>
-      </div>
-    </div>
-    
+    <div class="modal-field"><label>Total Weight</label><input id="bc_weight" oninput="window.formatWeight(this)" /></div>
+    <div class="modal-field"><label>Status</label><select id="bc_status"><option>Partial</option><option>Ship Today</option><option>Ship Tomorrow</option><option>Ship On Future Date</option><option>Corp Pick</option><option>Customer Pick-Up</option><option>Awaiting Instructions</option></select></div>
+    <div class="modal-field"><label>Consolidated By</label><div style="display:flex; width:100%;"><input id="bc_staged_by" list="dl_stagers" style="border-top-right-radius:0; border-bottom-right-radius:0; border-right:0;" /><button type="button" onclick="window.banishMemory('bc_staged_by')" style="height:42px; width:36px; flex:none; background:#f8fafc; border:1px solid #cbd5e1; border-top-right-radius:8px; border-bottom-right-radius:8px; color:#dc2626; font-weight:bold; font-size:18px; cursor:pointer;">&times;</button></div></div>
     <div class="modal-field"><label>Comments</label><textarea id="bc_comments" rows="2" style="width:100%; border:1px solid #cbd5e1; border-radius:8px; padding:8px 12px; font-family:inherit; resize:vertical;"></textarea></div>
-
     <button id="btnConfirmBc" class="btn" style="margin-top:12px; width:100%; background:var(--brand);" onclick="window.executeBatchConsolidate()">Confirm Consolidation</button>
   </div>
 </div>
 
-<div id="changelogModal" class="modal-overlay" onclick="if(event.target===this) document.querySelector('#changelogModal').style.display='none'">
-  <div class="modal-window" style="max-width: 700px;">
-    <button class="modal-close-x" onclick="document.querySelector('#changelogModal').style.display='none'">&times;</button>
-    <h3 id="changelogTitle" style="margin:0 0 10px 0;">Changelog</h3>
-    <div class="table-wrap" style="max-height: 400px; overflow-y: auto;">
-      <table id="tblChangelog" style="min-width: 100%;">
-        <thead><tr><th style="width:160px; background:#fafafa; padding:8px;">Date/Time</th><th style="background:#fafafa; padding:8px;">Action Details</th></tr></thead>
-        <tbody></tbody>
-      </table>
-    </div>
-  </div>
-</div>
+<div id="changelogModal" class="modal-overlay" onclick="if(event.target===this) document.querySelector('#changelogModal').style.display='none'"><div class="modal-window" style="max-width: 700px;"><button class="modal-close-x" onclick="document.querySelector('#changelogModal').style.display='none'">&times;</button><h3 id="changelogTitle" style="margin:0 0 10px 0;">Changelog</h3><div class="table-wrap" style="max-height: 400px; overflow-y: auto;"><table id="tblChangelog" style="min-width: 100%;"><thead><tr><th style="width:160px; background:#fafafa; padding:8px;">Date/Time</th><th style="background:#fafafa; padding:8px;">Action Details</th></tr></thead><tbody></tbody></table></div></div></div>
+<div id="commentModal" class="modal-overlay" onclick="if(event.target===this) document.querySelector('#commentModal').style.display='none'"><div class="modal-window" style="max-width: 400px;"><button class="modal-close-x" onclick="document.querySelector('#commentModal').style.display='none'">&times;</button><h3 style="margin:0;">Comments</h3><div class="modal-field"><textarea id="quick_comments" rows="4" style="width:100%; border:1px solid #cbd5e1; border-radius:8px; padding:8px 12px; font-family:inherit; resize:vertical;"></textarea></div><div style="display:flex; justify-content:flex-end; gap:8px; margin-top:4px;"><button class="btn" style="background:#9ca3af;" onclick="document.querySelector('#commentModal').style.display='none'">Close</button><button id="saveCommentBtn" class="btn" onclick="window.saveQuickComment()">Save</button></div></div></div>
+<div id="ordersModal" class="modal-overlay" onclick="if(event.target===this) document.querySelector('#ordersModal').style.display='none'"><div class="modal-window" style="max-width: 600px;"><button class="modal-close-x" onclick="document.querySelector('#ordersModal').style.display='none'">&times;</button><h3 style="margin:0 0 10px 0;">Active Staging Orders</h3><input id="searchOrdersModal" autocomplete="off" spellcheck="false" placeholder="Quick Search SO or Customer..." style="margin-bottom:12px;" oninput="window.filterOrdersModal()"/><div class="table-wrap" style="max-height: 400px; overflow-y: auto;"><table id="tblOrders" style="min-width: 480px; width: 100%;"><thead><tr><th>SO</th><th colspan="3">Details</th></tr></thead><tbody></tbody></table></div></div></div>
+<div id="loginModal" class="modal-overlay" onclick="if(event.target===this) document.querySelector('#loginModal').style.display='none'"><div class="modal-window" style="max-width: 350px;"><button class="modal-close-x" onclick="document.querySelector('#loginModal').style.display='none'">&times;</button><h3 style="margin:0 0 10px 0;">Sign In</h3><div class="modal-field"><label>E-mail</label><input type="email" id="login_email" autocomplete="username" placeholder="warehouse@swiftsupply.ca" /></div><div class="modal-field"><label>Password</label><input type="password" id="login_password" autocomplete="current-password" placeholder="••••••••" /></div><button id="loginBtn" class="btn" style="margin-top:12px; width:100%;" onclick="window.submitLogin()">Sign In</button></div></div>
 
-<div id="commentModal" class="modal-overlay" onclick="if(event.target===this) document.querySelector('#commentModal').style.display='none'">
-  <div class="modal-window" style="max-width: 400px;">
-    <button class="modal-close-x" onclick="document.querySelector('#commentModal').style.display='none'">&times;</button>
-    <h3 style="margin:0;">Comments</h3>
-    <div class="modal-field">
-      <textarea id="quick_comments" rows="4" style="width:100%; border:1px solid #cbd5e1; border-radius:8px; padding:8px 12px; font-family:inherit; font-size:14px; resize:vertical;"></textarea>
-    </div>
-    <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:4px;">
-      <button class="btn" style="background:#9ca3af; padding:8px 16px; border-radius:8px;" onclick="document.querySelector('#commentModal').style.display='none'">Close</button>
-      <button id="saveCommentBtn" class="btn" style="padding:8px 16px; border-radius:8px;" onclick="window.saveQuickComment()">Save Changes</button>
-    </div>
-  </div>
-</div>
+<div id="orderHistoryModal" class="modal-overlay" onclick="if(event.target===this) document.querySelector('#orderHistoryModal').style.display='none'"><div class="modal-window" style="max-width: 550px;"><button class="modal-close-x" onclick="document.querySelector('#orderHistoryModal').style.display='none'">&times;</button><h3 style="margin:0 0 10px 0;">Order History: <span id="history_so_title" style="color:var(--brand);"></span></h3><div id="history_content" style="min-height:100px;"></div></div></div>
+<div id="soConflictModal" class="modal-overlay" onclick="if(event.target===this) document.querySelector('#soConflictModal').style.display='none'"><div class="modal-window" style="max-width: 550px;"><button class="modal-close-x" onclick="document.querySelector('#soConflictModal').style.display='none'">&times;</button><h3 style="margin:0 0 10px 0; color:#dc2626;">SO Conflict Detected</h3><p style="font-size:13px; color:#4b5563; margin-top:0;">SO <b><span id="conflict_so_title"></span></b> already exists in active Staging. Review history below:</p><div id="conflict_content" style="background:#fcfcfc; border:1px solid #cbd5e1; border-radius:8px; padding:12px; min-height:100px; margin-bottom:12px;"></div><div class="modal-actions" style="display:flex; gap:8px; justify-content:flex-end;"><button id="conflictCancelBtn" class="btn" style="background:#64748b;">Cancel Action</button><button id="conflictProceedBtn" class="btn" style="background:#10b981;">Proceed Anyway</button></div></div></div>
+<div id="splitPromptModal" class="modal-overlay" onclick="if(event.target===this) document.querySelector('#splitPromptModal').style.display='none'"><div class="modal-window" style="max-width: 350px;"><button class="modal-close-x" onclick="document.querySelector('#splitPromptModal').style.display='none'">&times;</button><h3 style="margin:0 0 10px 0;">Split Order</h3><div class="modal-field"><label>How many splits are required?</label><input type="number" id="split_count_input" value="2" min="2" max="10" /></div><button class="btn" style="margin-top:12px; width:100%; background:#8b5cf6;" onclick="window.submitSplitCount()">Start Splitting</button></div></div>
+<div id="configureSplitModal" class="modal-overlay" onclick="if(event.target===this) document.querySelector('#configureSplitModal').style.display='none'"><div class="modal-window"><button class="modal-close-x" onclick="document.querySelector('#configureSplitModal').style.display='none'">&times;</button><h3 id="splitConfigTitle" style="margin:0 0 10px 0;">Configure Split</h3><div class="modal-field"><label>SO#</label><input id="sp_so" readonly style="background:#f9fafb;" /></div><div class="modal-field"><label>Customer</label><input id="sp_cust" readonly style="background:#f9fafb;" /></div><label style="font-size:12px; font-weight:700; color:#4b5563; margin-top:8px; margin-bottom:-4px;">Split Containers</label><div class="freight-block"><div class="counter-box"><label>Skids</label><div class="counter-controls"><button class="counter-btn" onclick="window.adjustEditCount('sp_skid',-1)">-</button><input id="sp_skid" value="0" readonly/><button class="counter-btn" onclick="window.adjustEditCount('sp_skid',1)">+</button></div></div><div class="counter-box"><label>Boxes</label><div class="counter-controls"><button class="counter-btn" onclick="window.adjustEditCount('sp_box',-1)">-</button><input id="sp_box" value="0" readonly/><button class="counter-btn" onclick="window.adjustEditCount('sp_box',1)">+</button></div></div><div class="counter-box"><label>Crates</label><div class="counter-controls"><button class="counter-btn" onclick="window.adjustEditCount('sp_crate',-1)">-</button><input id="sp_crate" value="0" readonly/><button class="counter-btn" onclick="window.adjustEditCount('sp_crate',1)">+</button></div></div><div class="counter-box"><label>Pipe/Rod</label><div class="counter-controls"><button class="counter-btn" onclick="window.adjustEditCount('sp_pipe',-1)">-</button><input id="sp_pipe" value="0" readonly/><button class="counter-btn" onclick="window.adjustEditCount('sp_pipe',1)">+</button></div></div><div class="counter-box"><label>Other</label><div class="counter-controls"><button class="counter-btn" onclick="window.adjustEditCount('sp_other',-1)">-</button><input id="sp_other" value="0" readonly/><button class="counter-btn" onclick="window.adjustEditCount('sp_other',1)">+</button></div></div></div><div class="modal-field"><label>Split Location</label><input id="sp_loc" list="dl_locations" /></div><div class="modal-field"><label>Coords</label><input id="sp_coords" readonly onclick="window.fetchBrowserGPS('sp_coords')" style="background:#fafafa; cursor:pointer;" placeholder="Tap to update coordinates" /></div><div class="modal-field"><label>Total Weight</label><input id="sp_weight" oninput="window.formatWeight(this)" /></div><div class="modal-field"><label>Status</label><select id="sp_status"><option>Partial</option><option>Ship Today</option><option>Ship Tomorrow</option><option>Ship On Future Date</option><option>Corp Pick</option><option>Customer Pick-Up</option><option>Awaiting Instructions</option></select></div><div class="modal-field"><label>Split By</label><input id="sp_staged_by" list="dl_stagers" /></div><div class="modal-field"><label>Comments</label><textarea id="sp_comments" rows="2" style="width:100%; border:1px solid #cbd5e1; border-radius:8px; padding:8px 12px; font-family:inherit; resize:vertical;"></textarea></div><button class="btn" style="margin-top:12px; width:100%; background:var(--brand);" onclick="window.saveConfigureSplit()">Save & Next</button></div></div>
 
-<div id="loginModal" class="modal-overlay" onclick="if(event.target===this) document.querySelector('#loginModal').style.display='none'">
-  <div class="modal-window" style="max-width: 350px;">
-    <button class="modal-close-x" onclick="document.querySelector('#loginModal').style.display='none'">&times;</button>
-    <h3 style="margin:0 0 10px 0;">Sign In</h3>
-    <div class="modal-field"><label>E-mail</label><input type="email" id="login_email" autocomplete="username" placeholder="warehouse@swiftsupply.ca" /></div>
-    <div class="modal-field"><label>Password</label><input type="password" id="login_password" autocomplete="current-password" placeholder="••••••••" /></div>
-    <button id="loginBtn" class="btn" style="margin-top:12px; width:100%;" onclick="window.submitLogin()">Sign In</button>
-  </div>
-</div>
-
-<!-- ORDER HISTORY MODAL -->
-<div id="orderHistoryModal" class="modal-overlay" onclick="if(event.target===this) document.querySelector('#orderHistoryModal').style.display='none'">
-  <div class="modal-window" style="max-width: 550px;">
-    <button class="modal-close-x" onclick="document.querySelector('#orderHistoryModal').style.display='none'">&times;</button>
-    <h3 style="margin:0 0 10px 0;">Order History: <span id="history_so_title" style="color:var(--brand);"></span></h3>
-    <div id="history_content" style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:8px; padding:12px; min-height:100px;"></div>
-  </div>
-</div>
-
-<!-- SO CONFLICT MODAL -->
-<div id="soConflictModal" class="modal-overlay">
-  <div class="modal-window" style="max-width: 550px;">
-    <h3 style="margin:0 0 10px 0; color:#dc2626;">SO Conflict Detected</h3>
-    <p style="font-size:13px; color:#4b5563; margin-top:0;">SO <b><span id="conflict_so_title"></span></b> already exists in active Staging. Review the history below to ensure this is not a duplicate entry.</p>
-    <div id="conflict_content" style="background:#fcfcfc; border:1px solid #cbd5e1; border-radius:8px; padding:12px; min-height:100px; margin-bottom:12px;"></div>
-    <div class="modal-actions" style="display:flex; gap:8px; justify-content:flex-end;">
-      <button id="conflictCancelBtn" class="btn" style="background:#64748b;">Cancel Action</button>
-      <button id="conflictProceedBtn" class="btn" style="background:#10b981;">Proceed Anyway</button>
-    </div>
-  </div>
-</div>
-
-<!-- SPLIT PROMPT MODAL -->
-<div id="splitPromptModal" class="modal-overlay" onclick="if(event.target===this) document.querySelector('#splitPromptModal').style.display='none'">
-  <div class="modal-window" style="max-width: 350px;">
-    <button class="modal-close-x" onclick="document.querySelector('#splitPromptModal').style.display='none'">&times;</button>
-    <h3 style="margin:0 0 10px 0;">Split Order</h3>
-    <div class="modal-field"><label>How many splits are required?</label>
-      <input type="number" id="split_count_input" value="2" min="2" max="10" />
-    </div>
-    <button class="btn" style="margin-top:12px; width:100%; background:#8b5cf6;" onclick="window.submitSplitCount()">Start Splitting</button>
-  </div>
-</div>
-
-<!-- CONFIGURE SPLITTING MODAL -->
-<div id="configureSplitModal" class="modal-overlay">
-  <div class="modal-window">
-    <button class="modal-close-x" onclick="document.querySelector('#configureSplitModal').style.display='none'">&times;</button>
-    <h3 id="splitConfigTitle" style="margin:0 0 10px 0;">Configure Split</h3>
-    <div class="modal-field"><label>SO#</label><input id="sp_so" readonly style="background:#f9fafb;" /></div>
-    <div class="modal-field"><label>Customer</label><input id="sp_cust" readonly style="background:#f9fafb;" /></div>
-    
-    <label style="font-size:12px; font-weight:700; color:#4b5563; margin-top:8px; margin-bottom:-4px;">Split Containers</label>
-    <div class="freight-block">
-      <div class="counter-box"><label>Skids</label><div class="counter-controls"><button class="counter-btn" onclick="window.adjustEditCount('sp_skid',-1)">-</button><input id="sp_skid" value="0" readonly/><button class="counter-btn" onclick="window.adjustEditCount('sp_skid',1)">+</button></div></div>
-      <div class="counter-box"><label>Boxes</label><div class="counter-controls"><button class="counter-btn" onclick="window.adjustEditCount('sp_box',-1)">-</button><input id="sp_box" value="0" readonly/><button class="counter-btn" onclick="window.adjustEditCount('sp_box',1)">+</button></div></div>
-      <div class="counter-box"><label>Crates</label><div class="counter-controls"><button class="counter-btn" onclick="window.adjustEditCount('sp_crate',-1)">-</button><input id="sp_crate" value="0" readonly/><button class="counter-btn" onclick="window.adjustEditCount('sp_crate',1)">+</button></div></div>
-      <div class="counter-box"><label>Pipe/Rod</label><div class="counter-controls"><button class="counter-btn" onclick="window.adjustEditCount('sp_pipe',-1)">-</button><input id="sp_pipe" value="0" readonly/><button class="counter-btn" onclick="window.adjustEditCount('sp_pipe',1)">+</button></div></div>
-      <div class="counter-box"><label>Other</label><div class="counter-controls"><button class="counter-btn" onclick="window.adjustEditCount('sp_other',-1)">-</button><input id="sp_other" value="0" readonly/><button class="counter-btn" onclick="window.adjustEditCount('sp_other',1)">+</button></div></div>
-    </div>
-
-    <div class="modal-field"><label>Split Location</label><input id="sp_loc" list="dl_locations" /></div>
-    <div class="modal-field"><label>Coords</label><input id="sp_coords" readonly onclick="window.fetchBrowserGPS('sp_coords')" style="background:#fafafa; cursor:pointer;" placeholder="Tap to update coordinates" /></div>
-    <div class="modal-field"><label>Total Weight (in lbs)</label><input id="sp_weight" oninput="window.formatWeight(this)" /></div>
-    <div class="modal-field"><label>Status</label><select id="sp_status"><option>Partial</option><option>Ship Today</option><option>Ship Tomorrow</option><option>Ship On Future Date</option><option>Corp Pick (Not Consolidated)</option><option>Customer Pick-Up</option><option>Awaiting Shipping Instructions</option></select></div>
-    <div class="modal-field"><label>Split By</label><input id="sp_staged_by" list="dl_stagers" /></div>
-    <div class="modal-field"><label>Comments</label><textarea id="sp_comments" rows="2" style="width:100%; border:1px solid #cbd5e1; border-radius:8px; padding:8px 12px; font-family:inherit; resize:vertical;"></textarea></div>
-
-    <button class="btn" style="margin-top:12px; width:100%; background:var(--brand);" onclick="window.saveConfigureSplit()">Save & Next</button>
-  </div>
-</div>
-    
-<script src="config.js?v=10.11"></script>
-<script src="auth.js?v=10.11"></script>
-<script src="ui.js?v=10.11"></script>
-<script src="operations.js?v=10.11"></script>
-<script src="batch.js?v=10.11"></script>
-<script src="media.js?v=10.11"></script>
-<script src="app.js?v=10.11"></script>
+<script src="config.js?v=1.1"></script><script src="auth.js?v=1.1"></script><script src="ui.js?v=1.1"></script><script src="history.js?v=1.1"></script><script src="split.js?v=1.1"></script><script src="reports.js?v=1.1"></script><script src="operations.js?v=1.1"></script><script src="batch.js?v=1.1"></script><script src="media.js?v=1.1"></script><script src="app.js?v=1.1"></script>
 </body>
 </html>
