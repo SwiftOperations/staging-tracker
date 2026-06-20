@@ -78,13 +78,28 @@ tr:hover td { background: #f8fafc; }
 .so-link:hover { color: #b93d1b; }
 
 @media (max-width: 600px) {
-  h1 { font-size: 24px; } h2 { font-size: 18px; } h3 { font-size: 16px; }
-  .grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
-  .tile { padding: 14px; } .big { font-size: 28px; }
-  table { min-width: 1000px; } 
-  th, td { padding: 10px 12px; font-size: 12px; white-space: nowrap; }
+  h1 { font-size: 20px; } h2 { font-size: 18px; } h3 { font-size: 15px; }
+  .wrap { padding: 8px; margin: 8px auto; }
+  .grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .card { padding: 12px; margin: 10px 0; }
+  .tile { padding: 10px; } .big { font-size: 24px; }
+  
+  /* Fits more table data on screen & stops vertical squishing */
+  table { min-width: 750px; } 
+  th, td { padding: 6px 8px; font-size: 11.5px; white-space: nowrap; }
+  
+  /* Shrinks bulky mobile buttons and inputs */
+  .btn, .btn-edit { height: 34px; padding: 0 10px; font-size: 12px; }
+  input, select, textarea { height: 38px; padding: 0 10px; font-size: 13px; }
   .row > * { flex: 1 1 100%; }
-  .counter-btn { width: 26px; } 
-  .counter-controls input { font-size: 13px; }
-  .modal-window { padding: 20px; }
+  
+  /* Allows container quantities to stack and be highly viewable */
+  .freight-block { display: flex; flex-wrap: wrap; gap: 8px; }
+  .counter-box { flex: 1 1 calc(33.333% - 8px); }
+  .counter-btn { width: 30px; height: 38px; font-size: 16px; } 
+  .counter-controls input { height: 38px; font-size: 14px; padding: 0; }
+  .counter-box label { font-size: 10px; letter-spacing: -0.5px; }
+  
+  .modal-window { padding: 16px; }
+  .split { gap: 8px; margin-bottom: 12px; }
 }
