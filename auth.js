@@ -31,16 +31,11 @@ window.submitLogin = async function() {
   const password = $('#login_password').value;
   if(!email || !password) return alert("Enter email and password.");
   
-  $('#loginBtn').disabled = true;
-  $('#loginBtn').textContent = 'Signing in...';
-  
+  $('#loginBtn').disabled = true; $('#loginBtn').textContent = 'Signing in...';
   const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+  $('#loginBtn').disabled = false; $('#loginBtn').textContent = 'Sign In';
   
-  $('#loginBtn').disabled = false;
-  $('#loginBtn').textContent = 'Sign In';
-  
-  if(error) { alert("Login Failed: " + error.message); } 
-  else { $('#loginModal').style.display = 'none'; }
+  if(error) { alert("Login Failed: " + error.message); } else { $('#loginModal').style.display = 'none'; }
 };
 
 window.signOut = async function() { await supabaseClient.auth.signOut(); window.location.reload(); };
