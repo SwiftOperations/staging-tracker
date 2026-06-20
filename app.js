@@ -14,14 +14,8 @@ function initApp() {
   if (isBatchMode) document.body.classList.add('batch-mode');
   window.loadCloudData(); 
   setInterval(window.loadCloudData, 5000); 
-
-  if($('#add')) {
-    $('#add').addEventListener('click', window.submitStagingEntry);
-  }
+  if($('#add')) $('#add').addEventListener('click', window.submitStagingEntry);
 }
 
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initApp);
-} else {
-  initApp();
-}
+if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', initApp); } 
+else { initApp(); }
