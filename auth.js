@@ -40,11 +40,7 @@ window.submitLogin = async function() {
   $('#loginBtn').textContent = 'Sign In';
   
   if(error) { alert("Login Failed: " + error.message); } 
-  else {
-    $('#loginModal').style.display = 'none';
-    $('#login_email').value = '';
-    $('#login_password').value = '';
-  }
+  else { $('#loginModal').style.display = 'none'; }
 };
 
-window.signOut = async function() { await supabaseClient.auth.signOut(); };
+window.signOut = async function() { await supabaseClient.auth.signOut(); window.location.reload(); };
