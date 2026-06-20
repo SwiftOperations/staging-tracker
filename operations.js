@@ -4,11 +4,9 @@ window.banishMemory = function(inputId) {
   if(!val) return;
   if(confirm(`Remove "${val}" from autocomplete memory?`)) {
     if(!hiddenMemory.includes(val)) {
-      hiddenMemory.push(val);
-      localStorage.setItem('swift_hidden_memory', JSON.stringify(hiddenMemory));
+      hiddenMemory.push(val); localStorage.setItem('swift_hidden_memory', JSON.stringify(hiddenMemory));
     }
-    $('#'+inputId).value = '';
-    window.loadCloudData();
+    $('#'+inputId).value = ''; window.loadCloudData();
   }
 };
 
@@ -18,7 +16,6 @@ window.loadCloudData = async function() {
       supabaseClient.from('staging').select('*').order('entry_date', { ascending: false }),
       supabaseClient.from('shipped').select('*').order('shipped_at', { ascending: false })
     ]);
-    
     if (!st.error && st.data) appData.staging = st.data; 
     if (!sh.error && sh.data) appData.shipped = sh.data;
     
@@ -30,8 +27,7 @@ window.loadCloudData = async function() {
     if($('#dl_stagers')) $('#dl_stagers').innerHTML = filterMem(allData.map(x=>(x.staged_by || x.shipped_by))).map(s=>`<option value="${s}">`).join('');
     if($('#dl_pastEmails')) $('#dl_pastEmails').innerHTML = filterMem(appData.shipped.map(x=>x.pmd_email)).map(em=>`<option value="${em}@swiftsupply.ca">`).join('');
     
-    window.renderTables(); 
-    if(typeof window.syncMapPins === 'function') window.syncMapPins();
+    window.renderTables(); if(typeof window.syncMapPins === 'function') window.syncMapPins();
   } catch(e) { console.error("Data load failed:", e); }
 };
 
@@ -42,25 +38,18 @@ window.deleteCurrentRecord = async function() {
     if($('#editModal')) $('#editModal').style.display = 'none';
     if(typeof window.showNotification === 'function') window.showNotification('Record Deleted Permanently');
     window.loadCloudData();
-    
-    if(window.activeReportMode) { window.reportIndex++; window.saveReportState(); setTimeout(window.renderNextReportItem, 600); }
-  } else {
-    if(window.activeReportMode) window.renderNextReportItem();
-  }
+    if(window.activeReportMode) { window.reportRecordAction('Fixed via Deletion'); }
+  } else { if(window.activeReportMode) window.renderNextReportItem(); }
 };
 
 window.submitReturnToStock = async function() {
   const pickedBy = $('#r_picked_by').value.trim(); const returnedBy = $('#r_returned_by').value.trim();
-  const reason = $('#r_reason').value.trim();
-  const pmEmail = $('#r_pm_email').value.trim(); const pmChecked = $('#r_pm_chk').checked;
+  const reason = $('#r_reason').value.trim(); const pmEmail = $('#r_pm_email').value.trim(); const pmChecked = $('#r_pm_chk').checked;
 
   if(!pickedBy || !returnedBy || !reason || (pmChecked && !pmEmail)) return alert("Missing required inputs.");
-  
   try {
-    const e = appData.staging.find(x => x.id === currentEditId);
-    const currentTimeStamp = new Date().toLocaleString();
-    let pmName = pmEmail ? pmEmail.split('@')[0].split('.')[0] : null;
-    if(pmName) pmName = pmName.charAt(0).toUpperCase() + pmName.slice(1);
+    const e = appData.staging.find(x => x.id === currentEditId); const currentTimeStamp = new Date().toLocaleString();
+    let pmName = pmEmail ? pmEmail.split('@')[0].split('.')[0] : null; if(pmName) pmName = pmName.charAt(0).toUpperCase() + pmName.slice(1);
     
     const { error: insertError } = await supabaseClient.from('shipped').insert([{
       so: editTargetRecord.so, customer: $('#e_cust').value.trim(), type: window.getDynamicType('e'), qty: window.getDynamicQty('e'),
@@ -70,108 +59,57 @@ window.submitReturnToStock = async function() {
     if(insertError) throw insertError;
     
     await supabaseClient.from('staging').delete().eq('id', currentEditId);
-    window.logAction('staging', `Returned to Stock SO: ${editTargetRecord.so}`);
-    window.logAction('shipped', `Added Return to Stock log for SO: ${editTargetRecord.so}`);
+    window.logAction('staging', `Returned to Stock SO: ${editTargetRecord.so}`); window.logAction('shipped', `Added Return to Stock log for SO: ${editTargetRecord.so}`);
     if(typeof window.showNotification === 'function') window.showNotification('Returned to Stock Successfully');
 
-    const photoLinks = editTargetRecord.photo_urls.length > 0 ? `\nAttached Photos:\n${editTargetRecord.photo_urls.map((p,i)=> `Image ${i+1}: ${SUPABASE_URL}/storage/v1/object/public/freight-photos/${p}`).join('\n')}\n` : '';
-
-    const cachedSubject = `RETURN TO STOCK: ${editTargetRecord.so} for ${$('#e_cust').value.trim()}`;
-    const cachedBody = `Your order/pick has now been Returned to Stock. Return details:\n\n` +
-      `Reason for Return to Stock: ${reason}\n\n` +
-      `----------------------------------------------------------------------\n` +
-      `SO#                   | ${editTargetRecord.so}\n` +
-      `Customer              | ${$('#e_cust').value.trim()}\n` +
-      `Container(s)          | ${window.getDynamicType('e')}\n` +
-      `Total Weight (In lbs) | ${$('#e_weight').value.trim() || '—'}\n` +
-      `Picked by             | ${pickedBy}\n` +
-      `Returned At           | ${currentTimeStamp}\n` +
-      `Returned By           | ${returnedBy}\n` +
-      `----------------------------------------------------------------------\n` +
-      photoLinks +
-      `\nFor more shipment details, visit the following link: https://swiftoperations.github.io/staging-tracker/\n\n` +
-      `Thanks\n`;
-
-    if($('#returnModal')) $('#returnModal').style.display='none';
-    window.loadCloudData();
-    if(pmChecked) { window.location.href = `mailto:${pmEmail}?cc=warehouse1@swiftsupply.ca&subject=${encodeURIComponent(cachedSubject)}&body=${encodeURIComponent(cachedBody)}`; }
-    
-    if(window.activeReportMode) { window.reportIndex++; window.saveReportState(); setTimeout(window.renderNextReportItem, 600); }
+    if($('#returnModal')) $('#returnModal').style.display='none'; window.loadCloudData();
+    if(window.activeReportMode) { window.reportRecordAction('Fixed via Return to Stock'); }
   } catch(err) { alert("Return to Stock error: " + err.message); }
 };
 
 window.saveEditedRecord = async function() {
   const dynamicQty = window.getDynamicQty('e');
   if (dynamicQty === 0) return alert("Error: You must have at least 1 container to save this record.");
-  
-  const locValue = $('#e_loc').value.trim();
-  const soVal = $('#e_so').value.trim();
+  const locValue = $('#e_loc').value.trim(); const soVal = $('#e_so').value.trim();
 
-  if (editTargetRecord.table === 'staging') {
-    const proceed = await window.checkSoConflict(soVal, currentEditId);
-    if(!proceed) return;
-  }
+  if (editTargetRecord.table === 'staging') { const proceed = await window.checkSoConflict(soVal, currentEditId); if(!proceed) return; }
   
   const aisleRegex = /^[A-Z]-\d{2}-[A-F]-[12]$/i;
   if (editTargetRecord.table === 'staging' && aisleRegex.test(locValue)) {
     const isOccupied = appData.staging.some(x => x.id !== currentEditId && (x.location || '').toLowerCase() === locValue.toLowerCase());
-    if (isOccupied) {
-      if (!confirm(`Conflict Warning: Aisle location ${locValue.toUpperCase()} is already occupied. Do you want to proceed and place them together?`)) return;
-    }
+    if (isOccupied && !confirm(`Conflict Warning: Aisle location ${locValue.toUpperCase()} is already occupied. Do you want to proceed and place them together?`)) return;
   }
 
-  const dynamicType = window.getDynamicType('e');
-  const basePayload = { so: soVal, customer: $('#e_cust').value.trim(), location: locValue, coords: $('#e_coords').value.trim(), weight: $('#e_weight').value.trim(), comments: $('#e_comments').value.trim(), type: dynamicType, qty: dynamicQty };
-
-  const oldRec = appData[editTargetRecord.table].find(x => x.id === currentEditId) || {};
-  let changes = [];
-  if ((oldRec.location || '') !== basePayload.location) changes.push(`Location (${oldRec.location || 'Blank'} ➔ ${basePayload.location})`);
-  if ((oldRec.weight || '') !== basePayload.weight) changes.push(`Weight (${oldRec.weight || 'Blank'} ➔ ${basePayload.weight})`);
-  if ((oldRec.coords || '') !== basePayload.coords) changes.push(`Coords updated`);
-  if ((oldRec.comments || '') !== basePayload.comments) changes.push(`Comments updated`);
-  if ((oldRec.type || '') !== basePayload.type) changes.push(`Containers updated`);
+  const basePayload = { so: soVal, customer: $('#e_cust').value.trim(), location: locValue, coords: $('#e_coords').value.trim(), weight: $('#e_weight').value.trim(), comments: $('#e_comments').value.trim(), type: window.getDynamicType('e'), qty: dynamicQty };
 
   if (editTargetRecord.table === 'staging') {
-    const newStatus = $('#e_status').value.trim();
-    if ((oldRec.status || '') !== newStatus) changes.push(`Status (${oldRec.status || 'Blank'} ➔ ${newStatus})`);
-    
-    const { error } = await supabaseClient.from('staging').update({ ...basePayload, status: newStatus, staged_by: $('#e_staged_by').value.trim(), photo_urls: editTargetRecord.photo_urls }).eq('id', currentEditId);
-    if(error) { alert("Database Error: " + error.message); return; }
+    const { error } = await supabaseClient.from('staging').update({ ...basePayload, status: $('#e_status').value.trim(), staged_by: $('#e_staged_by').value.trim(), photo_urls: editTargetRecord.photo_urls }).eq('id', currentEditId);
+    if(error) return alert("Database Error: " + error.message);
   } else {
-    const newCarrier = $('#e_carrier').value.trim();
-    if ((oldRec.carrier || '') !== newCarrier) changes.push(`Carrier (${oldRec.carrier || 'Blank'} ➔ ${newCarrier})`);
-    
-    const { error } = await supabaseClient.from('shipped').update({ ...basePayload, carrier: newCarrier, shipped_by: $('#e_shipped_by').value.trim(), pmd_email: $('#e_pm').value.trim() || null, photo_urls: editTargetRecord.photo_urls }).eq('id', currentEditId);
-    if(error) { alert("Database Error: " + error.message); return; }
+    const { error } = await supabaseClient.from('shipped').update({ ...basePayload, carrier: $('#e_carrier').value.trim(), shipped_by: $('#e_shipped_by').value.trim(), pmd_email: $('#e_pm').value.trim() || null, photo_urls: editTargetRecord.photo_urls }).eq('id', currentEditId);
+    if(error) return alert("Database Error: " + error.message);
   }
   
-  let changeString = changes.length > 0 ? changes.join(', ') : 'No tracked fields changed';
-  window.logAction(editTargetRecord.table, `Edited SO ${basePayload.so}: ${changeString}`);
-  
+  window.logAction(editTargetRecord.table, `Edited SO ${basePayload.so}`);
   if($('#editModal')) $('#editModal').style.display = 'none'; 
   if(typeof window.showNotification === 'function') window.showNotification('Record Updated Successfully');
   window.loadCloudData();
-  
-  if(window.activeReportMode) { window.reportIndex++; window.saveReportState(); setTimeout(window.renderNextReportItem, 600); }
+  if(window.activeReportMode) { window.reportRecordAction('Fixed via Manual Edit'); }
 };
 
 window.executeShippedUndo = async function() {
   if(!confirm("Are you sure you want to undo this action and return it to Staging?")) return;
   try {
     const { data: currentRecord } = await supabaseClient.from('shipped').select('*').eq('id', editTargetRecord.id).single();
-    
-    const proceed = await window.checkSoConflict(currentRecord.so, null);
-    if(!proceed) return;
+    const proceed = await window.checkSoConflict(currentRecord.so, null); if(!proceed) return;
 
     const { error } = await supabaseClient.from('staging').insert([{ so: currentRecord.so, customer: currentRecord.customer, type: currentRecord.type, qty: currentRecord.qty, location: currentRecord.location, coords: currentRecord.coords, weight: currentRecord.weight, comments: currentRecord.comments, status: 'Partial', photo_urls: currentRecord.photo_urls }]);
-    if (error) { alert("Undo Database Error: " + error.message); return; }
+    if (error) return alert("Undo Database Error: " + error.message);
     
     await supabaseClient.from('shipped').delete().eq('id', editTargetRecord.id);
-    window.logAction('shipped', `Undo Shipment Action for SO: ${currentRecord.so}`);
-    window.logAction('staging', `Restored to Staging via Undo for SO: ${currentRecord.so}`);
+    window.logAction('shipped', `Undo Shipment Action for SO: ${currentRecord.so}`); window.logAction('staging', `Restored to Staging via Undo for SO: ${currentRecord.so}`);
     if(typeof window.showNotification === 'function') window.showNotification('Shipment Action Undone');
-    if($('#editModal')) $('#editModal').style.display = 'none'; 
-    window.loadCloudData();
+    if($('#editModal')) $('#editModal').style.display = 'none'; window.loadCloudData();
   } catch(e) { alert("Undo error: " + e.message); }
 };
 
@@ -183,388 +121,64 @@ window.submitFreightDispatch = async function() {
   if($('#modalConfirmBtn')) $('#modalConfirmBtn').disabled = true;
   try {
     let photoUrls = (activeShipTargetItem && activeShipTargetItem.photo_urls) ? [...activeShipTargetItem.photo_urls] : [];
-    
     for (let i = 0; i < selectedPhotoBlobs.length; i++) {
-      const file = selectedPhotoBlobs[i]; 
-      const cleanFileName = file.name.replace(/[^a-zA-Z0-9.]/g, '');
+      const cleanFileName = selectedPhotoBlobs[i].name.replace(/[^a-zA-Z0-9.]/g, '');
       const path = `${activeShipTargetItem.so}-${Date.now()}-${i}-${cleanFileName}`;
-      await supabaseClient.storage.from('freight-photos').upload(path, file); photoUrls.push(path);
+      await supabaseClient.storage.from('freight-photos').upload(path, selectedPhotoBlobs[i]); photoUrls.push(path);
     }
     
-    let pmName = pmEmail ? pmEmail.split('@')[0].split('.')[0] : null;
-    if(pmName) pmName = pmName.charAt(0).toUpperCase() + pmName.slice(1);
-    const currentTimeStamp = new Date().toLocaleString();
-
-    const { error: insertError } = await supabaseClient.from('shipped').insert([{
-      so: activeShipTargetItem.so, customer: activeShipTargetItem.customer, type: activeShipTargetItem.type,
-      qty: activeShipTargetItem.qty, carrier: carrierVal, location: activeShipTargetItem.location, coords: activeShipTargetItem.coords,
-      weight: activeShipTargetItem.weight, comments: activeShipTargetItem.comments, shipped_by: dispatcher, pmd_email: pmName, photo_urls: photoUrls
-    }]);
-    if (insertError) {
-      alert("Database Error: " + insertError.message);
-      if($('#modalConfirmBtn')) $('#modalConfirmBtn').disabled = false;
-      return;
-    }
+    let pmName = pmEmail ? pmEmail.split('@')[0].split('.')[0] : null; if(pmName) pmName = pmName.charAt(0).toUpperCase() + pmName.slice(1);
+    const { error: insertError } = await supabaseClient.from('shipped').insert([{ so: activeShipTargetItem.so, customer: activeShipTargetItem.customer, type: activeShipTargetItem.type, qty: activeShipTargetItem.qty, carrier: carrierVal, location: activeShipTargetItem.location, coords: activeShipTargetItem.coords, weight: activeShipTargetItem.weight, comments: activeShipTargetItem.comments, shipped_by: dispatcher, pmd_email: pmName, photo_urls: photoUrls }]);
+    if (insertError) { alert("Database Error: " + insertError.message); if($('#modalConfirmBtn')) $('#modalConfirmBtn').disabled = false; return; }
 
     await supabaseClient.from('staging').delete().eq('id', activeShipTargetItem.id);
-    window.logAction('staging', `Ship Confirmed SO: ${activeShipTargetItem.so}`);
-    window.logAction('shipped', `Added via Ship Confirm: SO: ${activeShipTargetItem.so}`);
+    window.logAction('staging', `Ship Confirmed SO: ${activeShipTargetItem.so}`); window.logAction('shipped', `Added via Ship Confirm: SO: ${activeShipTargetItem.so}`);
     if(typeof window.showNotification === 'function') window.showNotification('Freight Dispatched Successfully');
-    
-    const photoLinks = photoUrls.length > 0 ? `\nAttached Photos:\n${photoUrls.map((p,i)=> `Image ${i+1}: ${SUPABASE_URL}/storage/v1/object/public/freight-photos/${p}`).join('\n')}\n` : '';
-    
-    const cachedSubject = `CONFIRMATION OF SHIPOUT: ${activeShipTargetItem.customer} ${activeShipTargetItem.so} @ ${activeShipTargetItem.type} via ${carrierVal}`;
-    const cachedBody = `Your order has now been shipped! Order details:\n\n` +
-      `----------------------------------------------------------------------\n` +
-      `SO#                   | ${activeShipTargetItem.so}\n` +
-      `Customer              | ${activeShipTargetItem.customer}\n` +
-      `Container(s)          | ${activeShipTargetItem.type}\n` +
-      `Total Weight (In lbs) | ${activeShipTargetItem.weight || '—'}\n` +
-      `Carrier               | ${carrierVal}\n` +
-      `Shipped At            | ${currentTimeStamp}\n` +
-      `Shipped By            | ${dispatcher}\n` +
-      `----------------------------------------------------------------------\n` +
-      photoLinks +
-      `\nFor more shipment details, visit the following link: https://swiftoperations.github.io/staging-tracker/\n\n` +
-      `Thanks\n`;
-
     window.closeShipModal();
-    if(pmChecked) { window.location.href = `mailto:${pmEmail}?cc=warehouse1@swiftsupply.ca&subject=${encodeURIComponent(cachedSubject)}&body=${encodeURIComponent(cachedBody)}`; }
+    if(window.activeReportMode) { window.reportRecordAction('Fixed via Shipped Out'); }
   } catch(e) { alert("Data dispatch error."); } finally { if($('#modalConfirmBtn')) $('#modalConfirmBtn').disabled = false; }
 };
 
 window.submitStagingEntry = async function() {
   const sk = parseInt($('#c_skid').value)||0, bx = parseInt($('#c_box').value)||0, cr = parseInt($('#c_crate').value)||0, pi = parseInt($('#c_pipe').value)||0, ot = parseInt($('#c_other').value)||0;
   if(!$('#so').value || !$('#customer').value || !$('#loc').value) return alert("Fields Missing.");
+  const totalQty = sk + bx + cr + pi + ot; if (totalQty === 0) return alert("Error: You must add at least 1 container to confirm this entry.");
   
-  const totalQty = sk + bx + cr + pi + ot;
-  if (totalQty === 0) return alert("Error: You must add at least 1 container to confirm this entry.");
-  
-  const soVal = $('#so').value.trim();
-  const locValue = $('#loc').value.trim();
-
-  const proceed = await window.checkSoConflict(soVal, null);
-  if(!proceed) return;
+  const soVal = $('#so').value.trim(); const locValue = $('#loc').value.trim();
+  const proceed = await window.checkSoConflict(soVal, null); if(!proceed) return;
 
   const aisleRegex = /^[A-Z]-\d{2}-[A-F]-[12]$/i;
   if (aisleRegex.test(locValue)) {
     const isOccupied = appData.staging.some(x => (x.location || '').toLowerCase() === locValue.toLowerCase());
-    if (isOccupied) {
-      if (!confirm(`Conflict Warning: Aisle location ${locValue.toUpperCase()} is already occupied. Do you want to proceed and place them together?`)) return;
-    }
+    if (isOccupied && !confirm(`Conflict Warning: Aisle location ${locValue.toUpperCase()} is already occupied. Do you want to proceed and place them together?`)) return;
   }
   
-  let type = []; 
-  if(sk) type.push(window.formatContainer(sk, 'Skid'));
-  if(bx) type.push(window.formatContainer(bx, 'Box'));
-  if(cr) type.push(window.formatContainer(cr, 'Crate'));
-  if(pi) type.push(window.formatContainer(pi, 'Pipe/Rod'));
-  if(ot) type.push(window.formatContainer(ot, 'Other'));
-  
-  $('#add').disabled = true;
-  $('#add').textContent = 'Saving...';
+  let type = []; if(sk) type.push(window.formatContainer(sk, 'Skid')); if(bx) type.push(window.formatContainer(bx, 'Box')); if(cr) type.push(window.formatContainer(cr, 'Crate')); if(pi) type.push(window.formatContainer(pi, 'Pipe/Rod')); if(ot) type.push(window.formatContainer(ot, 'Other'));
+  $('#add').disabled = true; $('#add').textContent = 'Saving...';
   
   try {
     let photoUrls = []; 
     for (let i = 0; i < mainPhotoBlobs.length; i++) {
-      const file = mainPhotoBlobs[i]; 
-      const cleanFileName = file.name.replace(/[^a-zA-Z0-9.]/g, '');
-      const path = `${soVal}-staging-${Date.now()}-${i}-${cleanFileName}`;
-      const { error: uploadError } = await supabaseClient.storage.from('freight-photos').upload(path, file);
-      if(!uploadError) photoUrls.push(path);
+      const cleanFileName = mainPhotoBlobs[i].name.replace(/[^a-zA-Z0-9.]/g, ''); const path = `${soVal}-staging-${Date.now()}-${i}-${cleanFileName}`;
+      const { error: uploadError } = await supabaseClient.storage.from('freight-photos').upload(path, mainPhotoBlobs[i]); if(!uploadError) photoUrls.push(path);
     }
   
     const { error } = await supabaseClient.from('staging').insert([{ so: soVal, customer: $('#customer').value.trim(), status: $('#status').value, location: locValue, coords: $('#coords').value.trim(), weight: $('#weight').value.trim(), comments: $('#comments').value.trim(), staged_by: $('#staged_by').value.trim(), type: type.join(', '), qty: totalQty, photo_urls: photoUrls }]);
-    
-    if (error) {
-      alert("Database Error: " + error.message);
-      $('#add').disabled = false; $('#add').textContent = 'Add'; return;
-    }
+    if (error) { alert("Database Error: " + error.message); $('#add').disabled = false; $('#add').textContent = 'Add'; return; }
     
     window.logAction('staging', `Added new entry for SO: ${soVal}`);
     if(typeof window.showNotification === 'function') window.showNotification('Staging Entry Added');
-    
-    $('#so').value=''; $('#customer').value=''; $('#loc').value=''; $('#coords').value=''; $('#staged_by').value=''; $('#weight').value=''; $('#c_skid').value=0; $('#c_box').value=0; $('#c_crate').value=0; $('#c_pipe').value=0; $('#c_other').value=0; 
-    if($('#comments')) $('#comments').value='';
-    mainPhotoBlobs = []; window.renderMainPhotoStrip();
-    window.loadCloudData();
+    $('#so').value=''; $('#customer').value=''; $('#loc').value=''; $('#coords').value=''; $('#staged_by').value=''; $('#weight').value=''; $('#c_skid').value=0; $('#c_box').value=0; $('#c_crate').value=0; $('#c_pipe').value=0; $('#c_other').value=0; if($('#comments')) $('#comments').value=''; mainPhotoBlobs = []; window.renderMainPhotoStrip(); window.loadCloudData();
   } catch(e) { alert("System Error: " + e.message); }
-  
-  $('#add').disabled = false;
-  $('#add').textContent = 'Add';
+  $('#add').disabled = false; $('#add').textContent = 'Add';
 };
 
 window.saveQuickComment = async function() {
   const newComment = $('#quick_comments').value.trim();
-  const { error } = await supabaseClient.from(currentCommentTarget.table)
-    .update({ comments: newComment }).eq('id', currentCommentTarget.id);
+  const { error } = await supabaseClient.from(currentCommentTarget.table).update({ comments: newComment }).eq('id', currentCommentTarget.id);
   if(error) return alert("Error saving comment: " + error.message);
   const o = appData[currentCommentTarget.table].find(x => x.id === currentCommentTarget.id);
   if(o) window.logAction(currentCommentTarget.table, `Added/Edited comment for SO: ${o.so}`);
   if(typeof window.showNotification === 'function') window.showNotification('Comment Saved');
-  if($('#commentModal')) $('#commentModal').style.display = 'none';
-  window.loadCloudData();
-};
-
-// ==========================================
-// ORDER HISTORY & CONFLICT RESOLUTION ENGINE
-// ==========================================
-window.openOrderHistory = async function(so) {
-  if(!$('#orderHistoryModal')) return;
-  $('#history_so_title').textContent = so;
-  $('#history_content').innerHTML = '<div style="text-align:center; padding:20px; color:#6b7280;">Loading history...</div>';
-  $('#orderHistoryModal').style.display = 'flex';
-
-  try {
-    const { data, error } = await supabaseClient.from('changelog').select('*').ilike('action', `%${so}%`).order('created_at', { ascending: false });
-    if(error) throw error;
-    if(!data || data.length === 0) {
-      $('#history_content').innerHTML = '<div style="text-align:center; padding:20px; color:#6b7280;">No history found for this SO.</div>';
-      return;
-    }
-    let html = '<ul style="text-align:left; padding-left:20px; margin:0; font-size:13px; color:#334155; max-height: 400px; overflow-y: auto;">';
-    data.forEach(log => { html += `<li style="margin-bottom:10px;"><b>${new Date(log.created_at).toLocaleString()}</b> <span style="color:#0284c7;">[${log.user_email}]</span><br/>${log.action}</li>`; });
-    html += '</ul>';
-    $('#history_content').innerHTML = html;
-  } catch (e) { $('#history_content').innerHTML = `<span style="color:red;">Error: ${e.message}</span>`; }
-};
-
-window.checkSoConflict = function(so, currentId = null) {
-  return new Promise(resolve => {
-    const exists = appData.staging.some(x => x.so === so && x.id !== currentId);
-    if (!exists) return resolve(true);
-
-    $('#conflict_so_title').textContent = so;
-    $('#conflict_content').innerHTML = '<div style="text-align:center; padding:10px; color:#6b7280;">Loading history...</div>';
-    $('#soConflictModal').style.display = 'flex';
-
-    supabaseClient.from('changelog').select('*').ilike('action', `%${so}%`).order('created_at', { ascending: false }).then(({data, error}) => {
-      if(error || !data || data.length === 0) {
-        $('#conflict_content').innerHTML = '<span style="color:#6b7280; padding:10px;">No previous history found.</span>';
-      } else {
-        let html = '<ul style="text-align:left; padding-left:20px; margin:0; font-size:13px; color:#4b5563; max-height:200px; overflow-y:auto;">';
-        data.forEach(log => { html += `<li style="margin-bottom:8px;"><b>${new Date(log.created_at).toLocaleString()}</b> [${log.user_email}]<br/>${log.action}</li>`; });
-        html += '</ul>';
-        $('#conflict_content').innerHTML = html;
-      }
-    });
-
-    $('#conflictCancelBtn').onclick = () => { $('#soConflictModal').style.display = 'none'; resolve(false); };
-    $('#conflictProceedBtn').onclick = () => { $('#soConflictModal').style.display = 'none'; resolve(true); };
-  });
-};
-
-// ==========================================
-// SPLIT ORDER ENGINE
-// ==========================================
-window.splitEngine = { targetId: null, total: 0, current: 0, dataArray: [], sourceItem: null };
-
-window.openSplitPrompt = function() {
-  window.splitEngine.targetId = window.activeReportMode ? window.reportQueue[window.reportIndex] : currentEditId;
-  $('#split_count_input').value = 2;
-  if($('#editModal')) $('#editModal').style.display = 'none';
-  $('#splitPromptModal').style.display = 'flex';
-};
-
-window.submitSplitCount = function() {
-  const count = parseInt($('#split_count_input').value);
-  if(isNaN(count) || count < 2) return alert("Must select at least 2 splits.");
-  
-  window.splitEngine.total = count;
-  window.splitEngine.current = 1;
-  window.splitEngine.dataArray = [];
-  window.splitEngine.sourceItem = appData.staging.find(x => x.id === window.splitEngine.targetId);
-  
-  $('#splitPromptModal').style.display = 'none';
-  window.renderSplitConfig();
-};
-
-window.renderSplitConfig = function() {
-  const item = window.splitEngine.sourceItem;
-  $('#splitConfigTitle').textContent = `Configure Split (${window.splitEngine.current} of ${window.splitEngine.total})`;
-  $('#sp_so').value = item.so;
-  $('#sp_cust').value = item.customer;
-  
-  $('#sp_skid').value = 0; $('#sp_box').value = 0; $('#sp_crate').value = 0; $('#sp_pipe').value = 0; $('#sp_other').value = 0;
-  $('#sp_loc').value = ''; $('#sp_coords').value = ''; $('#sp_weight').value = ''; $('#sp_comments').value = '';
-  $('#sp_status').value = 'Partial';
-  $('#sp_staged_by').value = currentUser ? currentUser.email.split('@')[0] : '';
-  
-  $('#configureSplitModal').style.display = 'flex';
-};
-
-window.saveConfigureSplit = async function() {
-  const dynamicQty = window.getDynamicQty('sp');
-  if (dynamicQty === 0) return alert("Error: You must add at least 1 container to confirm this split.");
-  if (!$('#sp_loc').value.trim()) return alert("Error: You must assign a Location for this split.");
-  
-  const payload = {
-    so: $('#sp_so').value.trim(), customer: $('#sp_cust').value.trim(), location: $('#sp_loc').value.trim(),
-    coords: $('#sp_coords').value.trim(), weight: $('#sp_weight').value.trim(), status: $('#sp_status').value.trim(),
-    comments: $('#sp_comments').value.trim(), staged_by: $('#sp_staged_by').value.trim() + ' (Split)',
-    type: window.getDynamicType('sp'), qty: dynamicQty, photo_urls: window.splitEngine.sourceItem.photo_urls || []
-  };
-  
-  window.splitEngine.dataArray.push(payload);
-  window.splitEngine.current++;
-  
-  if (window.splitEngine.current > window.splitEngine.total) {
-    $('#configureSplitModal').style.display = 'none';
-    try {
-      const { error: insErr } = await supabaseClient.from('staging').insert(window.splitEngine.dataArray);
-      if(insErr) throw insErr;
-      await supabaseClient.from('staging').delete().eq('id', window.splitEngine.targetId);
-      
-      window.logAction('staging', `Split Order SO ${payload.so} into ${window.splitEngine.total} separate entries.`);
-      if(typeof window.showNotification === 'function') window.showNotification(`Order Split Successfully`);
-      window.loadCloudData();
-      
-      if(window.activeReportMode) { window.reportIndex++; window.saveReportState(); setTimeout(window.renderNextReportItem, 600); }
-    } catch(e) { alert("Split Error: " + e.message); }
-  } else {
-    $('#configureSplitModal').style.display = 'none';
-    setTimeout(window.renderSplitConfig, 200);
-  }
-};
-
-// ==========================================
-// STAGING VERIFICATION REPORT ENGINE
-// ==========================================
-window.activeReportMode = false;
-window.reportQueue = [];
-window.reportIndex = 0;
-
-window.startStagingReport = function() {
-  const saved = localStorage.getItem('swift_report_state');
-  if(saved) {
-    try {
-      const state = JSON.parse(saved);
-      if(state.queue && state.queue.length > 0 && state.index < state.queue.length) {
-        if($('#reportResumeModal')) $('#reportResumeModal').style.display = 'flex';
-        return;
-      }
-    } catch(e) {}
-  }
-  window.initStagingReport();
-};
-
-window.resumeStagingReport = function() {
-  const state = JSON.parse(localStorage.getItem('swift_report_state'));
-  window.reportQueue = state.queue;
-  window.reportIndex = state.index;
-  window.activeReportMode = true;
-  if($('#reportResumeModal')) $('#reportResumeModal').style.display = 'none';
-  window.renderNextReportItem();
-};
-
-window.initStagingReport = function() {
-  const aisleRegex = /^[A-Z]-\d{2}-[A-F]-[12]$/i;
-  let sorted = [...appData.staging].sort((a, b) => {
-    const aAisle = aisleRegex.test(a.location||'');
-    const bAisle = aisleRegex.test(b.location||'');
-    if (aAisle && !bAisle) return -1;
-    if (!aAisle && bAisle) return 1;
-    return (a.location||'').localeCompare(b.location||'');
-  });
-  
-  window.reportQueue = sorted.map(x => x.id);
-  window.reportIndex = 0;
-  window.activeReportMode = true;
-  window.saveReportState();
-  if($('#reportResumeModal')) $('#reportResumeModal').style.display = 'none';
-  window.renderNextReportItem();
-};
-
-window.saveReportState = function() {
-  localStorage.setItem('swift_report_state', JSON.stringify({queue: window.reportQueue, index: window.reportIndex}));
-};
-
-window.renderNextReportItem = function() {
-  if(!window.activeReportMode) return;
-  document.querySelectorAll('.modal-overlay').forEach(m => m.style.display = 'none'); 
-  
-  if (window.reportIndex >= window.reportQueue.length) {
-    alert("Staging Verification Report Complete!");
-    window.activeReportMode = false;
-    localStorage.removeItem('swift_report_state');
-    return;
-  }
-
-  const itemId = window.reportQueue[window.reportIndex];
-  const item = appData.staging.find(x => x.id === itemId);
-  
-  if (!item) {
-    window.reportIndex++; window.saveReportState(); return window.renderNextReportItem();
-  }
-
-  if($('#rep_loc')) $('#rep_loc').textContent = item.location || 'No Location';
-  if($('#rep_so')) $('#rep_so').textContent = item.so;
-  if($('#rep_cust')) $('#rep_cust').textContent = item.customer;
-  if($('#rep_date')) $('#rep_date').textContent = new Date(item.entry_date).toLocaleString();
-  if($('#rep_qty')) $('#rep_qty').textContent = item.type;
-  if($('#rep_status')) $('#rep_status').textContent = item.status;
-  if($('#rep_by')) $('#rep_by').textContent = item.staged_by || '—';
-  
-  if($('#rep_comment_box')) {
-    if(item.comments && item.comments.trim() !== '') {
-      $('#rep_comment_box').style.display = 'block';
-      $('#rep_comments_text').value = item.comments;
-    } else { $('#rep_comment_box').style.display = 'none'; }
-  }
-  
-  if($('#rep_progress')) $('#rep_progress').textContent = `${window.reportIndex + 1} of ${window.reportQueue.length}`;
-  if($('#reportMainModal')) $('#reportMainModal').style.display = 'flex';
-};
-
-window.reportHandleYes = function() {
-  window.reportIndex++; window.saveReportState(); window.renderNextReportItem();
-};
-
-window.reportHandleNo = function() {
-  if($('#reportMainModal')) $('#reportMainModal').style.display = 'none';
-  if($('#reportNoModal')) $('#reportNoModal').style.display = 'flex';
-};
-
-window.reportAction = function(action) {
-  const itemId = window.reportQueue[window.reportIndex];
-  if($('#reportNoModal')) $('#reportNoModal').style.display = 'none';
-  
-  if(action === 'settle') {
-    window.reportIndex++; window.saveReportState(); window.renderNextReportItem();
-  } 
-  else if (action === 'change') {
-    if($('#report_new_loc')) $('#report_new_loc').value = '';
-    if($('#reportChangeLocModal')) $('#reportChangeLocModal').style.display = 'flex';
-  } 
-  else if (action === 'split') {
-    window.openSplitPrompt();
-  }
-  else {
-    window.openUniversalEditor('staging', itemId);
-    if($('#editModal')) $('#editModal').style.display = 'none'; 
-    
-    if (action === 'delete') window.deleteCurrentRecord();
-    else if (action === 'return') window.triggerReturnModal();
-    else if (action === 'consolidate') window.openSameSoModal();
-  }
-};
-
-window.reportSubmitNewLocation = async function() {
-  const newLoc = $('#report_new_loc').value.trim();
-  if(!newLoc) return alert("Enter a valid location.");
-  
-  const targetId = window.reportQueue[window.reportIndex];
-  const target = appData.staging.find(x => x.id === targetId);
-  
-  $('#reportChangeLocModal').style.display = 'none';
-  try {
-    const { error } = await supabaseClient.from('staging').update({ location: newLoc }).eq('id', targetId);
-    if(error) throw error;
-    
-    window.logAction('staging', `Report Fix: Changed Location for SO ${target.so} to ${newLoc}`);
-    if(typeof window.showNotification === 'function') window.showNotification('Location Updated');
-    
-    window.reportIndex++; window.saveReportState(); window.loadCloudData();
-    setTimeout(window.renderNextReportItem, 600);
-  } catch(e) { alert("Error updating location: " + e.message); window.renderNextReportItem(); }
+  if($('#commentModal')) $('#commentModal').style.display = 'none'; window.loadCloudData();
 };
