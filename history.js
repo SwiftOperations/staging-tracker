@@ -13,9 +13,7 @@ window.openOrderHistory = async function(so) {
     if(activeEntries.length === 0) html += `<p style="font-size:12px; color:#6b7280;">No active staging entries found.</p>`;
     else {
       html += `<ul style="margin:0 0 12px 0; padding-left:20px; font-size:13px; color:#334155;">`;
-      activeEntries.forEach(e => {
-        html += `<li><b>${e.type}</b> @ ${e.location} <br><span style="font-size:11px; color:#64748b;">(Staged by ${e.staged_by || 'Unknown'} on ${new Date(e.entry_date).toLocaleString()})</span></li>`;
-      });
+      activeEntries.forEach(e => { html += `<li><b>${e.type}</b> @ ${e.location} <br><span style="font-size:11px; color:#64748b;">(Staged by ${e.staged_by || 'Unknown'} on ${new Date(e.entry_date).toLocaleString()})</span></li>`; });
       html += `</ul>`;
     }
 
@@ -33,9 +31,8 @@ window.openOrderHistory = async function(so) {
     html += `<h4 style="margin:0 0 8px 0; color:#8b5cf6; border-bottom:1px solid #cbd5e1; padding-bottom:4px;">Changelog History</h4>`;
     const { data, error } = await supabaseClient.from('changelog').select('*').ilike('action', `%${so}%`).order('created_at', { ascending: false });
     if(error) throw error;
-    if(!data || data.length === 0) {
-      html += `<p style="font-size:12px; color:#6b7280;">No log history.</p>`;
-    } else {
+    if(!data || data.length === 0) { html += `<p style="font-size:12px; color:#6b7280;">No log history.</p>`; } 
+    else {
       html += `<ul style="margin:0; padding-left:20px; font-size:12px; color:#4b5563; max-height:200px; overflow-y:auto;">`;
       data.forEach(log => { html += `<li style="margin-bottom:6px;"><b>${new Date(log.created_at).toLocaleString()}</b> <span style="color:#0284c7;">[${log.user_email}]</span><br/>${log.action}</li>`; });
       html += `</ul>`;
@@ -56,9 +53,8 @@ window.checkSoConflict = function(so, currentId = null) {
     $('#soConflictModal').style.display = 'flex';
 
     supabaseClient.from('changelog').select('*').ilike('action', `%${so}%`).order('created_at', { ascending: false }).then(({data, error}) => {
-      if(error || !data || data.length === 0) {
-        $('#conflict_content').innerHTML = '<span style="color:#6b7280; padding:10px;">No previous history found.</span>';
-      } else {
+      if(error || !data || data.length === 0) { $('#conflict_content').innerHTML = '<span style="color:#6b7280; padding:10px;">No previous history found.</span>'; } 
+      else {
         let html = '<ul style="text-align:left; padding-left:20px; margin:0; font-size:13px; color:#4b5563; max-height:200px; overflow-y:auto;">';
         data.forEach(log => { html += `<li style="margin-bottom:8px;"><b>${new Date(log.created_at).toLocaleString()}</b> [${log.user_email}]<br/>${log.action}</li>`; });
         html += '</ul>';
@@ -85,8 +81,7 @@ window.openChangelogModal = async function(table) {
   
   try {
     const { data, error } = await supabaseClient.from('changelog').select('*').eq('table_name', table).order('created_at', { ascending: false }).limit(75);
-    if(error) throw error;
-    tbody.innerHTML = '';
+    if(error) throw error; tbody.innerHTML = '';
     if(!data || data.length === 0) return tbody.innerHTML = '<tr><td colspan="2" style="text-align:center; color:#6b7280; padding:12px;">No changes logged.</td></tr>';
     data.forEach(log => {
       tbody.insertAdjacentHTML('beforeend', `<tr style="border-bottom: 1px solid #f0f1f3;"><td style="color:#6b7280; font-size:12px; white-space:nowrap; padding:8px;">${new Date(log.created_at).toLocaleString()}</td><td style="font-size:13px; padding:8px;"><span style="font-weight:bold; color:#0284c7;">[${log.user_email}]</span> ${log.action}</td></tr>`);
