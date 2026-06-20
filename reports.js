@@ -1,17 +1,17 @@
-window.activeReportMode = false;
-window.reportQueue = [];
-window.reportIndex = 0;
-window.reportResults = [];
+window.activeReportMode = false; window.reportQueue = []; window.reportIndex = 0; window.reportResults = [];
 
 function locSortKey(loc) {
   const match = (loc||'').toUpperCase().match(/^([A-Z])-(\d{2})-([A-Z])-(1|2|1\+2)$/);
   if (!match) return [1, loc||'']; 
   let suffixWeight = 0;
-  if (match[4] === '1') suffixWeight = 1;
-  else if (match[4] === '2') suffixWeight = 2;
-  else if (match[4] === '1+2') suffixWeight = 3;
-  return [0, match[1], parseInt(match[2]), match[3], suffixWeight];
+  if (match[4] === '1') suffixWeight = 1; else if (match[4] === '2') suffixWeight = 2; else if (match[4] === '1+2') suffixWeight = 3;
+  return [0, match[1], parseInt(match[2], 10), match[3], suffixWeight];
 }
+
+window.pauseReport = function() {
+  document.querySelectorAll('.modal-overlay').forEach(m => m.style.display = 'none');
+  if(window.activeReportMode) window.saveReportState();
+};
 
 window.startStagingReport = function(mode) {
   const saved = localStorage.getItem('swift_report_state');
@@ -61,9 +61,7 @@ window.initStagingReport = function(mode = 'all') {
   window.renderNextReportItem();
 };
 
-window.saveReportState = function() {
-  localStorage.setItem('swift_report_state', JSON.stringify({queue: window.reportQueue, index: window.reportIndex, results: window.reportResults}));
-};
+window.saveReportState = function() { localStorage.setItem('swift_report_state', JSON.stringify({queue: window.reportQueue, index: window.reportIndex, results: window.reportResults})); };
 
 window.downloadCSV = function(data, filename) {
   const headers = ['SO', 'Customer', 'Location', 'Entry Date', 'Result'];
@@ -92,18 +90,13 @@ window.renderNextReportItem = function() {
   const item = appData.staging.find(x => x.id === itemId);
   if (!item) { window.reportIndex++; window.saveReportState(); return window.renderNextReportItem(); }
 
-  if($('#rep_loc')) $('#rep_loc').textContent = item.location || 'No Location';
-  if($('#rep_so')) $('#rep_so').textContent = item.so;
-  if($('#rep_cust')) $('#rep_cust').textContent = item.customer;
-  if($('#rep_date')) $('#rep_date').textContent = new Date(item.entry_date).toLocaleString();
-  if($('#rep_qty')) $('#rep_qty').textContent = item.type;
-  if($('#rep_status')) $('#rep_status').textContent = item.status;
-  if($('#rep_by')) $('#rep_by').textContent = item.staged_by || '—';
+  if($('#rep_loc')) $('#rep_loc').textContent = item.location || 'No Location'; if($('#rep_so')) $('#rep_so').textContent = item.so;
+  if($('#rep_cust')) $('#rep_cust').textContent = item.customer; if($('#rep_date')) $('#rep_date').textContent = new Date(item.entry_date).toLocaleString();
+  if($('#rep_qty')) $('#rep_qty').textContent = item.type; if($('#rep_status')) $('#rep_status').textContent = item.status; if($('#rep_by')) $('#rep_by').textContent = item.staged_by || '—';
   
   if($('#rep_comment_box')) {
-    if(item.comments && item.comments.trim() !== '') {
-      $('#rep_comment_box').style.display = 'block'; $('#rep_comments_text').value = item.comments;
-    } else { $('#rep_comment_box').style.display = 'none'; }
+    if(item.comments && item.comments.trim() !== '') { $('#rep_comment_box').style.display = 'block'; $('#rep_comments_text').value = item.comments; } 
+    else { $('#rep_comment_box').style.display = 'none'; }
   }
   
   if($('#rep_progress')) $('#rep_progress').textContent = `${window.reportIndex + 1} of ${window.reportQueue.length}`;
@@ -129,9 +122,8 @@ window.reportHandleNo = function() {
 };
 
 window.reportHandleBack = function() {
-  if (window.reportIndex > 0) {
-    window.reportResults.pop(); window.reportIndex--; window.saveReportState(); window.renderNextReportItem();
-  } else { alert("You are at the beginning of the report."); }
+  if (window.reportIndex > 0) { window.reportResults.pop(); window.reportIndex--; window.saveReportState(); window.renderNextReportItem(); } 
+  else { alert("You are at the beginning of the report."); }
 };
 
 window.reportAction = function(action) {
@@ -139,10 +131,7 @@ window.reportAction = function(action) {
   if($('#reportNoModal')) $('#reportNoModal').style.display = 'none';
   
   if(action === 'settle') { window.reportRecordAction('Discrepancy - Unresolved'); } 
-  else if (action === 'change') {
-    if($('#report_new_loc')) $('#report_new_loc').value = '';
-    if($('#reportChangeLocModal')) $('#reportChangeLocModal').style.display = 'flex';
-  } 
+  else if (action === 'change') { if($('#report_new_loc')) $('#report_new_loc').value = ''; if($('#reportChangeLocModal')) $('#reportChangeLocModal').style.display = 'flex'; } 
   else if (action === 'split') { window.openSplitPrompt(); }
   else if (action === 'ship') { window.triggerShipModal(itemId); }
   else {
@@ -157,15 +146,13 @@ window.reportAction = function(action) {
 window.reportSubmitNewLocation = async function() {
   const newLoc = $('#report_new_loc').value.trim();
   if(!newLoc) return alert("Enter a valid location.");
-  const targetId = window.reportQueue[window.reportIndex];
-  const target = appData.staging.find(x => x.id === targetId);
+  const targetId = window.reportQueue[window.reportIndex]; const target = appData.staging.find(x => x.id === targetId);
   $('#reportChangeLocModal').style.display = 'none';
   try {
     const { error } = await supabaseClient.from('staging').update({ location: newLoc }).eq('id', targetId);
     if(error) throw error;
     window.logAction('staging', `Report Fix: Changed Location for SO ${target.so} to ${newLoc}`);
     if(typeof window.showNotification === 'function') window.showNotification('Location Updated');
-    window.loadCloudData();
-    window.reportRecordAction(`Fixed via Location Change (${newLoc})`);
+    window.loadCloudData(); window.reportRecordAction(`Fixed via Location Change (${newLoc})`);
   } catch(e) { alert("Error updating location: " + e.message); window.renderNextReportItem(); }
 };
