@@ -1,11 +1,7 @@
 window.banishMemory = function(inputId) {
-  if(!$('#'+inputId)) return;
-  const val = $('#'+inputId).value.trim();
-  if(!val) return;
+  if(!$('#'+inputId)) return; const val = $('#'+inputId).value.trim(); if(!val) return;
   if(confirm(`Remove "${val}" from autocomplete memory?`)) {
-    if(!hiddenMemory.includes(val)) {
-      hiddenMemory.push(val); localStorage.setItem('swift_hidden_memory', JSON.stringify(hiddenMemory));
-    }
+    if(!hiddenMemory.includes(val)) { hiddenMemory.push(val); localStorage.setItem('swift_hidden_memory', JSON.stringify(hiddenMemory)); }
     $('#'+inputId).value = ''; window.loadCloudData();
   }
 };
@@ -122,8 +118,7 @@ window.submitFreightDispatch = async function() {
   try {
     let photoUrls = (activeShipTargetItem && activeShipTargetItem.photo_urls) ? [...activeShipTargetItem.photo_urls] : [];
     for (let i = 0; i < selectedPhotoBlobs.length; i++) {
-      const cleanFileName = selectedPhotoBlobs[i].name.replace(/[^a-zA-Z0-9.]/g, '');
-      const path = `${activeShipTargetItem.so}-${Date.now()}-${i}-${cleanFileName}`;
+      const cleanFileName = selectedPhotoBlobs[i].name.replace(/[^a-zA-Z0-9.]/g, ''); const path = `${activeShipTargetItem.so}-${Date.now()}-${i}-${cleanFileName}`;
       await supabaseClient.storage.from('freight-photos').upload(path, selectedPhotoBlobs[i]); photoUrls.push(path);
     }
     
