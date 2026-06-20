@@ -42,9 +42,9 @@ window.openSameSoModal = function() {
   
   const tBody = $('#tblSameSo tbody'); tBody.innerHTML = '';
   matchingItems.forEach(o => {
-    tBody.insertAdjacentHTML('beforeend', `<tr style="color:#6b7280;">
-      <td style="text-align:center;"><input type="checkbox" style="width:16px;height:16px;" onchange="window.toggleSameSoSelect('${o.id}', this.checked)" checked></td>
-      <td><b>${o.so}</b></td><td>${o.customer}</td><td>${new Date(o.entry_date).toLocaleString()}</td><td>${o.type}</td><td>${o.location}</td><td><small>${o.coords||'—'}</small></td>
+    tBody.insertAdjacentHTML('beforeend', `<tr style="color:#64748b; border-bottom:1px solid #f1f5f9;">
+      <td style="text-align:center;"><input type="checkbox" style="width:18px;height:18px;" onchange="window.toggleSameSoSelect('${o.id}', this.checked)" checked></td>
+      <td><b>${o.so}</b></td><td>${o.customer}</td><td>${new Date(o.entry_date).toLocaleString()}</td><td>${o.type}</td><td><b>${o.location}</b></td><td><small>${o.coords||'—'}</small></td>
       <td>${o.weight || '—'}</td><td>${o.status}</td><td>${o.staged_by||'—'}</td></tr>`);
   });
   $('#sameSoModal').style.display = 'flex';
