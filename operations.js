@@ -76,7 +76,7 @@ window.submitReturnToStock = async function() {
       const cachedSubject = `RETURN TO STOCK: ${editTargetRecord.so} for ${$('#e_cust').value.trim()}`;
       const cachedBody = `Your order/pick has now been Returned to Stock. Return details:\n\nReason: ${reason}\n\n----------------------------------------------------------------------\nSO#                   | ${editTargetRecord.so}\nCustomer              | ${$('#e_cust').value.trim()}\nContainer(s)          | ${window.getDynamicType('e')}\nTotal Weight (In lbs) | ${$('#e_weight').value.trim() || '—'}\nPicked by             | ${pickedBy}\nReturned At           | ${currentTimeStamp}\nReturned By           | ${returnedBy}\n----------------------------------------------------------------------\n\nFor more shipment details, visit: https://swiftoperations.github.io/staging-tracker/\n\nThanks`;
       
-      fetch('PASTE_YOUR_MAKE_WEBHOOK_URL_HERE', {
+      fetch('https://hook.us2.make.com/xouhxvxi22q9b3gdwnthe4bre7z2jgu9', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ to: pmEmail, cc: "warehouse1@swiftsupply.ca", subject: cachedSubject, body: cachedBody })
       });
@@ -181,7 +181,7 @@ window.submitFreightDispatch = async function() {
       const cachedSubject = `CONFIRMATION OF SHIPOUT: ${activeShipTargetItem.customer} ${activeShipTargetItem.so} @ ${activeShipTargetItem.type} via ${carrierVal}`;
       const cachedBody = `Your order has now been shipped! Order details:\n\n----------------------------------------------------------------------\nSO#                   | ${activeShipTargetItem.so}\nCustomer              | ${activeShipTargetItem.customer}\nContainer(s)          | ${activeShipTargetItem.type}\nTotal Weight (In lbs) | ${activeShipTargetItem.weight || '—'}\nCarrier               | ${carrierVal}\nShipped At            | ${currentTimeStamp}\nShipped By            | ${dispatcher}\n----------------------------------------------------------------------\n\nFor more shipment details, visit: https://swiftoperations.github.io/staging-tracker/\n\nThanks`;
       
-      fetch('PASTE_YOUR_MAKE_WEBHOOK_URL_HERE', {
+      fetch('https://hook.us2.make.com/xouhxvxi22q9b3gdwnthe4bre7z2jgu9', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ to: pmEmail, cc: "warehouse1@swiftsupply.ca", subject: cachedSubject, body: cachedBody })
       });
