@@ -187,22 +187,16 @@ window.submitFreightDispatch = async function() {
       });
     }
 
-    window.closeShipModal();
+        window.closeShipModal();
     if(window.activeReportMode) { window.reportRecordAction('Fixed via Shipped Out'); }
-
-      if($('#modalConfirmBtn')) $('#modalConfirmBtn').disabled = false;
-      return;
-    }
-
-    await supabaseClient.from('staging').delete().eq('id', activeShipTargetItem.id);
-    window.logAction('staging', `Ship Confirmed SO: ${activeShipTargetItem.so}`);
-    window.logAction('shipped', `Added via Ship Confirm: SO: ${activeShipTargetItem.so}`);
-    if(typeof window.showNotification === 'function') window.showNotification('Freight Dispatched Successfully');
-
-    window.closeShipModal();
-    if(window.activeReportMode) { window.reportRecordAction('Fixed via Shipped Out'); }
-  } catch(e) { alert("Data dispatch error."); } finally { if($('#modalConfirmBtn')) $('#modalConfirmBtn').disabled = false; }
+  } catch(e) { 
+    console.error("Data dispatch error:", e); 
+    alert("Data dispatch error."); 
+  } finally { 
+    if($('#modalConfirmBtn')) $('#modalConfirmBtn').disabled = false; 
+  }
 };
+
 
 window.submitStagingEntry = async function() {
   const sk = parseInt($('#c_skid').value)||0, bx = parseInt($('#c_box').value)||0, cr = parseInt($('#c_crate').value)||0, pi = parseInt($('#c_pipe').value)||0, ot = parseInt($('#c_other').value)||0;
