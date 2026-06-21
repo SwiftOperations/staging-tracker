@@ -96,5 +96,5 @@ input[type="checkbox"] { width: 13px; height: 13px; cursor: pointer; transform: 
 .dropdown-content a:hover { background-color: #f8fafc; color: var(--brand); }
 .dropdown-content a.indented { padding-left: 32px; font-size: 13px; color: #64748b; }
 
-.so-link { color: var(--brand); cursor: pointer; text-decoration: underline; transition: 0.2s; }
+.so-link { color: var(--brand); cursor: pointer; text-decoration: underline; transition: 0.2s; display: inline-block; max-width: 140px; white-space: normal; overflow-wrap: break-word; }
 .so-link:hover { color: #0284c7; }
