@@ -74,8 +74,8 @@ window.submitReturnToStock = async function() {
 
     if(pmChecked) {
       const cachedSubject = `RETURN TO STOCK: ${editTargetRecord.so} for ${$('#e_cust').value.trim()}`;
-      const cachedBody = `Your order/pick has now been Returned to Stock. Return details:\n\nReason: ${reason}\n\n----------------------------------------------------------------------\nSO#                   | ${editTargetRecord.so}\nCustomer              | ${$('#e_cust').value.trim()}\nContainer(s)          | ${window.getDynamicType('e')}\nTotal Weight (In lbs) | ${$('#e_weight').value.trim() || '—'}\nPicked by             | ${pickedBy}\nReturned At           | ${currentTimeStamp}\nReturned By           | ${returnedBy}\n----------------------------------------------------------------------\n\nFor more shipment details, visit: https://swiftoperations.github.io/staging-tracker/\n\nThanks`;
-      
+      const cachedBody = `Your order/pick has now been Returned to Stock. Return details:<br><br><b>Reason:</b> ${reason}<br><br>----------------------------------------------------------------------<br><b>SO#</b>                   | ${editTargetRecord.so}<br><b>Customer</b>              | ${$('#e_cust').value.trim()}<br><b>Container(s)</b>          | ${window.getDynamicType('e')}<br><b>Total Weight (In lbs)</b> | ${$('#e_weight').value.trim() || '—'}<br><b>Picked by</b>             | ${pickedBy}<br><b>Returned At</b>           | ${currentTimeStamp}<br><b>Returned By</b>           | ${returnedBy}<br>----------------------------------------------------------------------<br><br>For more shipment details, visit: <a href="https://swiftoperations.github.io/staging-tracker/">Swift Staging Tracker</a><br><br>Thanks`;
+
       fetch('https://hook.us2.make.com/xouhxvxi22q9b3gdwnthe4bre7z2jgu9', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ to: pmEmail, cc: "warehouse1@swiftsupply.ca", subject: cachedSubject, body: cachedBody })
@@ -191,8 +191,8 @@ window.submitFreightDispatch = async function() {
     if(pmChecked) {
       const currentTimeStamp = new Date().toLocaleString();
       const cachedSubject = `CONFIRMATION OF SHIPOUT: ${activeShipTargetItem.customer} ${activeShipTargetItem.so} @ ${activeShipTargetItem.type} via ${carrierVal}`;
-      const cachedBody = `Your order has now been shipped! Order details:\n\n----------------------------------------------------------------------\nSO#                   | ${activeShipTargetItem.so}\nCustomer              | ${activeShipTargetItem.customer}\nContainer(s)          | ${activeShipTargetItem.type}\nTotal Weight (In lbs) | ${activeShipTargetItem.weight || '—'}\nCarrier               | ${carrierVal}\nShipped At            | ${currentTimeStamp}\nShipped By            | ${dispatcher}\n----------------------------------------------------------------------\n\nFor more shipment details, visit: https://swiftoperations.github.io/staging-tracker/\n\nThanks`;
-      
+      const cachedBody = `Your order has now been shipped! Order details:<br><br>----------------------------------------------------------------------<br><b>SO#</b>                   | ${activeShipTargetItem.so}<br><b>Customer</b>              | ${activeShipTargetItem.customer}<br><b>Container(s)</b>          | ${activeShipTargetItem.type}<br><b>Total Weight (In lbs)</b> | ${activeShipTargetItem.weight || '—'}<br><b>Carrier</b>               | ${carrierVal}<br><b>Shipped At</b>            | ${currentTimeStamp}<br><b>Shipped By</b>            | ${dispatcher}<br>----------------------------------------------------------------------<br><br>For more shipment details, visit: <a href="https://swiftoperations.github.io/staging-tracker/">Swift Staging Tracker</a><br><br>Thanks`;
+
       fetch('https://hook.us2.make.com/xouhxvxi22q9b3gdwnthe4bre7z2jgu9', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ to: pmEmail, cc: "warehouse1@swiftsupply.ca", subject: cachedSubject, body: cachedBody })
