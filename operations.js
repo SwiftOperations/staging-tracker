@@ -171,13 +171,25 @@ window.submitFreightDispatch = async function() {
     let pmName = pmEmail ? pmEmail.split('@')[0].split('.')[0] : null;
     if(pmName) pmName = pmName.charAt(0).toUpperCase() + pmName.slice(1);
 
-    const { error: insertError } = await supabaseClient.from('shipped').insert([{
-      so: activeShipTargetItem.so, customer: activeShipTargetItem.customer, type: activeShipTargetItem.type,
-      qty: activeShipTargetItem.qty, carrier: carrierVal, location: activeShipTargetItem.location, coords: activeShipTargetItem.coords,
-      weight: activeShipTargetItem.weight, comments: activeShipTargetItem.comments, shipped_by: dispatcher, pmd_email: pmName, photo_urls: photoUrls
-    }]);
-    if (insertError) {
-      alert("Database Error: " + insertError.message);
+        await supabaseClient.from('staging').delete().eq('id', activeShipTargetItem.id);
+    window.logAction('staging', `Ship Confirmed SO: ${activeShipTargetItem.so}`);
+    window.logAction('shipped', `Added via Ship Confirm: SO: ${activeShipTargetItem.so}`);
+    if(typeof window.showNotification === 'function') window.showNotification('Freight Dispatched Successfully');
+
+    if(pmChecked) {
+      const currentTimeStamp = new Date().toLocaleString();
+      const cachedSubject = `CONFIRMATION OF SHIPOUT: ${activeShipTargetItem.customer} ${activeShipTargetItem.so} @ ${activeShipTargetItem.type} via ${carrierVal}`;
+      const cachedBody = `Your order has now been shipped! Order details:\n\n----------------------------------------------------------------------\nSO#                   | ${activeShipTargetItem.so}\nCustomer              | ${activeShipTargetItem.customer}\nContainer(s)          | ${activeShipTargetItem.type}\nTotal Weight (In lbs) | ${activeShipTargetItem.weight || '—'}\nCarrier               | ${carrierVal}\nShipped At            | ${currentTimeStamp}\nShipped By            | ${dispatcher}\n----------------------------------------------------------------------\n\nFor more shipment details, visit: https://swiftoperations.github.io/staging-tracker/\n\nThanks`;
+      
+      fetch('PASTE_YOUR_MAKE_WEBHOOK_URL_HERE', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ to: pmEmail, cc: "warehouse1@swiftsupply.ca", subject: cachedSubject, body: cachedBody })
+      });
+    }
+
+    window.closeShipModal();
+    if(window.activeReportMode) { window.reportRecordAction('Fixed via Shipped Out'); }
+
       if($('#modalConfirmBtn')) $('#modalConfirmBtn').disabled = false;
       return;
     }
