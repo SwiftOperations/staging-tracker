@@ -171,7 +171,19 @@ window.submitFreightDispatch = async function() {
     let pmName = pmEmail ? pmEmail.split('@')[0].split('.')[0] : null;
     if(pmName) pmName = pmName.charAt(0).toUpperCase() + pmName.slice(1);
 
-        await supabaseClient.from('staging').delete().eq('id', activeShipTargetItem.id);
+    const { error: insertError } = await supabaseClient.from('shipped').insert([{
+      so: activeShipTargetItem.so, customer: activeShipTargetItem.customer, type: activeShipTargetItem.type,
+      qty: activeShipTargetItem.qty, carrier: carrierVal, location: activeShipTargetItem.location, coords: activeShipTargetItem.coords,
+      weight: activeShipTargetItem.weight, comments: activeShipTargetItem.comments, shipped_by: dispatcher, pmd_email: pmName, photo_urls: photoUrls
+    }]);
+    
+    if (insertError) {
+      alert("Database Error: " + insertError.message);
+      if($('#modalConfirmBtn')) $('#modalConfirmBtn').disabled = false;
+      return;
+    }
+
+    await supabaseClient.from('staging').delete().eq('id', activeShipTargetItem.id);
     window.logAction('staging', `Ship Confirmed SO: ${activeShipTargetItem.so}`);
     window.logAction('shipped', `Added via Ship Confirm: SO: ${activeShipTargetItem.so}`);
     if(typeof window.showNotification === 'function') window.showNotification('Freight Dispatched Successfully');
@@ -187,15 +199,16 @@ window.submitFreightDispatch = async function() {
       });
     }
 
-        window.closeShipModal();
+    window.closeShipModal();
     if(window.activeReportMode) { window.reportRecordAction('Fixed via Shipped Out'); }
+
   } catch(e) { 
-    console.error("Data dispatch error:", e); 
     alert("Data dispatch error."); 
   } finally { 
     if($('#modalConfirmBtn')) $('#modalConfirmBtn').disabled = false; 
   }
 };
+
 
 
 window.submitStagingEntry = async function() {
