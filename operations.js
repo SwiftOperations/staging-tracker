@@ -67,15 +67,26 @@ window.submitReturnToStock = async function() {
     }]); 
     if(insertError) throw insertError;
     
-    await supabaseClient.from('staging').delete().eq('id', currentEditId);
+        await supabaseClient.from('staging').delete().eq('id', currentEditId);
     window.logAction('staging', `Returned to Stock SO: ${editTargetRecord.so}`);
     window.logAction('shipped', `Added Return to Stock log for SO: ${editTargetRecord.so}`);
     if(typeof window.showNotification === 'function') window.showNotification('Returned to Stock Successfully');
+
+    if(pmChecked) {
+      const cachedSubject = `RETURN TO STOCK: ${editTargetRecord.so} for ${$('#e_cust').value.trim()}`;
+      const cachedBody = `Your order/pick has now been Returned to Stock. Return details:\n\nReason: ${reason}\n\n----------------------------------------------------------------------\nSO#                   | ${editTargetRecord.so}\nCustomer              | ${$('#e_cust').value.trim()}\nContainer(s)          | ${window.getDynamicType('e')}\nTotal Weight (In lbs) | ${$('#e_weight').value.trim() || '—'}\nPicked by             | ${pickedBy}\nReturned At           | ${currentTimeStamp}\nReturned By           | ${returnedBy}\n----------------------------------------------------------------------\n\nFor more shipment details, visit: https://swiftoperations.github.io/staging-tracker/\n\nThanks`;
+      
+      fetch('PASTE_YOUR_MAKE_WEBHOOK_URL_HERE', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ to: pmEmail, cc: "warehouse1@swiftsupply.ca", subject: cachedSubject, body: cachedBody })
+      });
+    }
 
     if($('#returnModal')) $('#returnModal').style.display='none';
     window.loadCloudData();
     
     if(window.activeReportMode) { window.reportRecordAction('Fixed via Return to Stock'); }
+
   } catch(err) { alert("Return to Stock error: " + err.message); }
 };
 
