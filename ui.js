@@ -135,7 +135,13 @@ window.openUniversalEditor = function(table, id) {
     if($('#editConsolidateBtn')) $('#editConsolidateBtn').style.display = 'block';
     if($('#editSplitBtn')) $('#editSplitBtn').style.display = 'block';
     if($('#editSaveBtn')) $('#editSaveBtn').style.display = 'block';
-    if($('#e_status')) $('#e_status').value = o.status; 
+    if($('#e_status')) {
+      const formatted = window.getFormattedStatus(o.status);
+      if (!Array.from($('#e_status').options).some(opt => opt.value === formatted)) {
+        $('#e_status').insertAdjacentHTML('beforeend', `<option value="${formatted}">${formatted}</option>`);
+      }
+      $('#e_status').value = formatted;
+    }
     if($('#e_staged_by')) $('#e_staged_by').value = o.staged_by || '';
   } else {
     if($('#editModalTitle')) $('#editModalTitle').textContent = isRet ? 'View Locked Record' : 'Edit Shipped Entry Logs'; 
