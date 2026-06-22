@@ -69,7 +69,7 @@ window.renderTables = function() {
         sBody.insertAdjacentHTML('beforeend', `<tr>
           <td class="show-in-batch" style="text-align:center;">${batchChk}</td>
           <td class="hide-in-batch">${editBtn}</td><td class="hide-in-batch">${picBtn}</td><td><a class="so-link" onclick="event.stopPropagation(); window.openOrderHistory('${o.so}')">${o.so}</a></td><td>${o.customer}</td><td>${new Date(o.entry_date).toLocaleString()}</td><td>${o.type}</td><td><b>${o.location}</b></td><td><small>${geoLink}</small></td>
-          <td>${o.weight || '—'}</td><td class="hide-in-batch">${commentBtn}</td><td>${o.status}</td><td>${o.staged_by||'—'}</td>
+          <td>${o.weight || '—'}</td><td class="hide-in-batch">${commentBtn}</td><td style="color:#0ea5e9; font-weight:bold;">${window.getFormattedStatus(o.status)}</td><td>${o.staged_by||'—'}</td>
           <td class="hide-in-batch" style="position:sticky;right:0;text-align:center; background:#f8fafc; border-left:1px solid #e2e8f0;">${chkBox}</td></tr>`);
       });
     }
