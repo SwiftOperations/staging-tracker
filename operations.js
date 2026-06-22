@@ -114,7 +114,7 @@ window.saveEditedRecord = async function() {
   const basePayload = { so: soVal, customer: $('#e_cust').value.trim(), location: locValue, coords: $('#e_coords').value.trim(), weight: $('#e_weight').value.trim(), comments: $('#e_comments').value.trim(), type: dynamicType, qty: dynamicQty };
 
   if (editTargetRecord.table === 'staging') {
-    const newStatus = $('#e_status').value.trim();
+    const newStatus = window.getDbStatus($('#e_status').value.trim());
     const { error } = await supabaseClient.from('staging').update({ ...basePayload, status: newStatus, staged_by: $('#e_staged_by').value.trim(), photo_urls: editTargetRecord.photo_urls }).eq('id', currentEditId);
     if(error) { alert("Database Error: " + error.message); return; }
   } else {
