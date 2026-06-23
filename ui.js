@@ -260,59 +260,6 @@ document.addEventListener('click', function(e) {
   if (!e.target.matches('.hamburger-btn')) { document.querySelectorAll('.dropdown-content.show-menu').forEach(menu => { menu.classList.remove('show-menu'); }); }
 });
 
-// --- STATUS AUTO-SHIFT & MODAL LOGIC ---
-window.getFormattedStatus = function(dbStatus) {
-  if (/^\d{4}-\d{2}-\d{2}$/.test(dbStatus)) {
-    const todayStr = new Date().toLocaleDateString('en-CA'); 
-    const tmrw = new Date(); tmrw.setDate(tmrw.getDate() + 1);
-    const tmrwStr = tmrw.toLocaleDateString('en-CA');
-    
-    if (dbStatus <= todayStr) return "Ship Today";
-    if (dbStatus === tmrwStr) return "Ship Tomorrow";
-  }
-  return dbStatus;
-};
-
-window.getDbStatus = function(uiStatus) {
-   const todayStr = new Date().toLocaleDateString('en-CA');
-   const tmrw = new Date(); tmrw.setDate(tmrw.getDate() + 1);
-   const tmrwStr = tmrw.toLocaleDateString('en-CA');
-
-   if (uiStatus === 'Ship Today') return todayStr;
-   if (uiStatus === 'Ship Tomorrow') return tmrwStr;
-   return uiStatus; 
-};
-
-window.activeStatusDropdownId = null;
-document.addEventListener('change', function(e) {
-  if (e.target.tagName === 'SELECT' && e.target.id.includes('status') && e.target.value === 'Ship On Future Date') {
-    window.activeStatusDropdownId = e.target.id;
-    const todayStr = new Date().toLocaleDateString('en-CA');
-    if($('#fd_datePicker')) {
-      $('#fd_datePicker').min = todayStr; $('#fd_datePicker').value = todayStr;
-      $('#fd_datePicker').disabled = false; $('#fd_tbd').checked = false;
-    }
-    if($('#futureDateModal')) $('#futureDateModal').style.display = 'flex';
-  }
-});
-
-window.cancelDateModal = function() {
-  if($('#futureDateModal')) $('#futureDateModal').style.display = 'none';
-  if(window.activeStatusDropdownId && $('#' + window.activeStatusDropdownId)) $('#' + window.activeStatusDropdownId).value = 'Partial';
-};
-
-window.confirmDateModal = function() {
-  const isTbd = $('#fd_tbd').checked; const dateVal = $('#fd_datePicker').value;
-  if(!isTbd && !dateVal) return alert("Please select a date or check TBD.");
-  const finalVal = isTbd ? 'TBD' : dateVal;
-  const sel = $('#' + window.activeStatusDropdownId);
-  if (!Array.from(sel.options).some(opt => opt.value === finalVal)) {
-    sel.insertAdjacentHTML('beforeend', `<option value="${finalVal}">${finalVal}</option>`);
-  }
-  sel.value = finalVal;
-  if($('#futureDateModal')) $('#futureDateModal').style.display = 'none';
-};
-
 // --- STATUS AUTO-SHIFT, DATE MODAL & OVERDUE LOGIC ---
 window.getFormattedStatus = function(dbStatus) {
   if (/^\d{4}-\d{2}-\d{2}$/.test(dbStatus)) {
