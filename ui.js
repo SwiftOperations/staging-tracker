@@ -86,7 +86,7 @@ window.renderTables = function() {
         const editBtn = canEdit ? `<button class="btn-edit" onclick="window.openUniversalEditor('shipped', '${o.id}')">Edit</button>` : `<span style="color:#94a3b8; font-size:11px;">Read-Only</span>`;
         const commentBtn = o.comments ? `<button class="btn" style="padding:4px 8px; font-size:12px; background:#8b5cf6; color:#fff; height:auto;" onclick="window.openCommentModal('shipped', '${o.id}')">See</button>` : (canEdit ? `<button class="btn" style="padding:4px 8px; font-size:12px; background:#e2e8f0; color:#475569; height:auto;" onclick="window.openCommentModal('shipped', '${o.id}')">Add</button>` : `<span style="color:#9ca3af;">—</span>`);
 
-                shBody.insertAdjacentHTML('beforeend', `<tr ${rowClass}>
+        shBody.insertAdjacentHTML('beforeend', `<tr ${rowClass}>
           <td>${editBtn}</td><td>${picBtn}</td><td><a class="so-link" onclick="event.stopPropagation(); window.openOrderHistory('${o.so}')">${o.so}</a></td><td>${o.customer}</td><td>${o.type}</td><td><b>${o.carrier || '—'}</b></td><td>${o.location}</td><td><small>${geoLink}</small></td>
           <td>${o.weight || '—'}</td><td>${commentBtn}</td><td>${new Date(o.shipped_at).toLocaleString()}</td><td>${o.shipped_by || '—'}</td><td>${o.pmd_email ? o.pmd_email+(isRet?'':'<span class="green-check"> ✓</span>') : '—'}</td></tr>`);
       });
@@ -104,6 +104,12 @@ window.renderTables = function() {
   if($('#kPipe')) $('#kPipe').textContent = sumByType('Pipe/Rod'); 
   if($('#kOther')) $('#kOther').textContent = sumByType('Other');
   if($('#kShipped')) $('#kShipped').textContent = appData.shipped.filter(x => x.carrier !== 'RETURNED TO STOCK' && x.carrier !== 'CONSOLIDATED').length;
+
+  // Auto-check for overdue shipments on render
+  if (!window.hasCheckedOverdue && appData.staging && appData.staging.length > 0) {
+    window.hasCheckedOverdue = true;
+    setTimeout(window.checkOverdueShipments, 1500);
+  }
 };
 
 window.openUniversalEditor = function(table, id) {
@@ -263,6 +269,7 @@ window.toggleMenu = function(e) {
 document.addEventListener('click', function(e) {
   if (!e.target.matches('.hamburger-btn')) { document.querySelectorAll('.dropdown-content.show-menu').forEach(menu => { menu.classList.remove('show-menu'); }); }
 });
+
 
 // --- STATUS AUTO-SHIFT, DATE MODAL & OVERDUE LOGIC ---
 window.getFormattedStatus = function(dbStatus) {
