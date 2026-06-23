@@ -188,7 +188,11 @@ window.triggerShipModal = function(id) {
   window.renderPhotoStrip('#photoPreviewStrip', selectedPhotoBlobs);
 };
 
-window.closeShipModal = function() { if($('#shipModal')) $('#shipModal').style.display = 'none'; window.loadCloudData(); };
+window.closeShipModal = function() { 
+  if($('#shipModal')) $('#shipModal').style.display = 'none'; 
+  if (window.isResolvingOverdue && window.overdueIndex < window.overdueQueue.length) $('#overduePromptModal').style.display = 'flex';
+  window.loadCloudData(); 
+};
 
 window.openOrdersModal = function() {
   if(!$('#ordersModal')) return; const tbody = $('#tblOrders tbody'); if(!tbody) return; tbody.innerHTML = '';
