@@ -140,7 +140,7 @@ window.executeShippedUndo = async function() {
     const proceed = await window.checkSoConflict(currentRecord.so, null);
     if(!proceed) return;
 
-    const { error } = await supabaseClient.from('staging').insert([{ so: currentRecord.so, customer: currentRecord.customer, type: currentRecord.type, qty: currentRecord.qty, location: currentRecord.location, coords: currentRecord.coords, weight: currentRecord.weight, comments: currentRecord.comments, status: 'Partial', photo_urls: currentRecord.photo_urls }]);
+    const { error } = await supabaseClient.from('staging').insert([{ so: currentRecord.so, customer: currentRecord.customer, type: currentRecord.type, qty: currentRecord.qty, location: currentRecord.location, coords: currentRecord.coords, weight: currentRecord.weight, comments: currentRecord.comments, status: '', photo_urls: currentRecord.photo_urls }]);
     if (error) { alert("Undo Database Error: " + error.message); return; }
     
     await supabaseClient.from('shipped').delete().eq('id', editTargetRecord.id);
