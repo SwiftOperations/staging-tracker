@@ -201,6 +201,11 @@ window.submitFreightDispatch = async function() {
 
     window.closeShipModal();
     if(window.activeReportMode) { window.reportRecordAction('Fixed via Shipped Out'); }
+    if(window.isResolvingOverdue) {
+      if($('#overduePromptModal')) $('#overduePromptModal').style.display = 'none';
+      window.overdueIndex++;
+      setTimeout(window.renderNextOverdue, 400);
+    }
 
   } catch(e) { 
     alert("Data dispatch error."); 
