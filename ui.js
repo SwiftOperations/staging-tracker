@@ -86,7 +86,7 @@ window.renderTables = function() {
         const editBtn = canEdit ? `<button class="btn-edit" onclick="window.openUniversalEditor('shipped', '${o.id}')">Edit</button>` : `<span style="color:#94a3b8; font-size:11px;">Read-Only</span>`;
         const commentBtn = o.comments ? `<button class="btn" style="padding:4px 8px; font-size:12px; background:#8b5cf6; color:#fff; height:auto;" onclick="window.openCommentModal('shipped', '${o.id}')">See</button>` : (canEdit ? `<button class="btn" style="padding:4px 8px; font-size:12px; background:#e2e8f0; color:#475569; height:auto;" onclick="window.openCommentModal('shipped', '${o.id}')">Add</button>` : `<span style="color:#9ca3af;">—</span>`);
 
-        shBody.insertAdjacentHTML('beforeend', `<tr ${rowClass}>
+                shBody.insertAdjacentHTML('beforeend', `<tr ${rowClass}>
           <td>${editBtn}</td><td>${picBtn}</td><td><a class="so-link" onclick="event.stopPropagation(); window.openOrderHistory('${o.so}')">${o.so}</a></td><td>${o.customer}</td><td>${o.type}</td><td><b>${o.carrier || '—'}</b></td><td>${o.location}</td><td><small>${geoLink}</small></td>
           <td>${o.weight || '—'}</td><td>${commentBtn}</td><td>${new Date(o.shipped_at).toLocaleString()}</td><td>${o.shipped_by || '—'}</td><td>${o.pmd_email ? o.pmd_email+(isRet?'':'<span class="green-check"> ✓</span>') : '—'}</td></tr>`);
       });
@@ -104,12 +104,6 @@ window.renderTables = function() {
   if($('#kPipe')) $('#kPipe').textContent = sumByType('Pipe/Rod'); 
   if($('#kOther')) $('#kOther').textContent = sumByType('Other');
   if($('#kShipped')) $('#kShipped').textContent = appData.shipped.filter(x => x.carrier !== 'RETURNED TO STOCK' && x.carrier !== 'CONSOLIDATED').length;
-
-  // Auto-check for overdue shipments on render
-  if (!window.hasCheckedOverdue && appData.staging && appData.staging.length > 0) {
-    window.hasCheckedOverdue = true;
-    setTimeout(window.checkOverdueShipments, 1500);
-  }
 };
 
 window.openUniversalEditor = function(table, id) {
@@ -194,11 +188,7 @@ window.triggerShipModal = function(id) {
   window.renderPhotoStrip('#photoPreviewStrip', selectedPhotoBlobs);
 };
 
-window.closeShipModal = function() { 
-  if($('#shipModal')) $('#shipModal').style.display = 'none'; 
-  if (window.isResolvingOverdue && window.overdueIndex < window.overdueQueue.length) $('#overduePromptModal').style.display = 'flex';
-  window.loadCloudData(); 
-};
+window.closeShipModal = function() { if($('#shipModal')) $('#shipModal').style.display = 'none'; window.loadCloudData(); };
 
 window.openOrdersModal = function() {
   if(!$('#ordersModal')) return; const tbody = $('#tblOrders tbody'); if(!tbody) return; tbody.innerHTML = '';
@@ -270,13 +260,13 @@ document.addEventListener('click', function(e) {
   if (!e.target.matches('.hamburger-btn')) { document.querySelectorAll('.dropdown-content.show-menu').forEach(menu => { menu.classList.remove('show-menu'); }); }
 });
 
-
-// --- STATUS AUTO-SHIFT, DATE MODAL & OVERDUE LOGIC ---
+// --- STATUS AUTO-SHIFT & MODAL LOGIC ---
 window.getFormattedStatus = function(dbStatus) {
   if (/^\d{4}-\d{2}-\d{2}$/.test(dbStatus)) {
     const todayStr = new Date().toLocaleDateString('en-CA'); 
     const tmrw = new Date(); tmrw.setDate(tmrw.getDate() + 1);
     const tmrwStr = tmrw.toLocaleDateString('en-CA');
+    
     if (dbStatus <= todayStr) return "Ship Today";
     if (dbStatus === tmrwStr) return "Ship Tomorrow";
   }
@@ -287,6 +277,7 @@ window.getDbStatus = function(uiStatus) {
    const todayStr = new Date().toLocaleDateString('en-CA');
    const tmrw = new Date(); tmrw.setDate(tmrw.getDate() + 1);
    const tmrwStr = tmrw.toLocaleDateString('en-CA');
+
    if (uiStatus === 'Ship Today') return todayStr;
    if (uiStatus === 'Ship Tomorrow') return tmrwStr;
    return uiStatus; 
@@ -297,100 +288,27 @@ document.addEventListener('change', function(e) {
   if (e.target.tagName === 'SELECT' && e.target.id.includes('status') && e.target.value === 'Ship On Future Date') {
     window.activeStatusDropdownId = e.target.id;
     const todayStr = new Date().toLocaleDateString('en-CA');
-    if($('#fd_datePicker')) { $('#fd_datePicker').min = todayStr; $('#fd_datePicker').value = todayStr; $('#fd_datePicker').disabled = false; $('#fd_tbd').checked = false; }
+    if($('#fd_datePicker')) {
+      $('#fd_datePicker').min = todayStr; $('#fd_datePicker').value = todayStr;
+      $('#fd_datePicker').disabled = false; $('#fd_tbd').checked = false;
+    }
     if($('#futureDateModal')) $('#futureDateModal').style.display = 'flex';
   }
 });
 
 window.cancelDateModal = function() {
   if($('#futureDateModal')) $('#futureDateModal').style.display = 'none';
-  if(window.activeStatusDropdownId === 'OVERDUE') { $('#overdueResolveModal').style.display = 'flex'; return; }
   if(window.activeStatusDropdownId && $('#' + window.activeStatusDropdownId)) $('#' + window.activeStatusDropdownId).value = 'Partial';
 };
 
-window.confirmDateModal = async function() {
+window.confirmDateModal = function() {
   const isTbd = $('#fd_tbd').checked; const dateVal = $('#fd_datePicker').value;
   if(!isTbd && !dateVal) return alert("Please select a date or check TBD.");
   const finalVal = isTbd ? 'TBD' : dateVal;
-  
-  if (window.activeStatusDropdownId === 'OVERDUE') {
-    const item = window.overdueQueue[window.overdueIndex];
-    await supabaseClient.from('staging').update({ status: finalVal }).eq('id', item.id);
-    window.logAction('staging', `Resolved Overdue SO ${item.so} to ${finalVal}`);
-    if(typeof window.showNotification === 'function') window.showNotification('Overdue Status Updated');
-    if($('#futureDateModal')) $('#futureDateModal').style.display = 'none';
-    window.overdueIndex++; window.loadCloudData(); window.renderNextOverdue();
-    return;
-  }
-
   const sel = $('#' + window.activeStatusDropdownId);
-  if (sel) {
-    if (!Array.from(sel.options).some(opt => opt.value === finalVal)) { sel.insertAdjacentHTML('beforeend', `<option value="${finalVal}">${finalVal}</option>`); }
-    sel.value = finalVal;
+  if (!Array.from(sel.options).some(opt => opt.value === finalVal)) {
+    sel.insertAdjacentHTML('beforeend', `<option value="${finalVal}">${finalVal}</option>`);
   }
+  sel.value = finalVal;
   if($('#futureDateModal')) $('#futureDateModal').style.display = 'none';
-};
-
-window.overdueQueue = []; window.overdueIndex = 0; window.isResolvingOverdue = false;
-window.checkOverdueShipments = function() {
-  const todayStr = new Date().toLocaleDateString('en-CA');
-  window.overdueQueue = appData.staging.filter(o => /^\d{4}-\d{2}-\d{2}$/.test(o.status) && o.status < todayStr);
-  window.overdueIndex = 0;
-  if(window.overdueQueue.length > 0) { window.isResolvingOverdue = true; window.renderNextOverdue(); }
-};
-
-window.renderNextOverdue = async function() {
-  if (window.overdueIndex >= window.overdueQueue.length) {
-    window.isResolvingOverdue = false;
-    if($('#overduePromptModal')) $('#overduePromptModal').style.display = 'none';
-    if($('#overdueResolveModal')) $('#overdueResolveModal').style.display = 'none';
-    return;
-  }
-  const item = window.overdueQueue[window.overdueIndex];
-  $('#od_so').textContent = item.so; $('#od_date').textContent = item.status;
-  $('#od_history').innerHTML = '<div style="text-align:center; color:#6b7280;">Loading history...</div>';
-  $('#overduePromptModal').style.display = 'flex';
-  
-  try {
-    const { data, error } = await supabaseClient.from('changelog').select('*').ilike('action', `%${item.so}%`).order('created_at', { ascending: false }).limit(5);
-    if (!error && data && data.length > 0) {
-      $('#od_history').innerHTML = '<ul style="margin:0; padding-left:20px;">' + data.map(log => `<li style="margin-bottom:4px;"><b>${new Date(log.created_at).toLocaleString()}</b>: ${log.action}</li>`).join('') + '</ul>';
-    } else { $('#od_history').innerHTML = 'No recent history found.'; }
-  } catch(e) { $('#od_history').innerHTML = 'Error loading history.'; }
-};
-
-window.overdueHandleYes = function() {
-  $('#overduePromptModal').style.display = 'none';
-  window.triggerShipModal(window.overdueQueue[window.overdueIndex].id);
-};
-
-window.overdueHandleNo = function() {
-  $('#overduePromptModal').style.display = 'none';
-  $('#od_res_so').textContent = window.overdueQueue[window.overdueIndex].so;
-  $('#overdueResolveModal').style.display = 'flex';
-};
-
-window.overdueUpdateStatus = async function(statusSelection) {
-  if (statusSelection === 'Ship On Future Date') {
-    window.activeStatusDropdownId = 'OVERDUE';
-    const todayStr = new Date().toLocaleDateString('en-CA');
-    if($('#fd_datePicker')) { $('#fd_datePicker').min = todayStr; $('#fd_datePicker').value = todayStr; $('#fd_datePicker').disabled = false; $('#fd_tbd').checked = false; }
-    $('#overdueResolveModal').style.display = 'none';
-    if($('#futureDateModal')) $('#futureDateModal').style.display = 'flex';
-    return;
-  }
-  const item = window.overdueQueue[window.overdueIndex];
-  await supabaseClient.from('staging').update({ status: window.getDbStatus(statusSelection) }).eq('id', item.id);
-  window.logAction('staging', `Resolved Overdue SO ${item.so} to ${statusSelection}`);
-  if(typeof window.showNotification === 'function') window.showNotification('Overdue Status Updated');
-  $('#overdueResolveModal').style.display = 'none'; window.overdueIndex++; window.loadCloudData(); window.renderNextOverdue();
-};
-
-window.overdueDelete = async function() {
-  if(!confirm("Are you sure you want to PERMANENTLY delete this overdue record?")) return;
-  const item = window.overdueQueue[window.overdueIndex];
-  await supabaseClient.from('staging').delete().eq('id', item.id);
-  window.logAction('staging', `Deleted overdue entry for SO: ${item.so}`);
-  if(typeof window.showNotification === 'function') window.showNotification('Overdue Record Deleted');
-  $('#overdueResolveModal').style.display = 'none'; window.overdueIndex++; window.loadCloudData(); window.renderNextOverdue();
 };
