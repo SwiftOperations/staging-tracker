@@ -140,7 +140,7 @@ window.executeShippedUndo = async function() {
     const proceed = await window.checkSoConflict(currentRecord.so, null);
     if(!proceed) return;
 
-    const { error } = await supabaseClient.from('staging').insert([{ so: currentRecord.so, customer: currentRecord.customer, type: currentRecord.type, qty: currentRecord.qty, location: currentRecord.location, coords: currentRecord.coords, weight: currentRecord.weight, comments: currentRecord.comments, status: '', photo_urls: currentRecord.photo_urls }]);
+    const { error } = await supabaseClient.from('staging').insert([{ so: currentRecord.so, customer: currentRecord.customer, type: currentRecord.type, qty: currentRecord.qty, location: currentRecord.location, coords: currentRecord.coords, weight: currentRecord.weight, comments: currentRecord.comments, status: 'Partial', photo_urls: currentRecord.photo_urls }]);
     if (error) { alert("Undo Database Error: " + error.message); return; }
     
     await supabaseClient.from('shipped').delete().eq('id', editTargetRecord.id);
@@ -174,38 +174,7 @@ window.submitFreightDispatch = async function() {
     const { error: insertError } = await supabaseClient.from('shipped').insert([{
       so: activeShipTargetItem.so, customer: activeShipTargetItem.customer, type: activeShipTargetItem.type,
       qty: activeShipTargetItem.qty, carrier: carrierVal, location: activeShipTargetItem.location, coords: activeShipTargetItem.coords,
-      weight: activeShipTargetItem.weight, comments: activeShipTargetItem.comments, shipped_by: dispatcher, pmd_email: pmName, photo_urls: photoUrls, status: 'Shipped'
-    }]);
-    
-    if (insertError) {
-      alert("Database Error: " + insertError.message);
-      if($('#modalConfirmBtn')) $('#modalConfirmBtn').disabled = false;
-      return;
-    }
-window.submitFreightDispatch = async function() {
-  const dispatcher = $('#m_by').value.trim(); const pmEmail = $('#m_pm_email').value.trim(); const pmChecked = $('#m_pm_chk').checked;
-  const carrierVal = $('#m_carrier').value.trim() || 'Unassigned Carrier';
-  const shipComments = $('#m_comments') ? $('#m_comments').value.trim() : activeShipTargetItem.comments;
-  if(!dispatcher || (pmChecked && !pmEmail)) return alert("Missing required inputs.");
-  
-  if($('#modalConfirmBtn')) $('#modalConfirmBtn').disabled = true;
-  try {
-    let photoUrls = (activeShipTargetItem && activeShipTargetItem.photo_urls) ? [...activeShipTargetItem.photo_urls] : [];
-    
-    for (let i = 0; i < selectedPhotoBlobs.length; i++) {
-      const file = selectedPhotoBlobs[i]; 
-      const cleanFileName = file.name.replace(/[^a-zA-Z0-9.]/g, '');
-      const path = `${activeShipTargetItem.so}-${Date.now()}-${i}-${cleanFileName}`;
-      await supabaseClient.storage.from('freight-photos').upload(path, file); photoUrls.push(path);
-    }
-    
-    let pmName = pmEmail ? pmEmail.split('@')[0].split('.')[0] : null;
-    if(pmName) pmName = pmName.charAt(0).toUpperCase() + pmName.slice(1);
-
-    const { error: insertError } = await supabaseClient.from('shipped').insert([{
-      so: activeShipTargetItem.so, customer: activeShipTargetItem.customer, type: activeShipTargetItem.type,
-      qty: activeShipTargetItem.qty, carrier: carrierVal, location: activeShipTargetItem.location, coords: activeShipTargetItem.coords,
-      weight: activeShipTargetItem.weight, comments: shipComments, shipped_by: dispatcher, pmd_email: pmName, photo_urls: photoUrls
+      weight: activeShipTargetItem.weight, comments: activeShipTargetItem.comments, shipped_by: dispatcher, pmd_email: pmName, photo_urls: photoUrls
     }]);
     
     if (insertError) {
@@ -222,8 +191,8 @@ window.submitFreightDispatch = async function() {
     if(pmChecked) {
       const currentTimeStamp = new Date().toLocaleString();
       const cachedSubject = `CONFIRMATION OF SHIPOUT: ${activeShipTargetItem.customer} ${activeShipTargetItem.so} @ ${activeShipTargetItem.type} via ${carrierVal}`;
-      const cachedBody = `Your order has now been shipped! Order details:<br><br><b>Comments:</b> ${shipComments || 'None'}<br><br>----------------------------------------------------------------------<br><b>SO#</b>                   | ${activeShipTargetItem.so}<br><b>Customer</b>              | ${activeShipTargetItem.customer}<br><b>Container(s)</b>          | ${activeShipTargetItem.type}<br><b>Total Weight (In lbs)</b> | ${activeShipTargetItem.weight || '—'}<br><b>Carrier</b>               | ${carrierVal}<br><b>Shipped At</b>            | ${currentTimeStamp}<br><b>Shipped By</b>            | ${dispatcher}<br>----------------------------------------------------------------------<br><br>For more shipment details, visit: <a href="https://swiftoperations.github.io/staging-tracker/">Swift Staging Tracker</a><br><br>Thanks`;
-      
+      const cachedBody = `Your order has now been shipped! Order details:<br><br>----------------------------------------------------------------------<br><b>SO#</b>                   | ${activeShipTargetItem.so}<br><b>Customer</b>              | ${activeShipTargetItem.customer}<br><b>Container(s)</b>          | ${activeShipTargetItem.type}<br><b>Total Weight (In lbs)</b> | ${activeShipTargetItem.weight || '—'}<br><b>Carrier</b>               | ${carrierVal}<br><b>Shipped At</b>            | ${currentTimeStamp}<br><b>Shipped By</b>            | ${dispatcher}<br>----------------------------------------------------------------------<br><br>For more shipment details, visit: <a href="https://swiftoperations.github.io/staging-tracker/">Swift Staging Tracker</a><br><br>Thanks`;
+
       fetch('https://hook.us2.make.com/xouhxvxi22q9b3gdwnthe4bre7z2jgu9', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ to: pmEmail, cc: "warehouse1@swiftsupply.ca", subject: cachedSubject, body: cachedBody })
@@ -232,19 +201,15 @@ window.submitFreightDispatch = async function() {
 
     window.closeShipModal();
     if(window.activeReportMode) { window.reportRecordAction('Fixed via Shipped Out'); }
-    if(window.isResolvingOverdue) {
-      if($('#overduePromptModal')) $('#overduePromptModal').style.display = 'none';
-      window.overdueIndex++;
-      setTimeout(window.renderNextOverdue, 400);
-    }
 
   } catch(e) { 
-    console.error(e);
     alert("Data dispatch error."); 
   } finally { 
     if($('#modalConfirmBtn')) $('#modalConfirmBtn').disabled = false; 
   }
 };
+
+
 
 window.submitStagingEntry = async function() {
   const sk = parseInt($('#c_skid').value)||0, bx = parseInt($('#c_box').value)||0, cr = parseInt($('#c_crate').value)||0, pi = parseInt($('#c_pipe').value)||0, ot = parseInt($('#c_other').value)||0;
