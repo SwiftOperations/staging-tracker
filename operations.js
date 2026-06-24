@@ -155,6 +155,7 @@ window.executeShippedUndo = async function() {
 window.submitFreightDispatch = async function() {
   const dispatcher = $('#m_by').value.trim(); const pmEmail = $('#m_pm_email').value.trim(); const pmChecked = $('#m_pm_chk').checked;
   const carrierVal = $('#m_carrier').value.trim() || 'Unassigned Carrier';
+  const shipComments = $('#m_comments') ? $('#m_comments').value.trim() : (activeShipTargetItem.comments || '');
   if(!dispatcher || (pmChecked && !pmEmail)) return alert("Missing required inputs.");
   
   if($('#modalConfirmBtn')) $('#modalConfirmBtn').disabled = true;
