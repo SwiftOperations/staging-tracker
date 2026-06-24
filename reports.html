@@ -37,7 +37,7 @@
 </div>
 
 <div id="reportMainModal" class="modal-overlay">
-  <div class="modal-window" style="max-width: 500px; text-align:center;"><button class="modal-close-x" onclick="window.pauseReport(); document.querySelector('#reportMainModal').style.display='none'">&times;</button>
+  <div class="modal-window" style="max-width: 500px; text-align:center;"><button class="modal-close-x" onclick="document.querySelector('#reportMainModal').style.display='none'; try{ window.pauseReport(); }catch(e){};">&times;</button>
     <h3 style="margin-top:0; color:#64748b; font-size:14px; text-transform:uppercase;">Staging Verification</h3>
     <div id="rep_loc" style="font-size:42px; font-weight:900; color:#dd4d25; margin:10px 0;"></div>
     <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:16px; text-align:left; font-size:13.5px; color:#334155; margin-bottom:16px;">
