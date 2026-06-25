@@ -65,20 +65,26 @@ window.deleteCurrentRecord = async function() {
 window.submitReturnToStock = async function() {
   const pickedBy = $('#r_picked_by').value.trim(); const returnedBy = $('#r_returned_by').value.trim();
   const reason = $('#r_reason').value.trim();
-  const pmEmail = $('#r_pm_email').value.trim(); const pmChecked = $('#r_pm_chk').checked;
+  const pmRaw = $('#r_pm_email').value.trim(); const pmChecked = $('#r_pm_chk').checked;
 
-  if(!pickedBy || !returnedBy || !reason || (pmChecked && !pmEmail)) return alert("Missing required inputs.");
+  if(!pickedBy || !returnedBy || !reason) return alert("Missing required inputs.");
+  
+  let finalPmEmail = null;
+  if (pmChecked) {
+    finalPmEmail = window.resolveEmail(pmRaw);
+    if (!finalPmEmail) return alert("Invalid PM Entry. Please select a valid PM from the list or type a valid email address.");
+  }
   
   try {
     const e = appData.staging.find(x => x.id === currentEditId);
     const currentTimeStamp = new Date().toLocaleString();
-    let pmName = pmEmail ? pmEmail.split('@')[0].split('.')[0] : null;
+    let pmName = finalPmEmail ? finalPmEmail.split('@')[0].split('.')[0] : null;
     if(pmName) pmName = pmName.charAt(0).toUpperCase() + pmName.slice(1);
     
     const { error: insertError } = await supabaseClient.from('shipped').insert([{
       so: editTargetRecord.so, customer: $('#e_cust').value.trim(), type: window.getDynamicType('e'), qty: window.getDynamicQty('e'),
       carrier: 'RETURNED TO STOCK', location: $('#e_loc').value.trim(), coords: $('#e_coords').value.trim(),
-      weight: $('#e_weight').value.trim(), comments: e.comments, shipped_by: returnedBy, pmd_email: pickedBy, photo_urls: editTargetRecord.photo_urls
+      weight: $('#e_weight').value.trim(), comments: e.comments, shipped_by: returnedBy, pmd_email: pmName || pickedBy, photo_urls: editTargetRecord.photo_urls
     }]); 
     if(insertError) throw insertError;
     
@@ -87,21 +93,19 @@ window.submitReturnToStock = async function() {
     window.logAction('shipped', `Added Return to Stock log for SO: ${editTargetRecord.so}`);
     if(typeof window.showNotification === 'function') window.showNotification('Returned to Stock Successfully');
 
-    if(pmChecked) {
+    if(pmChecked && finalPmEmail) {
       const cachedSubject = `RETURN TO STOCK: ${editTargetRecord.so} for ${$('#e_cust').value.trim()}`;
       const cachedBody = `Your order/pick has now been Returned to Stock. Return details:<br><br><b>Reason:</b> ${reason}<br><br>----------------------------------------------------------------------<br><b>SO#</b>                   | ${editTargetRecord.so}<br><b>Customer</b>              | ${$('#e_cust').value.trim()}<br><b>Container(s)</b>          | ${window.getDynamicType('e')}<br><b>Total Weight (In lbs)</b> | ${$('#e_weight').value.trim() || '—'}<br><b>Picked by</b>             | ${pickedBy}<br><b>Returned At</b>           | ${currentTimeStamp}<br><b>Returned By</b>           | ${returnedBy}<br>----------------------------------------------------------------------<br><br>For more shipment details, visit: <a href="https://swiftoperations.github.io/staging-tracker/">Swift Staging Tracker</a><br><br>Thanks`;
 
       fetch('https://hook.us2.make.com/xouhxvxi22q9b3gdwnthe4bre7z2jgu9', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ to: "warehouse1@swiftsupply.ca", subject: cachedSubject, body: cachedBody })
+        body: JSON.stringify({ 
+          to: finalPmEmail, 
+          cc: "warehouse1@swiftsupply.ca", // Always CC's Warehouse 1
+          subject: cachedSubject, 
+          body: cachedBody 
+        })
       }).catch(err => console.warn(err));
-
-      if (pmEmail) {
-        fetch('https://hook.us2.make.com/xouhxvxi22q9b3gdwnthe4bre7z2jgu9', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ to: pmEmail, subject: cachedSubject, body: cachedBody })
-        }).catch(err => console.warn(err));
-      }
     }
 
     if($('#returnModal')) $('#returnModal').style.display='none';
@@ -176,10 +180,18 @@ window.executeShippedUndo = async function() {
 };
 
 window.submitFreightDispatch = async function() {
-  const dispatcher = $('#m_by').value.trim(); const pmEmail = $('#m_pm_email').value.trim(); const pmChecked = $('#m_pm_chk').checked;
+  const dispatcher = $('#m_by').value.trim(); 
+  const pmRaw = $('#m_pm_email').value.trim(); const pmChecked = $('#m_pm_chk').checked;
   const carrierVal = $('#m_carrier').value.trim() || 'Unassigned Carrier';
   const shipComments = $('#m_comments') ? $('#m_comments').value.trim() : (activeShipTargetItem.comments || '');
-  if(!dispatcher || (pmChecked && !pmEmail)) return alert("Missing required inputs.");
+  
+  if(!dispatcher) return alert("Missing required dispatcher input.");
+  
+  let finalPmEmail = null;
+  if (pmChecked) {
+    finalPmEmail = window.resolveEmail(pmRaw);
+    if (!finalPmEmail) return alert("Invalid PM Entry. Please select a valid PM from the list or type a valid email address.");
+  }
   
   if($('#modalConfirmBtn')) $('#modalConfirmBtn').disabled = true;
   try {
@@ -192,7 +204,7 @@ window.submitFreightDispatch = async function() {
       await supabaseClient.storage.from('freight-photos').upload(path, file); photoUrls.push(path);
     }
     
-    let pmName = pmEmail ? pmEmail.split('@')[0].split('.')[0] : null;
+    let pmName = finalPmEmail ? finalPmEmail.split('@')[0].split('.')[0] : null;
     if(pmName) pmName = pmName.charAt(0).toUpperCase() + pmName.slice(1);
 
     const { error: insertError } = await supabaseClient.from('shipped').insert([{
@@ -212,22 +224,20 @@ window.submitFreightDispatch = async function() {
     window.logAction('shipped', `Added via Ship Confirm: SO: ${activeShipTargetItem.so}`);
     if(typeof window.showNotification === 'function') window.showNotification('Freight Dispatched Successfully');
 
-    if(pmChecked) {
+    if(pmChecked && finalPmEmail) {
       const currentTimeStamp = new Date().toLocaleString();
       const cachedSubject = `CONFIRMATION OF SHIPOUT: ${activeShipTargetItem.customer} ${activeShipTargetItem.so} @ ${activeShipTargetItem.type} via ${carrierVal}`;
       const cachedBody = `Your order has now been shipped! Order details:<br><br>----------------------------------------------------------------------<br><b>SO#</b>                   | ${activeShipTargetItem.so}<br><b>Customer</b>              | ${activeShipTargetItem.customer}<br><b>Container(s)</b>          | ${activeShipTargetItem.type}<br><b>Total Weight (In lbs)</b> | ${activeShipTargetItem.weight || '—'}<br><b>Carrier</b>               | ${carrierVal}<br><b>Shipped At</b>            | ${currentTimeStamp}<br><b>Shipped By</b>            | ${dispatcher}<br><b>Comments</b>              | ${shipComments || 'None'}<br>----------------------------------------------------------------------<br><br>For more shipment details, visit: <a href="https://swiftoperations.github.io/staging-tracker/">Swift Staging Tracker</a><br><br>Thanks`;
 
       fetch('https://hook.us2.make.com/xouhxvxi22q9b3gdwnthe4bre7z2jgu9', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ to: "warehouse1@swiftsupply.ca", subject: cachedSubject, body: cachedBody })
+        body: JSON.stringify({ 
+          to: finalPmEmail, 
+          cc: "warehouse1@swiftsupply.ca", // Always CC's Warehouse 1
+          subject: cachedSubject, 
+          body: cachedBody 
+        })
       }).catch(err => console.warn(err));
-
-      if (pmEmail) {
-        fetch('https://hook.us2.make.com/xouhxvxi22q9b3gdwnthe4bre7z2jgu9', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ to: pmEmail, subject: cachedSubject, body: cachedBody })
-        }).catch(err => console.warn(err));
-      }
     }
 
     window.closeShipModal();
@@ -347,29 +357,25 @@ window.submitNotifyReturn = async function() {
   const locVal = $('#nr_loc').value.trim();
   const receivedByVal = $('#nr_received_by').value.trim();
   
-  if(!soVal || !custVal || !locVal || !receivedByVal) {
-    return alert("Please fill out all required fields (*).");
-  }
+  if(!soVal || !custVal || !locVal || !receivedByVal) return alert("Please fill out all required fields (*).");
   
-  const dynamicType = window.getDynamicType('nr');
-  const weightVal = $('#nr_weight').value.trim();
-  const coordsVal = $('#nr_coords').value.trim();
-  const commentsVal = $('#nr_comments').value.trim();
-  let ccPmVal = $('#nr_cc_pm') ? $('#nr_cc_pm').value.trim() : ''; 
+  const ccPmRaw = $('#nr_cc_pm') ? $('#nr_cc_pm').value.trim() : ''; 
+  let finalPmEmailToCC = null;
   
-  if (ccPmVal && !ccPmVal.includes('@')) {
-    if (typeof rawContactsData !== 'undefined') {
-      const foundMatch = rawContactsData.find(c => c.name.toLowerCase().includes(ccPmVal.toLowerCase()));
-      if (foundMatch && foundMatch.email && foundMatch.email !== 'N/A') {
-        ccPmVal = foundMatch.email;
-      } else { ccPmVal = ''; }
-    } else { ccPmVal = ''; }
+  if (ccPmRaw) {
+    finalPmEmailToCC = window.resolveEmail(ccPmRaw);
+    if (!finalPmEmailToCC) return alert("Invalid PM Entry in the CC field. Please use a valid name/email or clear the field.");
   }
 
   $('#nr_submitBtn').disabled = true; $('#nr_submitBtn').textContent = 'Sending Notification...';
   
   try {
+    const dynamicType = window.getDynamicType('nr');
+    const weightVal = $('#nr_weight').value.trim();
+    const coordsVal = $('#nr_coords').value.trim();
+    const commentsVal = $('#nr_comments').value.trim();
     let photoLinksHTML = "";
+    
     for (let i = 0; i < window.nrPhotoBlobs.length; i++) {
       const file = window.nrPhotoBlobs[i]; 
       const cleanFileName = file.name.replace(/[^a-zA-Z0-9.]/g, '');
@@ -399,19 +405,22 @@ window.submitNotifyReturn = async function() {
     if (photoLinksHTML !== "") emailBody += `<b>Photos:</b><br>${photoLinksHTML}<br><br>`;
     emailBody += `For more details, visit: <a href="https://swiftoperations.github.io/staging-tracker/">Swift Staging Tracker</a>`;
 
-    // 1. Primary Webhook
+    // Always CC Warehouse 1. If a PM was requested, cleanly add them using a semicolon.
+    let finalCcString = "warehouse1@swiftsupply.ca";
+    if (finalPmEmailToCC) {
+      finalCcString += ";" + finalPmEmailToCC;
+    }
+
+    // Fire One Unified Webhook 
     fetch('https://hook.us2.make.com/xouhxvxi22q9b3gdwnthe4bre7z2jgu9', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ to: "brian.rathburn@swiftsupply.ca", cc: "warehouse1@swiftsupply.ca", subject: emailSubject, body: emailBody })
-    }).catch(e => console.warn('Webhook fired with warnings:', e)); // Catches silent CORS errors
-
-    // 2. Secondary Webhook (Notice the 'cc' key is completely deleted so Make.com reads it as null)
-    if (ccPmVal && ccPmVal.includes('@')) {
-      fetch('https://hook.us2.make.com/xouhxvxi22q9b3gdwnthe4bre7z2jgu9', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ to: ccPmVal, subject: "CC: " + emailSubject, body: emailBody })
-      }).catch(e => console.warn('Webhook fired with warnings:', e));
-    }
+      body: JSON.stringify({ 
+        to: "brian.rathburn@swiftsupply.ca", 
+        cc: finalCcString, 
+        subject: emailSubject, 
+        body: emailBody 
+      })
+    }).catch(e => console.warn('Webhook silently caught error:', e));
 
     window.logAction('staging', `Sent Automated Return Notification for SO: ${soVal}`);
     if(typeof window.showNotification === 'function') window.showNotification('Return Notification Sent Successfully');
@@ -420,4 +429,15 @@ window.submitNotifyReturn = async function() {
   } catch(e) { alert("System Error: " + e.message); }
   
   $('#nr_submitBtn').disabled = false; $('#nr_submitBtn').textContent = 'Submit Return Notification';
+};
+// NEW: Email Auto-Corrector. Safely converts typed names into valid emails.
+window.resolveEmail = function(inputVal) {
+  if (!inputVal) return null;
+  let val = inputVal.trim();
+  if (val.includes('@')) return val; // It is already a valid email
+  if (typeof rawContactsData !== 'undefined') {
+    const match = rawContactsData.find(c => c.name.toLowerCase() === val.toLowerCase() || c.name.toLowerCase().includes(val.toLowerCase()));
+    if (match && match.email && match.email !== 'N/A') return match.email;
+  }
+  return null; 
 };
