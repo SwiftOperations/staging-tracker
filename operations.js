@@ -91,28 +91,26 @@ window.submitReturnToStock = async function() {
       const cachedSubject = `RETURN TO STOCK: ${editTargetRecord.so} for ${$('#e_cust').value.trim()}`;
       const cachedBody = `Your order/pick has now been Returned to Stock. Return details:<br><br><b>Reason:</b> ${reason}<br><br>----------------------------------------------------------------------<br><b>SO#</b>                   | ${editTargetRecord.so}<br><b>Customer</b>              | ${$('#e_cust').value.trim()}<br><b>Container(s)</b>          | ${window.getDynamicType('e')}<br><b>Total Weight (In lbs)</b> | ${$('#e_weight').value.trim() || '—'}<br><b>Picked by</b>             | ${pickedBy}<br><b>Returned At</b>           | ${currentTimeStamp}<br><b>Returned By</b>           | ${returnedBy}<br>----------------------------------------------------------------------<br><br>For more shipment details, visit: <a href="https://swiftoperations.github.io/staging-tracker/">Swift Staging Tracker</a><br><br>Thanks`;
 
-      // 1. Guaranteed Webhook to Warehouse 1
       fetch('https://hook.us2.make.com/xouhxvxi22q9b3gdwnthe4bre7z2jgu9', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ to: "warehouse1@swiftsupply.ca", cc: "", subject: cachedSubject, body: cachedBody })
-      });
+        body: JSON.stringify({ to: "warehouse1@swiftsupply.ca", subject: cachedSubject, body: cachedBody })
+      }).catch(err => console.warn(err));
 
-      // 2. Independent Webhook to the PM
       if (pmEmail) {
         fetch('https://hook.us2.make.com/xouhxvxi22q9b3gdwnthe4bre7z2jgu9', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ to: pmEmail, cc: "", subject: cachedSubject, body: cachedBody })
-        });
+          body: JSON.stringify({ to: pmEmail, subject: cachedSubject, body: cachedBody })
+        }).catch(err => console.warn(err));
       }
     }
 
     if($('#returnModal')) $('#returnModal').style.display='none';
     window.loadCloudData();
-    
     if(window.activeReportMode) { window.reportRecordAction('Fixed via Return to Stock'); }
 
   } catch(err) { alert("Return to Stock error: " + err.message); }
 };
+
 
 
 window.saveEditedRecord = async function() {
@@ -219,18 +217,16 @@ window.submitFreightDispatch = async function() {
       const cachedSubject = `CONFIRMATION OF SHIPOUT: ${activeShipTargetItem.customer} ${activeShipTargetItem.so} @ ${activeShipTargetItem.type} via ${carrierVal}`;
       const cachedBody = `Your order has now been shipped! Order details:<br><br>----------------------------------------------------------------------<br><b>SO#</b>                   | ${activeShipTargetItem.so}<br><b>Customer</b>              | ${activeShipTargetItem.customer}<br><b>Container(s)</b>          | ${activeShipTargetItem.type}<br><b>Total Weight (In lbs)</b> | ${activeShipTargetItem.weight || '—'}<br><b>Carrier</b>               | ${carrierVal}<br><b>Shipped At</b>            | ${currentTimeStamp}<br><b>Shipped By</b>            | ${dispatcher}<br><b>Comments</b>              | ${shipComments || 'None'}<br>----------------------------------------------------------------------<br><br>For more shipment details, visit: <a href="https://swiftoperations.github.io/staging-tracker/">Swift Staging Tracker</a><br><br>Thanks`;
 
-      // 1. Guaranteed Webhook to Warehouse 1
       fetch('https://hook.us2.make.com/xouhxvxi22q9b3gdwnthe4bre7z2jgu9', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ to: "warehouse1@swiftsupply.ca", cc: "", subject: cachedSubject, body: cachedBody })
-      });
+        body: JSON.stringify({ to: "warehouse1@swiftsupply.ca", subject: cachedSubject, body: cachedBody })
+      }).catch(err => console.warn(err));
 
-      // 2. Independent Webhook to the PM
       if (pmEmail) {
         fetch('https://hook.us2.make.com/xouhxvxi22q9b3gdwnthe4bre7z2jgu9', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ to: pmEmail, cc: "", subject: cachedSubject, body: cachedBody })
-        });
+          body: JSON.stringify({ to: pmEmail, subject: cachedSubject, body: cachedBody })
+        }).catch(err => console.warn(err));
       }
     }
 
@@ -243,6 +239,7 @@ window.submitFreightDispatch = async function() {
     if($('#modalConfirmBtn')) $('#modalConfirmBtn').disabled = false; 
   }
 };
+
 
 
 window.submitStagingEntry = async function() {
@@ -358,14 +355,21 @@ window.submitNotifyReturn = async function() {
   const weightVal = $('#nr_weight').value.trim();
   const coordsVal = $('#nr_coords').value.trim();
   const commentsVal = $('#nr_comments').value.trim();
-  const ccPmVal = $('#nr_cc_pm') ? $('#nr_cc_pm').value.trim() : ''; 
+  let ccPmVal = $('#nr_cc_pm') ? $('#nr_cc_pm').value.trim() : ''; 
   
+  if (ccPmVal && !ccPmVal.includes('@')) {
+    if (typeof rawContactsData !== 'undefined') {
+      const foundMatch = rawContactsData.find(c => c.name.toLowerCase().includes(ccPmVal.toLowerCase()));
+      if (foundMatch && foundMatch.email && foundMatch.email !== 'N/A') {
+        ccPmVal = foundMatch.email;
+      } else { ccPmVal = ''; }
+    } else { ccPmVal = ''; }
+  }
+
   $('#nr_submitBtn').disabled = true; $('#nr_submitBtn').textContent = 'Sending Notification...';
   
   try {
     let photoLinksHTML = "";
-    
-    // Upload Photos to Supabase
     for (let i = 0; i < window.nrPhotoBlobs.length; i++) {
       const file = window.nrPhotoBlobs[i]; 
       const cleanFileName = file.name.replace(/[^a-zA-Z0-9.]/g, '');
@@ -392,44 +396,28 @@ window.submitNotifyReturn = async function() {
     <b>Comments</b>              | ${commentsVal || 'None'}<br>
     ----------------------------------------------------------------------<br><br>`;
     
-    if (photoLinksHTML !== "") {
-      emailBody += `<b>Photos:</b><br>${photoLinksHTML}<br><br>`;
-    }
-    
+    if (photoLinksHTML !== "") emailBody += `<b>Photos:</b><br>${photoLinksHTML}<br><br>`;
     emailBody += `For more details, visit: <a href="https://swiftoperations.github.io/staging-tracker/">Swift Staging Tracker</a>`;
 
-    // 1. Primary Webhook: Sends to Brian & CC's Warehouse 1
+    // 1. Primary Webhook
     fetch('https://hook.us2.make.com/xouhxvxi22q9b3gdwnthe4bre7z2jgu9', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        to: "brian.rathburn@swiftsupply.ca", 
-        cc: "warehouse1@swiftsupply.ca", 
-        subject: emailSubject, 
-        body: emailBody 
-      })
-    });
+      body: JSON.stringify({ to: "brian.rathburn@swiftsupply.ca", cc: "warehouse1@swiftsupply.ca", subject: emailSubject, body: emailBody })
+    }).catch(e => console.warn('Webhook fired with warnings:', e)); // Catches silent CORS errors
 
-    // 2. Secondary Webhook: If a PM was selected, fire the alert directly to them too
-    if (ccPmVal) {
+    // 2. Secondary Webhook (Notice the 'cc' key is completely deleted so Make.com reads it as null)
+    if (ccPmVal && ccPmVal.includes('@')) {
       fetch('https://hook.us2.make.com/xouhxvxi22q9b3gdwnthe4bre7z2jgu9', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          to: ccPmVal, 
-          cc: "", // Left blank so we don't accidentally double-email Warehouse 1
-          subject: "CC: " + emailSubject, 
-          body: emailBody 
-        })
-      });
+        body: JSON.stringify({ to: ccPmVal, subject: "CC: " + emailSubject, body: emailBody })
+      }).catch(e => console.warn('Webhook fired with warnings:', e));
     }
 
     window.logAction('staging', `Sent Automated Return Notification for SO: ${soVal}`);
     if(typeof window.showNotification === 'function') window.showNotification('Return Notification Sent Successfully');
-    
     $('#notifyReturnModal').style.display = 'none';
 
-  } catch(e) { 
-    alert("System Error: " + e.message); 
-  }
+  } catch(e) { alert("System Error: " + e.message); }
   
   $('#nr_submitBtn').disabled = false; $('#nr_submitBtn').textContent = 'Submit Return Notification';
 };
