@@ -297,3 +297,104 @@ window.saveQuickComment = async function() {
   if($('#commentModal')) $('#commentModal').style.display = 'none';
   window.loadCloudData();
 };
+
+// --- NOTIFY OF RETURNS LOGIC ---
+
+window.nrPhotoBlobs = [];
+
+window.addNRPhotoBlob = function(inputEl) {
+  if(!inputEl.files || inputEl.files.length === 0) return;
+  Array.from(inputEl.files).forEach(f => { if(window.nrPhotoBlobs.length < 10) window.nrPhotoBlobs.push(f); });
+  window.renderNRPhotoStrip();
+};
+
+window.renderNRPhotoStrip = function() {
+  const container = $('#nr_photoPreviewStrip'); if(!container) return; container.innerHTML = '';
+  window.nrPhotoBlobs.forEach((f, idx) => {
+    container.insertAdjacentHTML('beforeend', `<span class="photo-badge">📎 Img-${idx+1} <span onclick="window.nrPhotoBlobs.splice(${idx},1); window.renderNRPhotoStrip()">&times;</span></span>`);
+  });
+};
+
+window.openNotifyReturnModal = function() {
+  $('#nr_so').value=''; $('#nr_cust').value=''; $('#nr_skid').value=0; $('#nr_box').value=0; $('#nr_crate').value=0; $('#nr_pipe').value=0; $('#nr_other').value=0; 
+  $('#nr_loc').value=''; $('#nr_coords').value=''; $('#nr_weight').value=''; $('#nr_comments').value=''; 
+  $('#nr_received_by').value = currentUser ? currentUser.email.split('@')[0] : '';
+  window.nrPhotoBlobs = []; window.renderNRPhotoStrip();
+  $('#notifyReturnModal').style.display = 'flex';
+};
+
+window.submitNotifyReturn = async function() {
+  const soVal = $('#nr_so').value.trim();
+  const custVal = $('#nr_cust').value.trim();
+  const locVal = $('#nr_loc').value.trim();
+  const receivedByVal = $('#nr_received_by').value.trim();
+  
+  if(!soVal || !custVal || !locVal || !receivedByVal) {
+    return alert("Please fill out all required fields (*).");
+  }
+  
+  const dynamicType = window.getDynamicType('nr');
+  const weightVal = $('#nr_weight').value.trim();
+  const coordsVal = $('#nr_coords').value.trim();
+  const commentsVal = $('#nr_comments').value.trim();
+  
+  $('#nr_submitBtn').disabled = true; $('#nr_submitBtn').textContent = 'Sending Notification...';
+  
+  try {
+    let photoLinksHTML = "";
+    
+    // Upload Photos to Supabase so they can be linked in the email
+    for (let i = 0; i < window.nrPhotoBlobs.length; i++) {
+      const file = window.nrPhotoBlobs[i]; 
+      const cleanFileName = file.name.replace(/[^a-zA-Z0-9.]/g, '');
+      const path = `${soVal}-return-${Date.now()}-${i}-${cleanFileName}`;
+      const { error: uploadError } = await supabaseClient.storage.from('freight-photos').upload(path, file);
+      if(!uploadError) {
+        const publicUrl = `https://gdrpdiwykmnybmkadlrv.supabase.co/storage/v1/object/public/freight-photos/${path}`;
+        photoLinksHTML += `<a href="${publicUrl}">View Attached Photo ${i+1}</a><br>`;
+      }
+    }
+
+    const currentTimeStamp = new Date().toLocaleString();
+    const emailSubject = `WAREHOUSE RETURN NOTIFICATION: SO ${soVal} - ${custVal}`;
+    let emailBody = `A new return has been received at the warehouse. Details below:<br><br>
+    ----------------------------------------------------------------------<br>
+    <b>SO#</b>                   | ${soVal}<br>
+    <b>Customer</b>              | ${custVal}<br>
+    <b>Container(s)</b>          | ${dynamicType || 'None specified'}<br>
+    <b>Location</b>              | ${locVal}<br>
+    <b>Total Weight (In lbs)</b> | ${weightVal || '—'}<br>
+    <b>Coords</b>                | ${coordsVal || '—'}<br>
+    <b>Received By</b>           | ${receivedByVal}<br>
+    <b>Received At</b>           | ${currentTimeStamp}<br>
+    <b>Comments</b>              | ${commentsVal || 'None'}<br>
+    ----------------------------------------------------------------------<br><br>`;
+    
+    if (photoLinksHTML !== "") {
+      emailBody += `<b>Photos:</b><br>${photoLinksHTML}<br><br>`;
+    }
+    
+    emailBody += `For more details, visit: <a href="https://swiftoperations.github.io/staging-tracker/">Swift Staging Tracker</a>`;
+
+    // Fire the Make.com Webhook
+    await fetch('https://hook.us2.make.com/xouhxvxi22q9b3gdwnthe4bre7z2jgu9', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        to: "brian.rathburn@swiftsupply.ca", 
+        cc: "warehouse1@swiftsupply.ca", 
+        subject: emailSubject, 
+        body: emailBody 
+      })
+    });
+
+    window.logAction('staging', `Sent Automated Return Notification for SO: ${soVal}`);
+    if(typeof window.showNotification === 'function') window.showNotification('Return Notification Sent Successfully');
+    
+    $('#notifyReturnModal').style.display = 'none';
+
+  } catch(e) { 
+    alert("System Error: " + e.message); 
+  }
+  
+  $('#nr_submitBtn').disabled = false; $('#nr_submitBtn').textContent = 'Submit Return Notification';
+};
