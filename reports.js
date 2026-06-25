@@ -1,9 +1,9 @@
-// --- reports.js ---
-
 window.activeReportMode = false;
+window.currentReportFilter = 'all'; // Tracks 'all', 'aisle', 'non_aisle', etc.
 window.reportQueue = [];
 window.reportIndex = 0;
 window.reportResults = [];
+window.reportPhotoBlobs = [];
 
 function locSortKey(loc) {
   const match = (loc||'').toUpperCase().match(/^([A-Z])-(\d{2})-([A-Z])-(1|2|1\+2)$/);
@@ -35,6 +35,7 @@ window.resumeStagingReport = function() {
   window.reportQueue = state.queue;
   window.reportIndex = state.index;
   window.reportResults = state.results || [];
+  window.currentReportFilter = state.filter || 'all'; // <-- Restores the filter tracking
   window.activeReportMode = true;
   if($('#reportResumeModal')) $('#reportResumeModal').style.display = 'none';
   window.renderNextReportItem();
@@ -42,7 +43,9 @@ window.resumeStagingReport = function() {
 
 window.initStagingReport = function(mode = 'all') {
   if(!mode && window.pendingReportMode) mode = window.pendingReportMode;
+  window.currentReportFilter = mode; // <-- Added to track current report type
   const aisleRegex = /^([A-Z])-\d{2}-([A-Z])-(1|2|1\+2)$/i;
+// ... rest of the existing code remains the same
   
   let sourceData = appData.staging;
   if (mode === 'aisle') sourceData = sourceData.filter(x => aisleRegex.test(x.location||''));
@@ -69,7 +72,7 @@ window.initStagingReport = function(mode = 'all') {
 };
 
 window.saveReportState = function() {
-  localStorage.setItem('swift_report_state', JSON.stringify({queue: window.reportQueue, index: window.reportIndex, results: window.reportResults}));
+  localStorage.setItem('swift_report_state', JSON.stringify({queue: window.reportQueue, index: window.reportIndex, results: window.reportResults, filter: window.currentReportFilter}));
 };
 
 window.downloadCSV = function(data, filename) {
@@ -203,4 +206,118 @@ window.reportSubmitNewLocation = async function() {
     window.loadCloudData();
     window.reportRecordAction(`Fixed via Location Change (${newLoc})`);
   } catch(e) { alert("Error updating location: " + e.message); window.renderNextReportItem(); }
+};
+
+// --- NEW REPORT ADD ENTRY LOGIC ---
+
+window.addReportPhotoBlob = function(inputEl) {
+  if(!inputEl.files || inputEl.files.length === 0) return;
+  Array.from(inputEl.files).forEach(f => { if(window.reportPhotoBlobs.length < 10) window.reportPhotoBlobs.push(f); });
+  window.renderReportPhotoStrip();
+};
+
+window.renderReportPhotoStrip = function() {
+  const container = $('#ra_photoPreviewStrip'); if(!container) return; container.innerHTML = '';
+  window.reportPhotoBlobs.forEach((f, idx) => {
+    container.insertAdjacentHTML('beforeend', `<span class="photo-badge">📎 Img-${idx+1} <span onclick="window.reportPhotoBlobs.splice(${idx},1); window.renderReportPhotoStrip()">&times;</span></span>`);
+  });
+};
+
+window.openReportAddModal = function() {
+  $('#ra_so').value=''; $('#ra_cust').value=''; $('#ra_skid').value=0; $('#ra_box').value=0; $('#ra_crate').value=0; $('#ra_pipe').value=0; $('#ra_other').value=0; 
+  $('#ra_loc').value=''; $('#ra_coords').value=''; $('#ra_weight').value=''; $('#ra_comments').value=''; 
+  $('#ra_staged_by').value = currentUser ? currentUser.email.split('@')[0] : '';
+  window.reportPhotoBlobs = []; window.renderReportPhotoStrip();
+  $('#reportAddModal').style.display = 'flex';
+};
+
+window.submitReportAddEntry = async function() {
+  const sk = parseInt($('#ra_skid').value)||0, bx = parseInt($('#ra_box').value)||0, cr = parseInt($('#ra_crate').value)||0, pi = parseInt($('#ra_pipe').value)||0, ot = parseInt($('#ra_other').value)||0;
+  if(!$('#ra_so').value || !$('#ra_cust').value || !$('#ra_loc').value) return alert("Fields Missing.");
+  
+  const totalQty = sk + bx + cr + pi + ot;
+  if (totalQty === 0) return alert("Error: You must add at least 1 container.");
+  
+  const soVal = $('#ra_so').value.trim();
+  const locValue = $('#ra_loc').value.trim();
+
+  const proceed = await window.checkSoConflict(soVal, null);
+  if(!proceed) return;
+
+  let type = []; 
+  if(sk) type.push(window.formatContainer(sk, 'Skid'));
+  if(bx) type.push(window.formatContainer(bx, 'Box'));
+  if(cr) type.push(window.formatContainer(cr, 'Crate'));
+  if(pi) type.push(window.formatContainer(pi, 'Pipe/Rod'));
+  if(ot) type.push(window.formatContainer(ot, 'Other'));
+  
+  $('#ra_submitBtn').disabled = true; $('#ra_submitBtn').textContent = 'Saving...';
+  
+  try {
+    let photoUrls = []; 
+    for (let i = 0; i < window.reportPhotoBlobs.length; i++) {
+      const file = window.reportPhotoBlobs[i]; 
+      const cleanFileName = file.name.replace(/[^a-zA-Z0-9.]/g, '');
+      const path = `${soVal}-staging-${Date.now()}-${i}-${cleanFileName}`;
+      const { error: uploadError } = await supabaseClient.storage.from('freight-photos').upload(path, file);
+      if(!uploadError) photoUrls.push(path);
+    }
+  
+    const newEntry = { so: soVal, customer: $('#ra_cust').value.trim(), status: window.getDbStatus($('#ra_status').value), location: locValue, coords: $('#ra_coords').value.trim(), weight: $('#ra_weight').value.trim(), comments: $('#ra_comments').value.trim(), staged_by: $('#ra_staged_by').value.trim(), type: type.join(', '), qty: totalQty, photo_urls: photoUrls };
+    
+    // Select the returned data so we can get its ID immediately
+    const { data: insertedData, error } = await supabaseClient.from('staging').insert([newEntry]).select();
+    
+    if (error) { alert("Database Error: " + error.message); $('#ra_submitBtn').disabled = false; $('#ra_submitBtn').textContent = 'Add Entry'; return; }
+    
+    window.logAction('staging', `Added new entry via Report module for SO: ${soVal}`);
+    if(typeof window.showNotification === 'function') window.showNotification('Staging Entry Added');
+    
+    // Inject the new item directly into our appData and the Report Queue
+    appData.staging.push(insertedData[0]); 
+    window.injectIntoReportQueue(insertedData[0]);
+    
+    $('#reportAddModal').style.display = 'none';
+    window.loadCloudData();
+  } catch(e) { alert("System Error: " + e.message); }
+  
+  $('#ra_submitBtn').disabled = false; $('#ra_submitBtn').textContent = 'Add Entry';
+};
+
+window.injectIntoReportQueue = function(item) {
+  if (!window.activeReportMode) return;
+  
+  const aisleRegex = /^([A-Z])-\d{2}-([A-Z])-(1|2|1\+2)$/i;
+  const isAisle = aisleRegex.test(item.location||'');
+  
+  // Abort if the new entry doesn't match the current report's filter constraints
+  if (window.currentReportFilter === 'aisle' && !isAisle) return;
+  if (window.currentReportFilter === 'non_aisle' && isAisle) return;
+  if (window.currentReportFilter === 'discrepancies') return; 
+  
+  // Create an array of actual objects, add the new item, and re-sort
+  const currentQueueItems = window.reportQueue.map(id => appData.staging.find(x => x.id === id)).filter(Boolean);
+  currentQueueItems.push(item);
+  
+  currentQueueItems.sort((a, b) => {
+    const keyA = locSortKey(a.location), keyB = locSortKey(b.location);
+    if (keyA[0] !== keyB[0]) return keyA[0] - keyB[0];
+    if (keyA[0] === 1) return (a.location||'').localeCompare(b.location||''); 
+    if (keyA[1] !== keyB[1]) return keyA[1].localeCompare(keyB[1]);
+    if (keyA[2] !== keyB[2]) return keyA[2] - keyB[2];
+    if (keyA[3] !== keyB[3]) return keyA[3].localeCompare(keyB[3]);
+    return keyA[4] - keyB[4];
+  });
+  
+  const newQueue = currentQueueItems.map(x => x.id);
+  const newIndexOfItem = newQueue.indexOf(item.id);
+  
+  // If the new item sorts BEFORE the item we are currently looking at, shift the index forward by 1 so the user stays on their current screen
+  if (newIndexOfItem <= window.reportIndex) {
+    window.reportIndex++; 
+  }
+  
+  window.reportQueue = newQueue;
+  window.saveReportState();
+  if($('#rep_progress')) $('#rep_progress').textContent = `${window.reportIndex + 1} of ${window.reportQueue.length}`;
 };
