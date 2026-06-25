@@ -334,18 +334,19 @@ window.submitNotifyReturn = async function() {
     return alert("Please fill out all required fields (*).");
   }
   
+  // Cleanly using your ui.js exactly as intended
   const dynamicType = window.getDynamicType('nr');
   const weightVal = $('#nr_weight').value.trim();
   const coordsVal = $('#nr_coords').value.trim();
   const commentsVal = $('#nr_comments').value.trim();
-  const ccPmVal = $('#nr_cc_pm') ? $('#nr_cc_pm').value.trim() : ''; // <-- Grab the optional PM email
+  const ccPmVal = $('#nr_cc_pm') ? $('#nr_cc_pm').value.trim() : ''; 
   
   $('#nr_submitBtn').disabled = true; $('#nr_submitBtn').textContent = 'Sending Notification...';
   
   try {
     let photoLinksHTML = "";
     
-    // Upload Photos to Supabase so they can be linked in the email
+    // Upload Photos to Supabase
     for (let i = 0; i < window.nrPhotoBlobs.length; i++) {
       const file = window.nrPhotoBlobs[i]; 
       const cleanFileName = file.name.replace(/[^a-zA-Z0-9.]/g, '');
@@ -378,14 +379,14 @@ window.submitNotifyReturn = async function() {
     
     emailBody += `For more details, visit: <a href="https://swiftoperations.github.io/staging-tracker/">Swift Staging Tracker</a>`;
 
-    // Combine Warehouse1 with the optional PM email for the CC field
+    // Make.com requires a semicolon to safely parse multiple CC emails
     let finalCcEmails = "warehouse1@swiftsupply.ca";
     if (ccPmVal) {
-      finalCcEmails += "," + ccPmVal;
+      finalCcEmails += ";" + ccPmVal;
     }
 
-    // Fire the Make.com Webhook
-    await fetch('https://hook.us2.make.com/xouhxvxi22q9b3gdwnthe4bre7z2jgu9', {
+    // FIX: Removed 'await'. This allows the webhook to fire successfully in the background without the browser freezing from Make.com's CORS policy.
+    fetch('https://hook.us2.make.com/xouhxvxi22q9b3gdwnthe4bre7z2jgu9', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ 
         to: "brian.rathburn@swiftsupply.ca", 
