@@ -27,23 +27,29 @@ window.loadCloudData = async function() {
     const allData = [...appData.staging, ...appData.shipped];
     const filterMem = (arr) => [...new Set(arr.filter(Boolean))].filter(x => !hiddenMemory.includes(x));
 
-    // NEW LOGIC: Check if the user is currently interacting with an autocomplete field
+    // Get the ID of the specific datalist the user is currently using (if any)
     const activeEl = document.activeElement;
-    const isDatalistFocused = activeEl && activeEl.tagName === 'INPUT' && activeEl.hasAttribute('list');
+    const activeListId = (activeEl && activeEl.tagName === 'INPUT') ? activeEl.getAttribute('list') : null;
 
-    // ONLY rebuild the memory lists if the user isn't currently trying to select something
-    if (!isDatalistFocused) {
-      if($('#dl_customers')) $('#dl_customers').innerHTML = filterMem(allData.map(x=>x.customer)).map(c=>`<option value="${c}">`).join('');
-      if($('#dl_locations')) $('#dl_locations').innerHTML = filterMem(allData.map(x=>x.location)).map(l=>`<option value="${l}">`).join('');
-      if($('#dl_stagers')) $('#dl_stagers').innerHTML = filterMem(allData.map(x=>(x.staged_by || x.shipped_by))).map(s=>`<option value="${s}">`).join('');
-      if($('#dl_pastEmails')) $('#dl_pastEmails').innerHTML = filterMem(appData.shipped.map(x=>x.pmd_email)).map(em=>`<option value="${em}@swiftsupply.ca">`).join('');
-    }
+    // Helper: Only update the HTML if the data actually changed, AND the user isn't actively typing in THIS specific list
+    const safeUpdateDatalist = (id, newHtml) => {
+      const el = $('#' + id);
+      if (el && el.innerHTML !== newHtml) {
+        if (activeListId !== id) { 
+          el.innerHTML = newHtml; 
+        }
+      }
+    };
+
+    safeUpdateDatalist('dl_customers', filterMem(allData.map(x=>x.customer)).map(c=>`<option value="${c}">`).join(''));
+    safeUpdateDatalist('dl_locations', filterMem(allData.map(x=>x.location)).map(l=>`<option value="${l}">`).join(''));
+    safeUpdateDatalist('dl_stagers', filterMem(allData.map(x=>(x.staged_by || x.shipped_by))).map(s=>`<option value="${s}">`).join(''));
+    safeUpdateDatalist('dl_pastEmails', filterMem(appData.shipped.map(x=>x.pmd_email)).map(em=>`<option value="${em}@swiftsupply.ca">`).join(''));
     
     window.renderTables(); 
     if(typeof window.syncMapPins === 'function') window.syncMapPins();
   } catch(e) { console.error("Data load failed:", e); }
 };
-
 window.deleteCurrentRecord = async function() {
   if(confirm("Are you sure you want to PERMANENTLY delete this record?")) {
     await supabaseClient.from(editTargetRecord.table).delete().eq('id', currentEditId);
