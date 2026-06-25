@@ -183,6 +183,10 @@ window.triggerShipModal = function(id) {
   if($('#photoPreviewStrip')) $('#photoPreviewStrip').innerHTML = ''; selectedPhotoBlobs = [];
   if($('#m_so')) $('#m_so').value = item.so; if($('#m_cust')) $('#m_cust').value = item.customer; if($('#m_qty')) $('#m_qty').value = item.type;
   if($('#m_carrier')) $('#m_carrier').value = ''; if($('#m_loc')) $('#m_loc').value = item.location; if($('#m_weight')) $('#m_weight').value = item.weight || '—'; if($('#m_by')) $('#m_by').value = '';
+  
+  // NEW LINE: Pull the original staging comments directly into the dispatch prompt
+  if($('#m_comments')) $('#m_comments').value = item.comments || ''; 
+  
   if($('#m_pm_chk')) $('#m_pm_chk').checked = false; window.togglePMEmail(false, 'm_pm_email', 'm_pm_email_btn');
   if($('#shipModal')) $('#shipModal').style.display = 'flex';
   window.renderPhotoStrip('#photoPreviewStrip', selectedPhotoBlobs);
