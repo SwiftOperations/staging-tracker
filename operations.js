@@ -319,6 +319,7 @@ window.openNotifyReturnModal = function() {
   $('#nr_so').value=''; $('#nr_cust').value=''; $('#nr_skid').value=0; $('#nr_box').value=0; $('#nr_crate').value=0; $('#nr_pipe').value=0; $('#nr_other').value=0; 
   $('#nr_loc').value=''; $('#nr_coords').value=''; $('#nr_weight').value=''; $('#nr_comments').value=''; 
   $('#nr_received_by').value = currentUser ? currentUser.email.split('@')[0] : '';
+  if($('#nr_cc_pm')) $('#nr_cc_pm').value = ''; // <-- Reset the CC field
   window.nrPhotoBlobs = []; window.renderNRPhotoStrip();
   $('#notifyReturnModal').style.display = 'flex';
 };
@@ -337,6 +338,7 @@ window.submitNotifyReturn = async function() {
   const weightVal = $('#nr_weight').value.trim();
   const coordsVal = $('#nr_coords').value.trim();
   const commentsVal = $('#nr_comments').value.trim();
+  const ccPmVal = $('#nr_cc_pm') ? $('#nr_cc_pm').value.trim() : ''; // <-- Grab the optional PM email
   
   $('#nr_submitBtn').disabled = true; $('#nr_submitBtn').textContent = 'Sending Notification...';
   
@@ -376,12 +378,18 @@ window.submitNotifyReturn = async function() {
     
     emailBody += `For more details, visit: <a href="https://swiftoperations.github.io/staging-tracker/">Swift Staging Tracker</a>`;
 
+    // Combine Warehouse1 with the optional PM email for the CC field
+    let finalCcEmails = "warehouse1@swiftsupply.ca";
+    if (ccPmVal) {
+      finalCcEmails += "," + ccPmVal;
+    }
+
     // Fire the Make.com Webhook
     await fetch('https://hook.us2.make.com/xouhxvxi22q9b3gdwnthe4bre7z2jgu9', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ 
         to: "brian.rathburn@swiftsupply.ca", 
-        cc: "warehouse1@swiftsupply.ca", 
+        cc: finalCcEmails, 
         subject: emailSubject, 
         body: emailBody 
       })
