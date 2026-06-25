@@ -91,10 +91,19 @@ window.submitReturnToStock = async function() {
       const cachedSubject = `RETURN TO STOCK: ${editTargetRecord.so} for ${$('#e_cust').value.trim()}`;
       const cachedBody = `Your order/pick has now been Returned to Stock. Return details:<br><br><b>Reason:</b> ${reason}<br><br>----------------------------------------------------------------------<br><b>SO#</b>                   | ${editTargetRecord.so}<br><b>Customer</b>              | ${$('#e_cust').value.trim()}<br><b>Container(s)</b>          | ${window.getDynamicType('e')}<br><b>Total Weight (In lbs)</b> | ${$('#e_weight').value.trim() || '—'}<br><b>Picked by</b>             | ${pickedBy}<br><b>Returned At</b>           | ${currentTimeStamp}<br><b>Returned By</b>           | ${returnedBy}<br>----------------------------------------------------------------------<br><br>For more shipment details, visit: <a href="https://swiftoperations.github.io/staging-tracker/">Swift Staging Tracker</a><br><br>Thanks`;
 
+      // 1. Guaranteed Webhook to Warehouse 1
       fetch('https://hook.us2.make.com/xouhxvxi22q9b3gdwnthe4bre7z2jgu9', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ to: pmEmail, cc: "warehouse1@swiftsupply.ca", subject: cachedSubject, body: cachedBody })
+        body: JSON.stringify({ to: "warehouse1@swiftsupply.ca", cc: "", subject: cachedSubject, body: cachedBody })
       });
+
+      // 2. Independent Webhook to the PM
+      if (pmEmail) {
+        fetch('https://hook.us2.make.com/xouhxvxi22q9b3gdwnthe4bre7z2jgu9', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ to: pmEmail, cc: "", subject: cachedSubject, body: cachedBody })
+        });
+      }
     }
 
     if($('#returnModal')) $('#returnModal').style.display='none';
@@ -104,6 +113,7 @@ window.submitReturnToStock = async function() {
 
   } catch(err) { alert("Return to Stock error: " + err.message); }
 };
+
 
 window.saveEditedRecord = async function() {
   const dynamicQty = window.getDynamicQty('e');
@@ -209,10 +219,19 @@ window.submitFreightDispatch = async function() {
       const cachedSubject = `CONFIRMATION OF SHIPOUT: ${activeShipTargetItem.customer} ${activeShipTargetItem.so} @ ${activeShipTargetItem.type} via ${carrierVal}`;
       const cachedBody = `Your order has now been shipped! Order details:<br><br>----------------------------------------------------------------------<br><b>SO#</b>                   | ${activeShipTargetItem.so}<br><b>Customer</b>              | ${activeShipTargetItem.customer}<br><b>Container(s)</b>          | ${activeShipTargetItem.type}<br><b>Total Weight (In lbs)</b> | ${activeShipTargetItem.weight || '—'}<br><b>Carrier</b>               | ${carrierVal}<br><b>Shipped At</b>            | ${currentTimeStamp}<br><b>Shipped By</b>            | ${dispatcher}<br><b>Comments</b>              | ${shipComments || 'None'}<br>----------------------------------------------------------------------<br><br>For more shipment details, visit: <a href="https://swiftoperations.github.io/staging-tracker/">Swift Staging Tracker</a><br><br>Thanks`;
 
+      // 1. Guaranteed Webhook to Warehouse 1
       fetch('https://hook.us2.make.com/xouhxvxi22q9b3gdwnthe4bre7z2jgu9', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ to: pmEmail, cc: "warehouse1@swiftsupply.ca", subject: cachedSubject, body: cachedBody })
+        body: JSON.stringify({ to: "warehouse1@swiftsupply.ca", cc: "", subject: cachedSubject, body: cachedBody })
       });
+
+      // 2. Independent Webhook to the PM
+      if (pmEmail) {
+        fetch('https://hook.us2.make.com/xouhxvxi22q9b3gdwnthe4bre7z2jgu9', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ to: pmEmail, cc: "", subject: cachedSubject, body: cachedBody })
+        });
+      }
     }
 
     window.closeShipModal();
@@ -224,6 +243,7 @@ window.submitFreightDispatch = async function() {
     if($('#modalConfirmBtn')) $('#modalConfirmBtn').disabled = false; 
   }
 };
+
 
 window.submitStagingEntry = async function() {
   const sk = parseInt($('#c_skid').value)||0, bx = parseInt($('#c_box').value)||0, cr = parseInt($('#c_crate').value)||0, pi = parseInt($('#c_pipe').value)||0, ot = parseInt($('#c_other').value)||0;
@@ -334,7 +354,6 @@ window.submitNotifyReturn = async function() {
     return alert("Please fill out all required fields (*).");
   }
   
-  // Cleanly using your ui.js exactly as intended
   const dynamicType = window.getDynamicType('nr');
   const weightVal = $('#nr_weight').value.trim();
   const coordsVal = $('#nr_coords').value.trim();
@@ -379,22 +398,29 @@ window.submitNotifyReturn = async function() {
     
     emailBody += `For more details, visit: <a href="https://swiftoperations.github.io/staging-tracker/">Swift Staging Tracker</a>`;
 
-    // Make.com requires a semicolon to safely parse multiple CC emails
-    let finalCcEmails = "warehouse1@swiftsupply.ca";
-    if (ccPmVal) {
-      finalCcEmails += ";" + ccPmVal;
-    }
-
-    // FIX: Removed 'await'. This allows the webhook to fire successfully in the background without the browser freezing from Make.com's CORS policy.
+    // 1. Primary Webhook: Sends to Brian & CC's Warehouse 1
     fetch('https://hook.us2.make.com/xouhxvxi22q9b3gdwnthe4bre7z2jgu9', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ 
         to: "brian.rathburn@swiftsupply.ca", 
-        cc: finalCcEmails, 
+        cc: "warehouse1@swiftsupply.ca", 
         subject: emailSubject, 
         body: emailBody 
       })
     });
+
+    // 2. Secondary Webhook: If a PM was selected, fire the alert directly to them too
+    if (ccPmVal) {
+      fetch('https://hook.us2.make.com/xouhxvxi22q9b3gdwnthe4bre7z2jgu9', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          to: ccPmVal, 
+          cc: "", // Left blank so we don't accidentally double-email Warehouse 1
+          subject: "CC: " + emailSubject, 
+          body: emailBody 
+        })
+      });
+    }
 
     window.logAction('staging', `Sent Automated Return Notification for SO: ${soVal}`);
     if(typeof window.showNotification === 'function') window.showNotification('Return Notification Sent Successfully');
