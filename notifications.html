@@ -30,8 +30,8 @@
     <p style="color:#64748b; font-size: 13px; margin-top: 0; margin-bottom: 16px;">Trigger automated alerts via E-mail and SMS to Project Managers and Operations for key warehouse events.</p>
     <div style="display:flex; flex-direction:column; gap:12px;">
       
-      <button class="btn" disabled style="background:#f1f5f9; color:#94a3b8; padding:16px; font-size:16px; border: 1px dashed #cbd5e1; cursor:not-allowed;">
-        Notify of Returns (Coming Soon)
+            <button class="btn" style="background:#3b82f6; color:#fff; padding:16px; font-size:16px; border: none; cursor:pointer; font-weight:bold; box-shadow:0 4px 6px rgba(59, 130, 246, 0.2);" onclick="window.openNotifyReturnModal()">
+        Notify of Returns
       </button>
       
       <button class="btn" disabled style="background:#f1f5f9; color:#94a3b8; padding:16px; font-size:16px; border: 1px dashed #cbd5e1; cursor:not-allowed;">
@@ -43,7 +43,41 @@
 </div>
 
 <div id="loginModal" class="modal-overlay"><div class="modal-window" style="max-width: 350px;"><button class="modal-close-x" onclick="document.querySelector('#loginModal').style.display='none'">&times;</button><h3 style="margin:0 0 12px 0;">Sign In</h3><div class="modal-field"><label>E-mail</label><input type="email" id="login_email" autocomplete="username" placeholder="warehouse@swiftsupply.ca" /></div><div class="modal-field"><label>Password</label><input type="password" id="login_password" autocomplete="current-password" placeholder="••••••••" /></div><button id="loginBtn" class="btn" style="margin-top:16px; width:100%;" onclick="window.submitLogin()">Sign In</button></div></div>
+
+<div id="notifyReturnModal" class="modal-overlay">
+  <div class="modal-window" style="max-width: 500px;">
+    <button class="modal-close-x" onclick="document.querySelector('#notifyReturnModal').style.display='none'">&times;</button>
+    <h3 style="margin-top:0; color:#3b82f6;">Notify of Returns</h3>
+    
+    <div class="photo-options-grid" style="margin-bottom:8px;">
+      <div class="photo-uploader" onclick="document.querySelector('#nr_cameraFile').click()">📷 Live Photo</div><input type="file" id="nr_cameraFile" accept="image/*" capture="environment" style="display:none" onchange="window.addNRPhotoBlob(this)" />
+      <div class="photo-uploader" onclick="document.querySelector('#nr_uploadFile').click()">📁 File Upload</div><input type="file" id="nr_uploadFile" multiple accept="image/*" style="display:none" onchange="window.addNRPhotoBlob(this)" />
+    </div>
+    <div id="nr_photoPreviewStrip" class="photo-strip" style="margin-bottom:8px;"></div>
+    
+    <div class="modal-field"><label>SO# <span style="color:#ef4444;">*</span></label><input id="nr_so" /></div>
+    <div class="modal-field"><label>Customer <span style="color:#ef4444;">*</span></label><input id="nr_cust" list="dl_customers" /></div>
+    
+    <label style="font-size:12px; font-weight:800; color:#475569; margin-top:8px; margin-bottom:-2px; text-transform:uppercase;">Quantities</label>
+    <div class="freight-block">
+      <div class="counter-box"><label>Skids</label><div class="counter-controls"><button class="counter-btn" onclick="window.adjustEditCount('nr_skid',-1)">-</button><input id="nr_skid" value="0" readonly/><button class="counter-btn" onclick="window.adjustEditCount('nr_skid',1)">+</button></div></div>
+      <div class="counter-box"><label>Boxes</label><div class="counter-controls"><button class="counter-btn" onclick="window.adjustEditCount('nr_box',-1)">-</button><input id="nr_box" value="0" readonly/><button class="counter-btn" onclick="window.adjustEditCount('nr_box',1)">+</button></div></div>
+      <div class="counter-box"><label>Crates</label><div class="counter-controls"><button class="counter-btn" onclick="window.adjustEditCount('nr_crate',-1)">-</button><input id="nr_crate" value="0" readonly/><button class="counter-btn" onclick="window.adjustEditCount('nr_crate',1)">+</button></div></div>
+      <div class="counter-box"><label>Pipe/Rod</label><div class="counter-controls"><button class="counter-btn" onclick="window.adjustEditCount('nr_pipe',-1)">-</button><input id="nr_pipe" value="0" readonly/><button class="counter-btn" onclick="window.adjustEditCount('nr_pipe',1)">+</button></div></div>
+      <div class="counter-box"><label>Other</label><div class="counter-controls"><button class="counter-btn" onclick="window.adjustEditCount('nr_other',-1)">-</button><input id="nr_other" value="0" readonly/><button class="counter-btn" onclick="window.adjustEditCount('nr_other',1)">+</button></div></div>
+    </div>
+    
+    <div class="modal-field"><label>Location <span style="color:#ef4444;">*</span></label><input id="nr_loc" list="dl_locations" /></div>
+    <div class="modal-field"><label>Coords</label><input id="nr_coords" readonly onclick="window.fetchBrowserGPS('nr_coords')" style="background:#fff; cursor:pointer;" placeholder="Tap to update coordinates" /></div>
+    <div class="modal-field"><label>Total Weight (In lbs)</label><input id="nr_weight" oninput="window.formatWeight(this)" /></div>
+    <div class="modal-field"><label>Received By <span style="color:#ef4444;">*</span></label><input id="nr_received_by" list="dl_stagers" /></div>
+    <div class="modal-field" style="margin-top:4px;"><label>Comments</label><textarea id="nr_comments" rows="2" style="width:100%; border:1px solid #cbd5e1; border-radius:10px; padding:10px 14px; background:#f8fafc; font-family:inherit; resize:vertical;"></textarea></div>
+    
+    <button id="nr_submitBtn" class="btn" style="margin-top:12px; width:100%; background:var(--brand);" onclick="window.submitNotifyReturn()">Submit Return Notification</button>
+  </div>
+</div>
   
+
 <script src="employees.js?v=1.5"></script>
 <script src="config.js?v=1.5"></script>
 <script src="auth.js?v=1.5"></script>
