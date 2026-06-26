@@ -93,6 +93,7 @@ window.submitReturnToStock = async function() {
     window.logAction('shipped', `Added Return to Stock log for SO: ${editTargetRecord.so}`);
     if(typeof window.showNotification === 'function') window.showNotification('Returned to Stock Successfully');
 
+    // UNIFIED WEBHOOK PAYLOAD
     if(pmChecked && finalPmEmail) {
       const cachedSubject = `RETURN TO STOCK: ${editTargetRecord.so} for ${$('#e_cust').value.trim()}`;
       const cachedBody = `Your order/pick has now been Returned to Stock. Return details:<br><br><b>Reason:</b> ${reason}<br><br>----------------------------------------------------------------------<br><b>SO#</b>                   | ${editTargetRecord.so}<br><b>Customer</b>              | ${$('#e_cust').value.trim()}<br><b>Container(s)</b>          | ${window.getDynamicType('e')}<br><b>Total Weight (In lbs)</b> | ${$('#e_weight').value.trim() || '—'}<br><b>Picked by</b>             | ${pickedBy}<br><b>Returned At</b>           | ${currentTimeStamp}<br><b>Returned By</b>           | ${returnedBy}<br>----------------------------------------------------------------------<br><br>For more shipment details, visit: <a href="https://swiftoperations.github.io/staging-tracker/">Swift Staging Tracker</a><br><br>Thanks`;
@@ -101,7 +102,7 @@ window.submitReturnToStock = async function() {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           to: finalPmEmail, 
-          cc: "warehouse1@swiftsupply.ca", // Always CC's Warehouse 1
+          cc: "warehouse1@swiftsupply.ca", 
           subject: cachedSubject, 
           body: cachedBody 
         })
@@ -114,7 +115,6 @@ window.submitReturnToStock = async function() {
 
   } catch(err) { alert("Return to Stock error: " + err.message); }
 };
-
 
 
 window.saveEditedRecord = async function() {
@@ -224,6 +224,7 @@ window.submitFreightDispatch = async function() {
     window.logAction('shipped', `Added via Ship Confirm: SO: ${activeShipTargetItem.so}`);
     if(typeof window.showNotification === 'function') window.showNotification('Freight Dispatched Successfully');
 
+    // UNIFIED WEBHOOK PAYLOAD
     if(pmChecked && finalPmEmail) {
       const currentTimeStamp = new Date().toLocaleString();
       const cachedSubject = `CONFIRMATION OF SHIPOUT: ${activeShipTargetItem.customer} ${activeShipTargetItem.so} @ ${activeShipTargetItem.type} via ${carrierVal}`;
@@ -233,7 +234,7 @@ window.submitFreightDispatch = async function() {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           to: finalPmEmail, 
-          cc: "warehouse1@swiftsupply.ca", // Always CC's Warehouse 1
+          cc: "warehouse1@swiftsupply.ca", 
           subject: cachedSubject, 
           body: cachedBody 
         })
@@ -356,16 +357,13 @@ window.submitNotifyReturn = async function() {
   const custVal = $('#nr_cust').value.trim();
   const locVal = $('#nr_loc').value.trim();
   const receivedByVal = $('#nr_received_by').value.trim();
+  const pmRaw = $('#nr_cc_pm') ? $('#nr_cc_pm').value.trim() : ''; 
   
   if(!soVal || !custVal || !locVal || !receivedByVal) return alert("Please fill out all required fields (*).");
+  if(!pmRaw) return alert("Please select a PM to notify of this return.");
   
-  const ccPmRaw = $('#nr_cc_pm') ? $('#nr_cc_pm').value.trim() : ''; 
-  let finalPmEmailToCC = null;
-  
-  if (ccPmRaw) {
-    finalPmEmailToCC = window.resolveEmail(ccPmRaw);
-    if (!finalPmEmailToCC) return alert("Invalid PM Entry in the CC field. Please use a valid name/email or clear the field.");
-  }
+  const finalPmEmail = window.resolveEmail(pmRaw);
+  if (!finalPmEmail) return alert("Invalid PM Entry. Please select a valid PM from the list or type a valid email address.");
 
   $('#nr_submitBtn').disabled = true; $('#nr_submitBtn').textContent = 'Sending Notification...';
   
@@ -405,18 +403,12 @@ window.submitNotifyReturn = async function() {
     if (photoLinksHTML !== "") emailBody += `<b>Photos:</b><br>${photoLinksHTML}<br><br>`;
     emailBody += `For more details, visit: <a href="https://swiftoperations.github.io/staging-tracker/">Swift Staging Tracker</a>`;
 
-    // Always CC Warehouse 1. If a PM was requested, cleanly add them using a semicolon.
-    let finalCcString = "warehouse1@swiftsupply.ca";
-    if (finalPmEmailToCC) {
-      finalCcString += ";" + finalPmEmailToCC;
-    }
-
-    // Fire One Unified Webhook 
+    // UNIFIED WEBHOOK PAYLOAD
     fetch('https://hook.us2.make.com/xouhxvxi22q9b3gdwnthe4bre7z2jgu9', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ 
-        to: "brian.rathburn@swiftsupply.ca", 
-        cc: finalCcString, 
+        to: finalPmEmail, 
+        cc: "warehouse1@swiftsupply.ca", 
         subject: emailSubject, 
         body: emailBody 
       })
@@ -434,7 +426,7 @@ window.submitNotifyReturn = async function() {
 window.resolveEmail = function(inputVal) {
   if (!inputVal) return null;
   let val = inputVal.trim();
-  if (val.includes('@')) return val; // It is already a valid email
+  if (val.includes('@')) return val; 
   if (typeof rawContactsData !== 'undefined') {
     const match = rawContactsData.find(c => c.name.toLowerCase() === val.toLowerCase() || c.name.toLowerCase().includes(val.toLowerCase()));
     if (match && match.email && match.email !== 'N/A') return match.email;
