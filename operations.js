@@ -98,7 +98,7 @@ window.submitReturnToStock = async function() {
       const cachedSubject = `RETURN TO STOCK: ${editTargetRecord.so} for ${$('#e_cust').value.trim()}`;
       const cachedBody = `Your order/pick has now been Returned to Stock. Return details:<br><br><b>Reason:</b> ${reason}<br><br>----------------------------------------------------------------------<br><b>SO#</b>                   | ${editTargetRecord.so}<br><b>Customer</b>              | ${$('#e_cust').value.trim()}<br><b>Container(s)</b>          | ${window.getDynamicType('e')}<br><b>Total Weight (In lbs)</b> | ${$('#e_weight').value.trim() || '—'}<br><b>Picked by</b>             | ${pickedBy}<br><b>Returned At</b>           | ${currentTimeStamp}<br><b>Returned By</b>           | ${returnedBy}<br>----------------------------------------------------------------------<br><br>For more shipment details, visit: <a href="https://swiftoperations.github.io/staging-tracker/">Swift Staging Tracker</a><br><br>Thanks`;
 
-      fetch('https://default331b7298d9764e739da6ba97508648.d6.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/7d9158f33b4e43039dda2d96314c3165/triggers/manual/paths/invoke?api-version=1', {
+      fetch('https://hook.us2.make.com/xouhxvxi22q9b3gdwnthe4bre7z2jgu9', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           to: finalPmEmail, 
@@ -230,7 +230,7 @@ window.submitFreightDispatch = async function() {
       const cachedSubject = `CONFIRMATION OF SHIPOUT: ${activeShipTargetItem.customer} ${activeShipTargetItem.so} @ ${activeShipTargetItem.type} via ${carrierVal}`;
       const cachedBody = `Your order has now been shipped! Order details:<br><br>----------------------------------------------------------------------<br><b>SO#</b>                   | ${activeShipTargetItem.so}<br><b>Customer</b>              | ${activeShipTargetItem.customer}<br><b>Container(s)</b>          | ${activeShipTargetItem.type}<br><b>Total Weight (In lbs)</b> | ${activeShipTargetItem.weight || '—'}<br><b>Carrier</b>               | ${carrierVal}<br><b>Shipped At</b>            | ${currentTimeStamp}<br><b>Shipped By</b>            | ${dispatcher}<br><b>Comments</b>              | ${shipComments || 'None'}<br>----------------------------------------------------------------------<br><br>For more shipment details, visit: <a href="https://swiftoperations.github.io/staging-tracker/">Swift Staging Tracker</a><br><br>Thanks`;
 
-      fetch('https://default331b7298d9764e739da6ba97508648.d6.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/7d9158f33b4e43039dda2d96314c3165/triggers/manual/paths/invoke?api-version=1', {
+      fetch('https://hook.us2.make.com/xouhxvxi22q9b3gdwnthe4bre7z2jgu9', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           to: finalPmEmail, 
@@ -407,7 +407,7 @@ window.submitNotifyReturn = async function() {
     emailBody += `For more details, visit: <a href="https://swiftoperations.github.io/staging-tracker/">Swift Staging Tracker</a>`;
 
     // UNIFIED WEBHOOK PAYLOAD
-    fetch('https://default331b7298d9764e739da6ba97508648.d6.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/7d9158f33b4e43039dda2d96314c3165/triggers/manual/paths/invoke?api-version=1', {
+    fetch('https://hook.us2.make.com/xouhxvxi22q9b3gdwnthe4bre7z2jgu9', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ 
         to: finalPmEmail, 
