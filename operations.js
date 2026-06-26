@@ -357,13 +357,16 @@ window.submitNotifyReturn = async function() {
   const custVal = $('#nr_cust').value.trim();
   const locVal = $('#nr_loc').value.trim();
   const receivedByVal = $('#nr_received_by').value.trim();
-  const pmRaw = $('#nr_cc_pm') ? $('#nr_cc_pm').value.trim() : ''; 
+  
+  // BULLETPROOF GRAB: Checks for both the new and old HTML ID just in case the browser cached an older version
+  const pmInputEl = $('#nr_pm_email') || $('#nr_cc_pm');
+  const pmRaw = pmInputEl ? pmInputEl.value.trim() : ''; 
   
   if(!soVal || !custVal || !locVal || !receivedByVal) return alert("Please fill out all required fields (*).");
-  if(!pmRaw) return alert("Please select a PM to notify of this return.");
+  if(!pmRaw) return alert("Please specify a PM to notify of this return.");
   
   const finalPmEmail = window.resolveEmail(pmRaw);
-  if (!finalPmEmail) return alert("Invalid PM Entry. Please select a valid PM from the list or type a valid email address.");
+  if (!finalPmEmail) return alert("Invalid PM Entry. Please select a valid PM from the list or type a full email address (e.g., name@domain.com).");
 
   $('#nr_submitBtn').disabled = true; $('#nr_submitBtn').textContent = 'Sending Notification...';
   
@@ -426,7 +429,11 @@ window.submitNotifyReturn = async function() {
 window.resolveEmail = function(inputVal) {
   if (!inputVal) return null;
   let val = inputVal.trim();
-  if (val.includes('@')) return val; 
+  
+  // 1. If it looks like a manually typed external email, accept it immediately
+  if (val.includes('@') && val.includes('.')) return val; 
+  
+  // 2. Otherwise, assume it's a name and search the company directory
   if (typeof rawContactsData !== 'undefined') {
     const match = rawContactsData.find(c => c.name.toLowerCase() === val.toLowerCase() || c.name.toLowerCase().includes(val.toLowerCase()));
     if (match && match.email && match.email !== 'N/A') return match.email;
