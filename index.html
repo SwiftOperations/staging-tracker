@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Swift Staging Tracker</title>
+<link rel="manifest" href="data:application/manifest+json;charset=utf-8,%7B%22short_name%22%3A%22StagingTracker%22%2C%22name%22%3A%22Swift%20Staging%20Tracker%20Hub%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22https%3A%2F%2Fcdn-icons-png.flaticon.com%2F512%2F3014%2F3014166.png%22%2C%22type%22%3A%22image%22%2C%22sizes%22%3A%22512x512%22%7D%5D%2C%22start_url%22%3A%22.%22%2C%22background_color%22%3A%22%23f6f7f9%22%2C%22theme_color%22%3A%22%23dd4d25%22%2C%22display%22%3A%22standalone%22%2C%22orientation%22%3A%22portrait%22%7D" id="pwa-manifest">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="stylesheet" href="style.css?v=1.0" />
+</head>
+<body>
+<datalist id="dl_customers"></datalist><datalist id="dl_locations"></datalist><datalist id="dl_stagers"></datalist><datalist id="dl_pastEmails"></datalist>
+
+ <div class="wrap"> 
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; flex-wrap:wrap; gap:12px;">
+    <div class="dropdown">
+      <button class="hamburger-btn" onclick="window.toggleMenu(event)">☰</button>
+      <div class="dropdown-content">
+        <a href="index.html"><b>Index</b> (Dashboard)</a>
+        <a href="stage.html" class="indented">↳ Staging Entries Log</a>
+        <a href="ship.html" class="indented">↳ Shipped Log</a>
+        <a href="reports.html"><b>Reports</b></a>
+        <a href="notifications.html"><b>Notifications</b></a>
+        <a href="contacts.html"><b>Contacts</b></a>
+      </div>
+    </div>
+    <h1 style="margin:0; flex: 1 1 auto;">Swift Staging Tracker</h1>
+    <div id="authStatus"></div>
+  </div>
+
+  <div id="err" style="display:none; background:#fee2e2; color:#991b1b; padding:10px; border-radius:10px; margin-bottom:10px"></div>
+
+  <div class="grid">
+    <div class="tile" onclick="window.openOrdersModal()" style="cursor:pointer; transition:0.2s;" onmouseover="this.style.borderColor='var(--brand)'" onmouseout="this.style.borderColor='#e6e7eb'"><h4>Orders</h4><div id="kOrders" class="big">0</div></div>
+    <div class="tile"><h4>Containers</h4><div id="kContainers" class="big">0</div></div>
+    <div class="tile"><h4>Skids</h4><div id="kSkids" class="big">0</div></div>
+    <div class="tile"><h4>Boxes</h4><div id="kBoxes" class="big">0</div></div>
+    <div class="tile"><h4>Crates</h4><div id="kCrates" class="big">0</div></div>
+    <div class="tile"><h4>Pipe/Rod</h4><div id="kPipe" class="big">0</div></div>
+    <div class="tile"><h4>Other</h4><div id="kOther" class="big">0</div></div>
+    <div class="tile"><h4>Shipped</h4><div id="kShipped" class="big">0</div></div>
+  </div>
+
+  <div class="card"><input id="q" autocomplete="off" spellcheck="false" placeholder="Quick search SO / Location / Customer..." oninput="window.renderTables()" /></div>
+
+  <div class="card" id="entryFormCard" style="display:none;">
+    <div class="split"><h3>Enter Staging Information</h3></div>
+    <div class="row">
+      <div class="photo-options-grid" style="flex: 1 1 180px; margin: 0;">
+        <div class="photo-uploader" style="padding: 8px; margin: 0; background: #fff;" onclick="document.querySelector('#main_cameraFile').click()">📷 Live Photo</div><input type="file" id="main_cameraFile" accept="image/*" capture="environment" style="display:none" onchange="window.addMainPhotoBlob(this)" />
+        <div class="photo-uploader" style="padding: 8px; margin: 0; background: #fff;" onclick="document.querySelector('#main_uploadFile').click()">📁 File Upload</div><input type="file" id="main_uploadFile" multiple accept="image/*" style="display:none" onchange="window.addMainPhotoBlob(this)" />
+      </div>
+      <input id="so" placeholder="SO number" style="flex: 1 1 110px;" />
+      <div style="display:flex; flex: 1 1 130px;"><input id="customer" placeholder="Customer" list="dl_customers" style="border-top-right-radius:0; border-bottom-right-radius:0; border-right:0; width:100%;" /><button type="button" onclick="window.banishMemory('customer')" style="height:42px; width:36px; flex:none; background:#f8fafc; border:1px solid #cbd5e1; border-top-right-radius:10px; border-bottom-right-radius:10px; color:#dc2626; font-weight:bold; font-size:18px; cursor:pointer; margin:0; padding:0;">&times;</button></div>
+      <select id="status" style="flex: 1 1 130px;"><option>Partial</option><option>Ship Today</option><option>Ship Tomorrow</option><option>Ship On Future Date</option><option>Corp Pick (Not Consolidated)</option><option>Customer Pick-Up</option><option>Awaiting Shipping Instructions</option></select>
+      <div id="mainPhotoPreviewStrip" class="photo-strip" style="margin-top:0px;"></div>
+      <div class="freight-block">
+        <div class="counter-box"><label>Skids</label><div class="counter-controls"><button onclick="window.adjustCount('c_skid',-1)" class="counter-btn">-</button><input id="c_skid" value="0" readonly/><button class="counter-btn" onclick="window.adjustCount('c_skid',1)">+</button></div></div>
+        <div class="counter-box"><label>Boxes</label><div class="counter-controls"><button onclick="window.adjustCount('c_box',-1)" class="counter-btn">-</button><input id="c_box" value="0" readonly/><button class="counter-btn" onclick="window.adjustCount('c_box',1)">+</button></div></div>
+        <div class="counter-box"><label>Crates</label><div class="counter-controls"><button onclick="window.adjustCount('c_crate',-1)" class="counter-btn">-</button><input id="c_crate" value="0" readonly/><button class="counter-btn" onclick="window.adjustCount('c_crate',1)">+</button></div></div>
+        <div class="counter-box"><label>Pipe/Rod</label><div class="counter-controls"><button onclick="window.adjustCount('c_pipe',-1)" class="counter-btn">-</button><input id="c_pipe" value="0" readonly/><button class="counter-btn" onclick="window.adjustCount('c_pipe',1)">+</button></div></div>
+        <div class="counter-box"><label>Other</label><div class="counter-controls"><button onclick="window.adjustCount('c_other',-1)" class="counter-btn">-</button><input id="c_other" value="0" readonly/><button class="counter-btn" onclick="window.adjustCount('c_other',1)">+</button></div></div>
+      </div>
+      <div style="display:flex; flex: 1 1 150px;"><input id="loc" placeholder="Location" list="dl_locations" style="border-top-right-radius:0; border-bottom-right-radius:0; border-right:0; width:100%;" /><button type="button" onclick="window.banishMemory('loc')" style="height:42px; width:36px; flex:none; background:#f8fafc; border:1px solid #cbd5e1; border-top-right-radius:10px; border-bottom-right-radius:10px; color:#dc2626; font-weight:bold; font-size:18px; cursor:pointer; margin:0; padding:0;">&times;</button></div>
+      <input id="coords" placeholder="Tap for GPS Coords" readonly onclick="window.fetchBrowserGPS('coords')" style="background:#fafafa; cursor:pointer;" />
+      <input id="weight" placeholder="Total Weight" oninput="window.formatWeight(this)" />
+      <input id="comments" placeholder="Comments" style="flex: 1 1 150px;" />
+      <div style="display:flex; flex: 1 1 150px;"><input id="staged_by" placeholder="Staged By" list="dl_stagers" style="border-top-right-radius:0; border-bottom-right-radius:0; border-right:0; width:100%;" /><button type="button" onclick="window.banishMemory('staged_by')" style="height:42px; width:36px; flex:none; background:#f8fafc; border:1px solid #cbd5e1; border-top-right-radius:10px; border-bottom-right-radius:10px; color:#dc2626; font-weight:bold; font-size:18px; cursor:pointer; margin:0; padding:0;">&times;</button></div>
+      <button id="add" class="btn">Add</button>
+    </div>
+  </div>
+
+  <div class="card" id="stagingCard">
+    <div class="split"><h3>Staging Entries</h3>
+      <div><button class="btn" style="background:#8b5cf6; padding:6px 12px; margin-right:4px;" onclick="window.open('stage.html?batch=true', '_blank')">Batch Mode</button><button class="btn" style="background:#0ea5e9; padding:6px 12px; margin-right:4px;" onclick="window.openChangelogModal('staging')">Changelog</button><button id="expandStaging" class="btn" onclick="window.open('stage.html', '_blank')" style="padding:6px 12px">Expand</button></div>
+    </div>
+    <div class="tblwrap"><div class="tbl-scroller"><table id="tblStaging">
+      <thead><tr>
+        <th class="show-in-batch" style="width:70px; background:#fafafa; padding:4px;"><div class="batch-header-btns" style="display:flex; flex-direction:column; gap:4px; text-align:center;"><button onclick="window.batchSelectAll()" style="font-size:10px; background:#fff; color:#4b5563;">Select All</button><button onclick="window.batchUnselectAll()" style="font-size:10px; background:#fff; color:#4b5563;">Unselect</button><button onclick="window.openBatchConsolidateModal(false)" style="font-size:10px; background:#8b5cf6; color:#fff; border-color:#8b5cf6;">Consolidate</button><button onclick="window.batchDelete()" style="font-size:10px; background:#dc2626; color:#fff; border-color:#dc2626;">Delete</button><button onclick="window.batchCancel()" style="font-size:10px; background:#e5e7eb; color:#4b5563; border-color:#cbd5e1;">Cancel</button></div></th>
+        <th class="hide-in-batch">Edit</th><th class="hide-in-batch">Photo(s)</th><th>SO</th><th>Customer</th><th>Entry Date</th><th>Containers</th><th>Location</th><th>Coords</th><th>Weight</th><th class="hide-in-batch">Comments</th><th>Status</th><th>Staged By</th><th class="hide-in-batch" style="position:sticky;right:0;text-align:center;">Shipped</th>
+      </tr></thead><tbody></tbody>
+    </table></div><div id="stageLimitNotice" class="log-limit-notice">Showing first 20. Expand for full log.</div></div>
+  </div>
+
+  <div class="card" id="shippedCard">
+    <div class="split"><h3>Shipped Log</h3>
+      <div style="display:flex; gap:8px; margin-left:auto;"><button class="btn" style="background:#0ea5e9; padding:6px 12px;" onclick="window.openChangelogModal('shipped')">Changelog</button><button id="expandShipped" class="btn" onclick="window.open('ship.html', '_blank')" style="padding:6px 12px;">Expand</button></div>
+    </div>
+    <div class="tblwrap"><div class="tbl-scroller"><table id="tblShipped">
+      <thead><tr><th>Edit</th><th>Photo(s)</th><th>SO</th><th>Customer</th><th>Containers</th><th>Carrier</th><th>Location</th><th>Coords</th><th>Weight</th><th>Comments</th><th>Shipped At</th><th>Shipped By</th><th>PM'd Email</th></tr></thead><tbody></tbody>
+    </table></div><div id="shippedLimitNotice" class="log-limit-notice">Showing first 20. Expand for full log.</div></div>
+  </div>
+  <div class="card" id="mapCard"><h3>Staged Inventory Location Mapping</h3><div id="openFreightMap" style="width:100%; height:420px; background:#e5e7eb; border-radius:10px; border:1px solid #cbd5e1; z-index:1;"></div></div>
+</div>
+
+<div id="returnModal" class="modal-overlay">
+  <div class="modal-window">
+    <button class="modal-close-x" onclick="document.querySelector('#returnModal').style.display='none'">&times;</button>
+    <h3>Return to Stock</h3>
+    <div class="modal-field"><label>Picked By</label><div style="display:flex; width:100%;"><input id="r_picked_by" list="dl_stagers" style="border-top-right-radius:0; border-bottom-right-radius:0; border-right:0;" /><button type="button" onclick="window.banishMemory('r_picked_by')" style="height:42px; width:36px; flex:none; background:#f8fafc; border:1px solid #cbd5e1; border-top-right-radius:8px; border-bottom-right-radius:8px; color:#dc2626; font-weight:bold; font-size:18px; cursor:pointer; padding:0;">&times;</button></div></div>
+    <div class="modal-field"><label>Returned By</label><div style="display:flex; width:100%;"><input id="r_returned_by" list="dl_stagers" style="border-top-right-radius:0; border-bottom-right-radius:0; border-right:0;" /><button type="button" onclick="window.banishMemory('r_returned_by')" style="height:42px; width:36px; flex:none; background:#f8fafc; border:1px solid #cbd5e1; border-top-right-radius:8px; border-bottom-right-radius:8px; color:#dc2626; font-weight:bold; font-size:18px; cursor:pointer; padding:0;">&times;</button></div></div>
+    <div class="modal-field"><label>Reason</label><input id="r_reason" /></div>
+    <div class="chk-row" style="margin-top:4px;"><input type="checkbox" id="r_pm_chk" onchange="window.togglePMEmail(this.checked, 'r_pm_email', 'r_pm_email_btn')"/><label>Confirm via e-mail</label></div>
+    <div class="modal-field"><div style="display:flex; width:100%;"><input id="r_pm_email" list="dl_pastEmails" disabled style="border-top-right-radius:0; border-bottom-right-radius:0; border-right:0;" /><button type="button" id="r_pm_email_btn" disabled onclick="window.banishMemory('r_pm_email')" style="height:42px; width:36px; flex:none; background:#f8fafc; border:1px solid #cbd5e1; border-top-right-radius:8px; border-bottom-right-radius:8px; color:#dc2626; font-weight:bold; font-size:18px; cursor:pointer; padding:0;">&times;</button></div></div>
+    <button class="btn" style="background:#dc2626; width:100%; margin-top:8px;" onclick="window.submitReturnToStock()">Confirm</button>
+  </div>
+</div>
+
+<div id="editModal" class="modal-overlay">
+  <div class="modal-window">
+    <button class="modal-close-x" onclick="document.querySelector('#editModal').style.display='none'">&times;</button><h3 id="editModalTitle">Edit Record</h3>
+    <div id="editPhotoSection" style="display:flex; flex-direction:column; gap:8px;"><label style="font-size:12px; font-weight:700;">Manage Photos</label><div class="photo-options-grid"><div class="photo-uploader" onclick="document.querySelector('#e_cameraFile').click()">📷 Take Photo</div><input type="file" id="e_cameraFile" accept="image/*" capture="environment" style="display:none" onchange="window.addEditPhotoBlob(this)" /><div class="photo-uploader" onclick="document.querySelector('#e_uploadFile').click()">📁 Upload</div><input type="file" id="e_uploadFile" multiple accept="image/*" style="display:none" onchange="window.addEditPhotoBlob(this)" /></div><div id="editPhotoPreviewStrip" class="photo-strip"></div></div>
+    <div class="modal-field"><label>SO#</label><input id="e_so" /></div>
+    <div class="modal-field"><label>Customer</label><div style="display:flex; width:100%;"><input id="e_cust" list="dl_customers" style="border-top-right-radius:0; border-bottom-right-radius:0; border-right:0;" /><button type="button" onclick="window.banishMemory('e_cust')" style="height:42px; width:36px; flex:none; background:#f8fafc; border:1px solid #cbd5e1; border-top-right-radius:8px; border-bottom-right-radius:8px; color:#dc2626; font-weight:bold; font-size:18px; cursor:pointer; padding:0;">&times;</button></div></div>
+    <label style="font-size:12px; font-weight:700; color:#4b5563; margin-bottom:-4px;">Container Quantities</label>
+    <div class="freight-block">
+      <div class="counter-box"><label>Skids</label><div class="counter-controls"><button class="counter-btn" onclick="window.adjustEditCount('e_skid',-1)">-</button><input id="e_skid" value="0" readonly/><button class="counter-btn" onclick="window.adjustEditCount('e_skid',1)">+</button></div></div>
+      <div class="counter-box"><label>Boxes</label><div class="counter-controls"><button class="counter-btn" onclick="window.adjustEditCount('e_box',-1)">-</button><input id="e_box" value="0" readonly/><button class="counter-btn" onclick="window.adjustEditCount('e_box',1)">+</button></div></div>
+      <div class="counter-box"><label>Crates</label><div class="counter-controls"><button class="counter-btn" onclick="window.adjustEditCount('e_crate',-1)">-</button><input id="e_crate" value="0" readonly/><button class="counter-btn" onclick="window.adjustEditCount('e_crate',1)">+</button></div></div>
+      <div class="counter-box"><label>Pipe/Rod</label><div class="counter-controls"><button class="counter-btn" onclick="window.adjustEditCount('e_pipe',-1)">-</button><input id="e_pipe" value="0" readonly/><button class="counter-btn" onclick="window.adjustEditCount('e_pipe',1)">+</button></div></div>
+      <div class="counter-box"><label>Other</label><div class="counter-controls"><button class="counter-btn" onclick="window.adjustEditCount('e_other',-1)">-</button><input id="e_other" value="0" readonly/><button class="counter-btn" onclick="window.adjustEditCount('e_other',1)">+</button></div></div>
+    </div>
+    <div class="modal-field"><label>Location</label><div style="display:flex; width:100%;"><input id="e_loc" list="dl_locations" style="border-top-right-radius:0; border-bottom-right-radius:0; border-right:0;" /><button type="button" onclick="window.banishMemory('e_loc')" style="height:42px; width:36px; flex:none; background:#f8fafc; border:1px solid #cbd5e1; border-top-right-radius:8px; border-bottom-right-radius:8px; color:#dc2626; font-weight:bold; font-size:18px; cursor:pointer; padding:0;">&times;</button></div></div>
+    <div class="modal-field"><label>Coords</label><input id="e_coords" readonly onclick="window.fetchBrowserGPS('e_coords')" style="background:#fafafa; cursor:pointer;" placeholder="Tap to update coordinates" /></div>
+    <div class="modal-field"><label>Total Weight (in lbs)</label><input id="e_weight" oninput="window.formatWeight(this)" /></div>
+    <div id="editStagingFields"><div class="modal-field"><label>Shipping Status</label><select id="e_status"><option>Partial</option><option>Ship Today</option><option>Ship Tomorrow</option><option>Ship On Future Date</option><option>Corp Pick</option><option>Customer Pick-Up</option><option>Awaiting Instructions</option></select></div><div class="modal-field"><label>Staged By</label><div style="display:flex; width:100%;"><input id="e_staged_by" list="dl_stagers" style="border-top-right-radius:0; border-bottom-right-radius:0; border-right:0;" /><button type="button" onclick="window.banishMemory('e_staged_by')" style="height:42px; width:36px; flex:none; background:#f8fafc; border:1px solid #cbd5e1; border-top-right-radius:8px; border-bottom-right-radius:8px; color:#dc2626; font-weight:bold; font-size:18px; cursor:pointer; padding:0;">&times;</button></div></div></div>
+    <div id="editShippedFields" style="display:none;"><div class="modal-field"><label>Carrier</label><input id="e_carrier" /></div><div class="modal-field"><label>Shipped By</label><div style="display:flex; width:100%;"><input id="e_shipped_by" list="dl_stagers" style="border-top-right-radius:0; border-bottom-right-radius:0; border-right:0;" /><button type="button" onclick="window.banishMemory('e_shipped_by')" style="height:42px; width:36px; flex:none; background:#f8fafc; border:1px solid #cbd5e1; border-top-right-radius:8px; border-bottom-right-radius:8px; color:#dc2626; font-weight:bold; font-size:18px; cursor:pointer; padding:0;">&times;</button></div></div><div class="modal-field"><label>PM Verified Shortname</label><div style="display:flex; width:100%;"><input id="e_pm" list="dl_pastEmails" style="border-top-right-radius:0; border-bottom-right-radius:0; border-right:0;" /><button type="button" onclick="window.banishMemory('e_pm')" style="height:42px; width:36px; flex:none; background:#f8fafc; border:1px solid #cbd5e1; border-top-right-radius:8px; border-bottom-right-radius:8px; color:#dc2626; font-weight:bold; font-size:18px; cursor:pointer; padding:0;">&times;</button></div></div></div>
+    <div class="modal-field" style="margin-top:4px;"><label>Comments</label><textarea id="e_comments" rows="3" style="width:100%; border:1px solid #cbd5e1; border-radius:8px; padding:8px 12px; font-family:inherit; resize:vertical;"></textarea></div>
+    <div class="modal-actions" style="justify-content: space-between; width:100%; margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap;">
+      <span style="display:flex; gap:8px; flex-wrap: wrap;">
+        <button id="editDelBtn" class="btn" style="background:#dc2626; padding: 10px 16px; border-radius: 8px; color: #fff;" onclick="window.deleteCurrentRecord()">Delete</button>
+        <button id="editUndoBtn" class="btn" style="background:#4b5563; padding: 10px 16px; border-radius: 8px; color: #fff;" onclick="window.executeShippedUndo()">Undo</button>
+        <button id="editReturnBtn" class="btn" style="background:#eab308; color:#222; padding: 10px 16px; border-radius: 8px;" onclick="window.triggerReturnModal()">Return</button>
+        <button id="editConsolidateBtn" class="btn" style="background:#8b5cf6; padding: 10px 16px; border-radius: 8px;" onclick="window.openSameSoModal()">Consolidate</button>
+        <button id="editSplitBtn" class="btn" style="background:#0ea5e9; padding: 10px 16px; border-radius: 8px;" onclick="window.openSplitPrompt()">Split Order</button>
+      </span>
+      <span style="display:flex; gap:8px; margin-left:auto; flex-wrap: wrap;">
+        <button class="btn" style="background:#9ca3af; border-radius: 8px; padding: 10px 16px;" onclick="document.querySelector('#editModal').style.display='none'">Cancel</button>
+        <button id="editSaveBtn" class="btn" style="background:#e04f26; border-radius: 8px; padding: 10px 16px;" onclick="window.saveEditedRecord()">Save</button>
+      </span>
+    </div>
+  </div>
+</div>
+
+<div id="shipModal" class="modal-overlay">
+  <div class="modal-window"><button class="modal-close-x" onclick="window.closeShipModal()">&times;</button><h3>Confirm Dispatch</h3><div class="photo-options-grid"><div class="photo-uploader" onclick="document.querySelector('#cameraFile').click()">📷 Photo</div><input type="file" id="cameraFile" accept="image/*" capture="environment" style="display:none" onchange="window.addPhotoBlob(this)" /><div class="photo-uploader" onclick="document.querySelector('#uploadFile').click()">📁 Upload</div><input type="file" id="uploadFile" multiple accept="image/*" style="display:none" onchange="window.addPhotoBlob(this)" /></div><div id="photoPreviewStrip" class="photo-strip"></div><div class="modal-field"><label>SO#</label><input id="m_so" readonly /></div><div class="modal-field"><label>Customer</label><input id="m_cust" readonly /></div><div class="modal-field"><label>Containers</label><input id="m_qty" readonly /></div><div class="modal-field"><label>Carrier</label><input id="m_carrier" /></div><div class="modal-field"><label>Location</label><input id="m_loc" readonly /></div><div class="modal-field"><label>Total Weight</label><input id="m_weight" readonly /></div><div class="modal-field"><label>Shipped By</label><div style="display:flex; width:100%;"><input id="m_by" list="dl_stagers" style="border-top-right-radius:0; border-bottom-right-radius:0; border-right:0;" /><button type="button" onclick="window.banishMemory('m_by')" style="height:42px; width:36px; flex:none; background:#f8fafc; border:1px solid #cbd5e1; border-top-right-radius:8px; border-bottom-right-radius:8px; color:#dc2626; font-weight:bold; font-size:18px; cursor:pointer; padding:0;">&times;</button></div></div><div class="modal-field" style="margin-top:4px;"><label>Comments</label><textarea id="m_comments" rows="2" style="width:100%; border:1px solid #cbd5e1; border-radius:8px; padding:8px 12px; font-family:inherit; resize:vertical;"></textarea></div><div class="chk-row"><input type="checkbox" id="m_pm_chk" onchange="window.togglePMEmail(this.checked, 'm_pm_email', 'm_pm_email_btn')"/><label>E-mail PM Verification</label></div><div class="modal-field"><div style="display:flex; width:100%;"><input id="m_pm_email" list="dl_pastEmails" disabled style="border-top-right-radius:0; border-bottom-right-radius:0; border-right:0;" /><button type="button" id="m_pm_email_btn" disabled onclick="window.banishMemory('m_pm_email')" style="height:42px; width:36px; flex:none; background:#f8fafc; border:1px solid #cbd5e1; border-top-right-radius:8px; border-bottom-right-radius:8px; color:#dc2626; font-weight:bold; font-size:18px; cursor:pointer; padding:0;">&times;</button></div></div><div style="display:flex; gap:8px; justify-content:flex-end; margin-top:8px;"><button id="modalConfirmBtn" class="btn" onclick="window.submitFreightDispatch()">Confirm Dispatch</button></div></div>
+</div>
+
+<div id="mapViewModal" class="modal-overlay"><div class="modal-window"><button class="modal-close-x" onclick="document.querySelector('#mapViewModal').style.display='none'">&times;</button><h3>Manifest Details</h3><div id="mapViewPhotoSection" style="display:none; flex-direction:column; gap:4px;"><label style="font-size:12px; font-weight:700;">Staged Images</label><div id="mapViewGalleryStrip" class="photo-strip"></div></div><div class="modal-field"><label>SO#</label><input id="v_so" readonly style="background:#f9fafb; border-color:#e5e7eb; color:#6b7280;"/></div><div class="modal-field"><label>Customer</label><input id="v_cust" readonly style="background:#f9fafb; border-color:#e5e7eb; color:#6b7280;"/></div><div class="modal-field"><label>Entry Date</label><input id="v_date" readonly style="background:#f9fafb; border-color:#e5e7eb; color:#6b7280;"/></div><div class="modal-field"><label>Containers</label><input id="v_type" readonly style="background:#f9fafb; border-color:#e5e7eb; color:#6b7280;"/></div><div class="modal-field"><label>Location</label><input id="v_loc" readonly style="background:#f9fafb; border-color:#e5e7eb; color:#6b7280;"/></div><div class="modal-field"><label>Coords</label><input id="v_coords" readonly style="background:#f9fafb; border-color:#e5e7eb; color:#6b7280;"/></div><div class="modal-field"><label>Total Weight</label><input id="v_weight" readonly style="background:#f9fafb; border-color:#e5e7eb; color:#6b7280;"/></div><div class="modal-field"><label>Status</label><input id="v_status" readonly style="background:#f9fafb; border-color:#e5e7eb; color:#6b7280;"/></div><div class="modal-field"><label>Staged By</label><input id="v_staged_by" readonly style="background:#f9fafb; border-color:#e5e7eb; color:#6b7280;"/></div></div></div>
+<div id="viewModal" class="modal-overlay"><div class="modal-window" style="max-width: 500px;"><button class="modal-close-x" onclick="document.querySelector('#viewModal').style.display='none'">&times;</button><h3 style="margin:0 0 10px 0;">Staged Photos</h3><div id="modalPhotoGallery" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:12px; padding: 4px 0;"></div></div></div>
+
+<div id="sameSoModal" class="modal-overlay">
+  <div class="modal-window" style="max-width: 950px;"><button class="modal-close-x" onclick="window.sameSoCancel()">&times;</button><h3 style="margin:0 0 10px 0;">Consolidate Matching SOs</h3><div class="table-wrap" style="max-height: 300px; overflow-y: auto;"><table id="tblSameSo"><thead><tr><th style="width:70px; background:#fafafa; padding:4px;"><div class="batch-header-btns" style="display:flex; flex-direction:column; gap:4px; text-align:center;"><button onclick="window.sameSoSelectAll()" style="font-size:10px; background:#fff; color:#4b5563;">Select All</button><button onclick="window.sameSoCancel()" style="font-size:10px; background:#fee2e2; color:#dc2626; border-color:#fca5a5;">Cancel</button></div></th><th>SO</th><th>Customer</th><th>Entry Date</th><th>Containers</th><th>Location</th><th>Coords</th><th>Weight</th><th>Status</th><th>Staged By</th></tr></thead><tbody></tbody></table></div><div style="display:flex; justify-content:flex-end; gap:8px; margin-top:8px;"><button class="btn" style="background:#8b5cf6;" onclick="window.openBatchConsolidateModal(true)">Consolidate</button></div></div>
+</div>
+
+<div id="batchConsolidateModal" class="modal-overlay">
+  <div class="modal-window">
+    <button class="modal-close-x" onclick="document.querySelector('#batchConsolidateModal').style.display='none'">&times;</button>
+    <h3 style="margin:0 0 10px 0;">Configure Consolidation</h3>
+    <input type="hidden" id="bc_source" /><input type="hidden" id="bc_photo_urls" />
+    <div class="modal-field"><label>SO#</label><input id="bc_so" /></div><div class="modal-field"><label>Customer</label><input id="bc_cust" readonly style="background:#f9fafb; color:#9ca3af;"/></div>
+    <label style="font-size:12px; font-weight:700; color:#4b5563; margin-top:8px; margin-bottom:-4px;">Combined Containers</label>
+    <div class="freight-block">
+      <div class="counter-box"><label>Skids</label><div class="counter-controls"><button class="counter-btn" onclick="window.adjustEditCount('bc_skid',-1)">-</button><input id="bc_skid" value="0" readonly/><button class="counter-btn" onclick="window.adjustEditCount('bc_skid',1)">+</button></div></div>
+      <div class="counter-box"><label>Boxes</label><div class="counter-controls"><button class="counter-btn" onclick="window.adjustEditCount('bc_box',-1)">-</button><input id="bc_box" value="0" readonly/><button class="counter-btn" onclick="window.adjustEditCount('bc_box',1)">+</button></div></div>
+      <div class="counter-box"><label>Crates</label><div class="counter-controls"><button class="counter-btn" onclick="window.adjustEditCount('bc_crate',-1)">-</button><input id="bc_crate" value="0" readonly/><button class="counter-btn" onclick="window.adjustEditCount('bc_crate',1)">+</button></div></div>
+      <div class="counter-box"><label>Pipe/Rod</label><div class="counter-controls"><button class="counter-btn" onclick="window.adjustEditCount('bc_pipe',-1)">-</button><input id="bc_pipe" value="0" readonly/><button class="counter-btn" onclick="window.adjustEditCount('bc_pipe',1)">+</button></div></div>
+      <div class="counter-box"><label>Other</label><div class="counter-controls"><button class="counter-btn" onclick="window.adjustEditCount('bc_other',-1)">-</button><input id="bc_other" value="0" readonly/><button class="counter-btn" onclick="window.adjustEditCount('bc_other',1)">+</button></div></div>
+    </div>
+    <div class="modal-field"><label>Consolidated Location</label><div style="display:flex; width:100%;"><input id="bc_loc" list="dl_locations" style="border-top-right-radius:0; border-bottom-right-radius:0; border-right:0;" /><button type="button" onclick="window.banishMemory('bc_loc')" style="height:42px; width:36px; flex:none; background:#f8fafc; border:1px solid #cbd5e1; border-top-right-radius:8px; border-bottom-right-radius:8px; color:#dc2626; font-weight:bold; font-size:18px; cursor:pointer;">&times;</button></div></div>
+    <div class="modal-field"><label>Coords</label><input id="bc_coords" readonly onclick="window.fetchBrowserGPS('bc_coords')" style="background:#fafafa; cursor:pointer;" placeholder="Tap to update coordinates" /></div>
+    <div class="modal-field"><label>Total Weight</label><input id="bc_weight" oninput="window.formatWeight(this)" /></div>
+    <div class="modal-field"><label>Status</label><select id="bc_status"><option>Partial</option><option>Ship Today</option><option>Ship Tomorrow</option><option>Ship On Future Date</option><option>Corp Pick</option><option>Customer Pick-Up</option><option>Awaiting Instructions</option></select></div>
+    <div class="modal-field"><label>Consolidated By</label><div style="display:flex; width:100%;"><input id="bc_staged_by" list="dl_stagers" style="border-top-right-radius:0; border-bottom-right-radius:0; border-right:0;" /><button type="button" onclick="window.banishMemory('bc_staged_by')" style="height:42px; width:36px; flex:none; background:#f8fafc; border:1px solid #cbd5e1; border-top-right-radius:8px; border-bottom-right-radius:8px; color:#dc2626; font-weight:bold; font-size:18px; cursor:pointer;">&times;</button></div></div>
+    <div class="modal-field"><label>Comments</label><textarea id="bc_comments" rows="2" style="width:100%; border:1px solid #cbd5e1; border-radius:8px; padding:8px 12px; font-family:inherit; resize:vertical;"></textarea></div>
+    <button id="btnConfirmBc" class="btn" style="margin-top:12px; width:100%; background:var(--brand);" onclick="window.executeBatchConsolidate()">Confirm Consolidation</button>
+  </div>
+</div>
+
+<div id="changelogModal" class="modal-overlay"><div class="modal-window" style="max-width: 700px;"><button class="modal-close-x" onclick="document.querySelector('#changelogModal').style.display='none'">&times;</button><h3 id="changelogTitle" style="margin:0 0 10px 0;">Changelog</h3><div class="table-wrap" style="max-height: 400px; overflow-y: auto;"><table id="tblChangelog" style="min-width: 100%;"><thead><tr><th style="width:160px; background:#fafafa; padding:8px;">Date/Time</th><th style="background:#fafafa; padding:8px;">Action Details</th></tr></thead><tbody></tbody></table></div></div></div>
+<div id="commentModal" class="modal-overlay"><div class="modal-window" style="max-width: 400px;"><button class="modal-close-x" onclick="document.querySelector('#commentModal').style.display='none'">&times;</button><h3 style="margin:0;">Comments</h3><div class="modal-field"><textarea id="quick_comments" rows="4" style="width:100%; border:1px solid #cbd5e1; border-radius:8px; padding:8px 12px; font-family:inherit; resize:vertical;"></textarea></div><div style="display:flex; justify-content:flex-end; gap:8px; margin-top:4px;"><button class="btn" style="background:#9ca3af;" onclick="document.querySelector('#commentModal').style.display='none'">Close</button><button id="saveCommentBtn" class="btn" onclick="window.saveQuickComment()">Save</button></div></div></div>
+<div id="ordersModal" class="modal-overlay"><div class="modal-window" style="max-width: 600px;"><button class="modal-close-x" onclick="document.querySelector('#ordersModal').style.display='none'">&times;</button><h3 style="margin:0 0 10px 0;">Active Staging Orders</h3><input id="searchOrdersModal" autocomplete="off" spellcheck="false" placeholder="Quick Search SO or Customer..." style="margin-bottom:12px;" oninput="window.filterOrdersModal()"/><div class="table-wrap" style="max-height: 400px; overflow-y: auto;"><table id="tblOrders" style="min-width: 480px; width: 100%;"><thead><tr><th>SO</th><th colspan="3">Details</th></tr></thead><tbody></tbody></table></div></div></div>
+<div id="loginModal" class="modal-overlay"><div class="modal-window" style="max-width: 350px;"><button class="modal-close-x" onclick="document.querySelector('#loginModal').style.display='none'">&times;</button><h3 style="margin:0 0 10px 0;">Sign In</h3><div class="modal-field"><label>E-mail</label><input type="email" id="login_email" autocomplete="username" placeholder="warehouse@swiftsupply.ca" /></div><div class="modal-field"><label>Password</label><input type="password" id="login_password" autocomplete="current-password" placeholder="••••••••" /></div><button id="loginBtn" class="btn" style="margin-top:12px; width:100%;" onclick="window.submitLogin()">Sign In</button></div></div>
+
+<div id="orderHistoryModal" class="modal-overlay"><div class="modal-window" style="max-width: 550px;"><button class="modal-close-x" onclick="document.querySelector('#orderHistoryModal').style.display='none'">&times;</button><h3 style="margin:0 0 10px 0;">Order History: <span id="history_so_title" style="color:var(--brand);"></span></h3><div id="history_content" style="min-height:100px;"></div></div></div>
+<div id="soConflictModal" class="modal-overlay"><div class="modal-window" style="max-width: 550px;"><button class="modal-close-x" onclick="document.querySelector('#soConflictModal').style.display='none'">&times;</button><h3 style="margin:0 0 10px 0; color:#dc2626;">SO Conflict Detected</h3><p style="font-size:13px; color:#4b5563; margin-top:0;">SO <b><span id="conflict_so_title"></span></b> already exists in active Staging. Review history below:</p><div id="conflict_content" style="background:#fcfcfc; border:1px solid #cbd5e1; border-radius:8px; padding:12px; min-height:100px; margin-bottom:12px;"></div><div class="modal-actions" style="display:flex; gap:8px; justify-content:flex-end;"><button id="conflictCancelBtn" class="btn" style="background:#64748b;">Cancel Action</button><button id="conflictProceedBtn" class="btn" style="background:#10b981;">Proceed Anyway</button></div></div></div>
+<div id="splitPromptModal" class="modal-overlay"><div class="modal-window" style="max-width: 350px;"><button class="modal-close-x" onclick="document.querySelector('#splitPromptModal').style.display='none'">&times;</button><h3 style="margin:0 0 10px 0;">Split Order</h3><div class="modal-field"><label>How many splits are required?</label><input type="number" id="split_count_input" value="2" min="2" max="10" /></div><button class="btn" style="margin-top:12px; width:100%; background:#8b5cf6;" onclick="window.submitSplitCount()">Start Splitting</button></div></div>
+<div id="configureSplitModal" class="modal-overlay"><div class="modal-window"><button class="modal-close-x" onclick="document.querySelector('#configureSplitModal').style.display='none'">&times;</button><h3 id="splitConfigTitle" style="margin:0 0 10px 0;">Configure Split</h3><div class="modal-field"><label>SO#</label><input id="sp_so" readonly style="background:#f9fafb;" /></div><div class="modal-field"><label>Customer</label><input id="sp_cust" readonly style="background:#f9fafb;" /></div><label style="font-size:12px; font-weight:700; color:#4b5563; margin-top:8px; margin-bottom:-4px;">Split Containers</label><div class="freight-block"><div class="counter-box"><label>Skids</label><div class="counter-controls"><button class="counter-btn" onclick="window.adjustEditCount('sp_skid',-1)">-</button><input id="sp_skid" value="0" readonly/><button class="counter-btn" onclick="window.adjustEditCount('sp_skid',1)">+</button></div></div><div class="counter-box"><label>Boxes</label><div class="counter-controls"><button class="counter-btn" onclick="window.adjustEditCount('sp_box',-1)">-</button><input id="sp_box" value="0" readonly/><button class="counter-btn" onclick="window.adjustEditCount('sp_box',1)">+</button></div></div><div class="counter-box"><label>Crates</label><div class="counter-controls"><button class="counter-btn" onclick="window.adjustEditCount('sp_crate',-1)">-</button><input id="sp_crate" value="0" readonly/><button class="counter-btn" onclick="window.adjustEditCount('sp_crate',1)">+</button></div></div><div class="counter-box"><label>Pipe/Rod</label><div class="counter-controls"><button class="counter-btn" onclick="window.adjustEditCount('sp_pipe',-1)">-</button><input id="sp_pipe" value="0" readonly/><button class="counter-btn" onclick="window.adjustEditCount('sp_pipe',1)">+</button></div></div><div class="counter-box"><label>Other</label><div class="counter-controls"><button class="counter-btn" onclick="window.adjustEditCount('sp_other',-1)">-</button><input id="sp_other" value="0" readonly/><button class="counter-btn" onclick="window.adjustEditCount('sp_other',1)">+</button></div></div></div><div class="modal-field"><label>Split Location</label><input id="sp_loc" list="dl_locations" /></div><div class="modal-field"><label>Coords</label><input id="sp_coords" readonly onclick="window.fetchBrowserGPS('sp_coords')" style="background:#fafafa; cursor:pointer;" placeholder="Tap to update coordinates" /></div><div class="modal-field"><label>Total Weight (in lbs)</label><input id="sp_weight" oninput="window.formatWeight(this)" /></div><div class="modal-field"><label>Status</label><select id="sp_status"><option>Partial</option><option>Ship Today</option><option>Ship Tomorrow</option><option>Ship On Future Date</option><option>Corp Pick (Not Consolidated)</option><option>Customer Pick-Up</option><option>Awaiting Shipping Instructions</option></select></div><div class="modal-field"><label>Split By</label><input id="sp_staged_by" list="dl_stagers" /></div><div class="modal-field"><label>Comments</label><textarea id="sp_comments" rows="2" style="width:100%; border:1px solid #cbd5e1; border-radius:8px; padding:8px 12px; font-family:inherit; resize:vertical;"></textarea></div><button class="btn" style="margin-top:12px; width:100%; background:var(--brand);" onclick="window.saveConfigureSplit()">Save & Next</button></div></div>
+ 
+<div id="futureDateModal" class="modal-overlay">
+  <div class="modal-window" style="max-width: 350px;">
+    <button class="modal-close-x" onclick="window.cancelDateModal()">&times;</button>
+    <h3 style="margin:0 0 10px 0;">Select Future Date</h3>
+    <div class="modal-field">
+      <label>Ship Date</label>
+      <input type="date" id="fd_datePicker" style="padding:10px; border-radius:8px; border:1px solid #cbd5e1; width:100%; font-family:inherit; font-size:14px;"/>
+    </div>
+    <div class="chk-row" style="margin-top:8px;">
+      <input type="checkbox" id="fd_tbd" onchange="document.getElementById('fd_datePicker').disabled = this.checked;" />
+      <label>TBD (To Be Determined)</label>
+    </div>
+    <button class="btn" style="margin-top:12px; width:100%; background:#8b5cf6;" onclick="window.confirmDateModal()">Set Date</button>
+  </div>
+</div>
+
+<div id="overduePromptModal" class="modal-overlay"><div class="modal-window" style="max-width: 500px;"><h3 style="margin:0 0 10px 0; color:#dc2626;">Overdue Shipment Detected</h3><p style="margin-top:0; font-size:14px;">Order <b id="od_so" style="color:var(--brand);"></b> was scheduled to ship on <b id="od_date"></b>. Has it been shipped?</p><div id="od_history" style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:8px; padding:10px; max-height:150px; overflow-y:auto; font-size:12px; margin-bottom:12px;"></div><div class="modal-actions" style="display:flex; gap:8px;"><button class="btn" style="flex:1; background:#10b981;" onclick="window.overdueHandleYes()">Yes</button><button class="btn" style="flex:1; background:#dc2626;" onclick="window.overdueHandleNo()">No</button></div></div></div>
+<div id="overdueResolveModal" class="modal-overlay"><div class="modal-window" style="max-width: 400px;"><h3 style="margin:0 0 10px 0;">Resolve Overdue Shipment</h3><p style="margin-top:0; font-size:14px;">Update status for Order <b id="od_res_so" style="color:var(--brand);"></b>:</p><div style="display:flex; flex-direction:column; gap:8px;"><button class="btn" style="background:#f59e0b;" onclick="window.overdueUpdateStatus('Ship Today')">Ship Today</button><button class="btn" style="background:#3b82f6;" onclick="window.overdueUpdateStatus('Ship Tomorrow')">Ship Tomorrow</button><button class="btn" style="background:#8b5cf6;" onclick="window.overdueUpdateStatus('Ship On Future Date')">Ship On Future Date</button><button class="btn" style="background:#dc2626;" onclick="window.overdueDelete()">Delete</button></div></div></div>
+ 
+<script src="employees.js?v=1.5"></script>
+<script src="config.js?v=1.5"></script>
+<script src="auth.js?v=1.5"></script>
+<script src="ui.js?v=1.5"></script>
+<script src="history.js?v=1.5"></script>
+<script src="split.js?v=1.5"></script>
+<script src="reports.js?v=1.5"></script>
+<script src="operations.js?v=1.5"></script>
+<script src="batch.js?v=1.5"></script>
+<script src="media.js?v=1.5"></script>
+<script src="app.js?v=1.5"></script>
+</body>
+</html>
