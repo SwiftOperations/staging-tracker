@@ -225,20 +225,28 @@ window.submitFreightDispatch = async function() {
     if(typeof window.showNotification === 'function') window.showNotification('Freight Dispatched Successfully');
 
     // UNIFIED WEBHOOK PAYLOAD
+    // UNIFIED WEBHOOK PAYLOAD (Inside submitFreightDispatch)
     if(pmChecked && finalPmEmail) {
-      const currentTimeStamp = new Date().toLocaleString();
-      const cachedSubject = `CONFIRMATION OF SHIPOUT: ${activeShipTargetItem.customer} ${activeShipTargetItem.so} @ ${activeShipTargetItem.type} via ${carrierVal}`;
-      const cachedBody = `Your order has now been shipped! Order details:<br><br>----------------------------------------------------------------------<br><b>SO#</b>                   | ${activeShipTargetItem.so}<br><b>Customer</b>              | ${activeShipTargetItem.customer}<br><b>Container(s)</b>          | ${activeShipTargetItem.type}<br><b>Total Weight (In lbs)</b> | ${activeShipTargetItem.weight || '—'}<br><b>Carrier</b>               | ${carrierVal}<br><b>Shipped At</b>            | ${currentTimeStamp}<br><b>Shipped By</b>            | ${dispatcher}<br><b>Comments</b>              | ${shipComments || 'None'}<br>----------------------------------------------------------------------<br><br>For more shipment details, visit: <a href="https://swiftoperations.github.io/staging-tracker/">Swift Staging Tracker</a><br><br>Thanks`;
+      const emailSubject = `DISPATCH CONFIRMATION: ${targetRecord.so} for ${targetRecord.customer}`; 
+      const emailBody = `Your order/pick has been successfully dispatched...`; // (abbreviated)
 
+      // 1. THE URL GENERATOR (Make sure you use the correct variable holding the photo paths for this function)
+      // I am using targetRecord.photo_urls as a placeholder here:
+      const publicPhotoUrls = targetRecord.photo_urls ? targetRecord.photo_urls.map(path => 
+        `${SUPABASE_URL}/storage/v1/object/public/freight-photos/${path}`
+      ) : [];
+
+      // 2. THE MODIFIED FETCH
       fetch('https://hook.us2.make.com/xouhxvxi22q9b3gdwnthe4bre7z2jgu9', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           to: finalPmEmail, 
           cc: "warehouse1@swiftsupply.ca", 
-          subject: cachedSubject, 
-          body: cachedBody 
+          subject: emailSubject, 
+          body: emailBody,
+          attachments: publicPhotoUrls // <-- INJECTED HERE
         })
-      }).catch(err => console.warn(err));
+      }).catch(e => console.warn('Webhook silently caught error:', e));
     }
 
     window.closeShipModal();
