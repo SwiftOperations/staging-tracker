@@ -27,11 +27,9 @@ window.loadCloudData = async function() {
     const allData = [...appData.staging, ...appData.shipped];
     const filterMem = (arr) => [...new Set(arr.filter(Boolean))].filter(x => !hiddenMemory.includes(x));
 
-    // Get the ID of the specific datalist the user is currently using (if any)
     const activeEl = document.activeElement;
     const activeListId = (activeEl && activeEl.tagName === 'INPUT') ? activeEl.getAttribute('list') : null;
 
-    // Helper: Only update the HTML if the data actually changed, AND the user isn't actively typing in THIS specific list
     const safeUpdateDatalist = (id, newHtml) => {
       const el = $('#' + id);
       if (el && el.innerHTML !== newHtml) {
@@ -58,7 +56,6 @@ window.deleteCurrentRecord = async function() {
     if($('#editModal')) $('#editModal').style.display = 'none';
     if(typeof window.showNotification === 'function') window.showNotification('Record Deleted Permanently');
     window.loadCloudData();
-    
     if(window.activeReportMode) { window.reportRecordAction('Fixed via Deletion'); }
   }
 };
@@ -108,7 +105,8 @@ window.submitReturnToStock = async function() {
           cc: "warehouse1@swiftsupply.ca", 
           subject: cachedSubject, 
           body: cachedBody,
-          attachments: attachmentUrls 
+          attachments: attachmentUrls,
+          has_attachments: attachmentUrls.length > 0 // NEW: Bulletproof boolean switch
         })
       }).catch(err => console.warn(err));
     }
@@ -123,23 +121,13 @@ window.submitReturnToStock = async function() {
 window.saveEditedRecord = async function() {
   const dynamicQty = window.getDynamicQty('e');
   if (dynamicQty === 0) return alert("Error: You must have at least 1 container to save this record.");
-  
-  const locValue = $('#e_loc').value.trim();
-  const soVal = $('#e_so').value.trim();
+  const locValue = $('#e_loc').value.trim(); const soVal = $('#e_so').value.trim();
 
   if (editTargetRecord.table === 'staging') {
     const proceed = await window.checkSoConflict(soVal, currentEditId);
     if(!proceed) return;
   }
   
-  const aisleRegex = /^[A-Z]-\d{2}-[A-F]-[12]$/i;
-  if (editTargetRecord.table === 'staging' && aisleRegex.test(locValue)) {
-    const isOccupied = appData.staging.some(x => x.id !== currentEditId && (x.location || '').toLowerCase() === locValue.toLowerCase());
-    if (isOccupied) {
-      if (!confirm(`Conflict Warning: Aisle location ${locValue.toUpperCase()} is already occupied. Do you want to proceed and place them together?`)) return;
-    }
-  }
-
   const dynamicType = window.getDynamicType('e');
   const basePayload = { so: soVal, customer: $('#e_cust').value.trim(), location: locValue, coords: $('#e_coords').value.trim(), weight: $('#e_weight').value.trim(), comments: $('#e_comments').value.trim(), type: dynamicType, qty: dynamicQty };
 
@@ -154,24 +142,19 @@ window.saveEditedRecord = async function() {
   }
   
   window.logAction(editTargetRecord.table, `Edited SO ${basePayload.so}`);
-  
   if($('#editModal')) $('#editModal').style.display = 'none'; 
   if(typeof window.showNotification === 'function') window.showNotification('Record Updated Successfully');
   window.loadCloudData();
-  
-  if(window.activeReportMode) { window.reportRecordAction('Fixed via Manual Edit'); }
 };
 
 window.executeShippedUndo = async function() {
   if(!confirm("Are you sure you want to undo this action and return it to Staging?")) return;
   try {
     const { data: currentRecord } = await supabaseClient.from('shipped').select('*').eq('id', editTargetRecord.id).single();
-    
     const proceed = await window.checkSoConflict(currentRecord.so, null);
     if(!proceed) return;
-
     const { error } = await supabaseClient.from('staging').insert([{ so: currentRecord.so, customer: currentRecord.customer, type: currentRecord.type, qty: currentRecord.qty, location: currentRecord.location, coords: currentRecord.coords, weight: currentRecord.weight, comments: currentRecord.comments, status: '', photo_urls: currentRecord.photo_urls }]);
-    if (error) { alert("Undo Database Error: " + error.message); return; }
+    if (error) return alert("Undo Database Error: " + error.message); 
     
     await supabaseClient.from('shipped').delete().eq('id', editTargetRecord.id);
     window.logAction('shipped', `Undo Shipment Action for SO: ${currentRecord.so}`);
@@ -218,8 +201,7 @@ window.submitFreightDispatch = async function() {
     
     if (insertError) {
       alert("Database Error: " + insertError.message);
-      if($('#modalConfirmBtn')) $('#modalConfirmBtn').disabled = false;
-      return;
+      if($('#modalConfirmBtn')) $('#modalConfirmBtn').disabled = false; return;
     }
 
     await supabaseClient.from('staging').delete().eq('id', activeShipTargetItem.id);
@@ -242,7 +224,8 @@ window.submitFreightDispatch = async function() {
           cc: "warehouse1@swiftsupply.ca", 
           subject: cachedSubject, 
           body: cachedBody,
-          attachments: attachmentUrls 
+          attachments: attachmentUrls,
+          has_attachments: attachmentUrls.length > 0 // NEW: Bulletproof boolean switch
         })
       }).catch(err => console.warn(err));
     }
@@ -250,34 +233,19 @@ window.submitFreightDispatch = async function() {
     window.closeShipModal();
     if(window.activeReportMode) { window.reportRecordAction('Fixed via Shipped Out'); }
 
-  } catch(e) { 
-    alert("Data dispatch error."); 
-  } finally { 
-    if($('#modalConfirmBtn')) $('#modalConfirmBtn').disabled = false; 
-  }
+  } catch(e) { alert("Data dispatch error."); } 
+  finally { if($('#modalConfirmBtn')) $('#modalConfirmBtn').disabled = false; }
 };
 
 window.submitStagingEntry = async function() {
   const sk = parseInt($('#c_skid').value)||0, bx = parseInt($('#c_box').value)||0, cr = parseInt($('#c_crate').value)||0, pi = parseInt($('#c_pipe').value)||0, ot = parseInt($('#c_other').value)||0;
   if(!$('#so').value || !$('#customer').value || !$('#loc').value) return alert("Fields Missing.");
-  
   const totalQty = sk + bx + cr + pi + ot;
   if (totalQty === 0) return alert("Error: You must add at least 1 container to confirm this entry.");
-  
-  const soVal = $('#so').value.trim();
-  const locValue = $('#loc').value.trim();
+  const soVal = $('#so').value.trim(); const locValue = $('#loc').value.trim();
 
-  const proceed = await window.checkSoConflict(soVal, null);
-  if(!proceed) return;
+  const proceed = await window.checkSoConflict(soVal, null); if(!proceed) return;
 
-  const aisleRegex = /^[A-Z]-\d{2}-[A-F]-[12]$/i;
-  if (aisleRegex.test(locValue)) {
-    const isOccupied = appData.staging.some(x => (x.location || '').toLowerCase() === locValue.toLowerCase());
-    if (isOccupied) {
-      if (!confirm(`Conflict Warning: Aisle location ${locValue.toUpperCase()} is already occupied. Do you want to proceed and place them together?`)) return;
-    }
-  }
-  
   let type = []; 
   if(sk) type.push(window.formatContainer(sk, 'Skid'));
   if(bx) type.push(window.formatContainer(bx, 'Box'));
@@ -285,8 +253,7 @@ window.submitStagingEntry = async function() {
   if(pi) type.push(window.formatContainer(pi, 'Pipe/Rod'));
   if(ot) type.push(window.formatContainer(ot, 'Other'));
   
-  $('#add').disabled = true;
-  $('#add').textContent = 'Saving...';
+  $('#add').disabled = true; $('#add').textContent = 'Saving...';
   
   try {
     let photoUrls = []; 
@@ -299,11 +266,7 @@ window.submitStagingEntry = async function() {
     }
   
     const { error } = await supabaseClient.from('staging').insert([{ so: soVal, customer: $('#customer').value.trim(), status: window.getDbStatus($('#status').value), location: locValue, coords: $('#coords').value.trim(), weight: $('#weight').value.trim(), comments: $('#comments').value.trim(), staged_by: $('#staged_by').value.trim(), type: type.join(', '), qty: totalQty, photo_urls: photoUrls }]);
-    
-    if (error) {
-      alert("Database Error: " + error.message);
-      $('#add').disabled = false; $('#add').textContent = 'Add'; return;
-    }
+    if (error) { alert("Database Error: " + error.message); $('#add').disabled = false; $('#add').textContent = 'Add'; return; }
     
     window.logAction('staging', `Added new entry for SO: ${soVal}`);
     if(typeof window.showNotification === 'function') window.showNotification('Staging Entry Added');
@@ -314,20 +277,17 @@ window.submitStagingEntry = async function() {
     window.loadCloudData();
   } catch(e) { alert("System Error: " + e.message); }
   
-  $('#add').disabled = false;
-  $('#add').textContent = 'Add';
+  $('#add').disabled = false; $('#add').textContent = 'Add';
 };
 
 window.saveQuickComment = async function() {
   const newComment = $('#quick_comments').value.trim();
-  const { error } = await supabaseClient.from(currentCommentTarget.table)
-    .update({ comments: newComment }).eq('id', currentCommentTarget.id);
+  const { error } = await supabaseClient.from(currentCommentTarget.table).update({ comments: newComment }).eq('id', currentCommentTarget.id);
   if(error) return alert("Error saving comment: " + error.message);
   const o = appData[currentCommentTarget.table].find(x => x.id === currentCommentTarget.id);
   if(o) window.logAction(currentCommentTarget.table, `Added/Edited comment for SO: ${o.so}`);
   if(typeof window.showNotification === 'function') window.showNotification('Comment Saved');
-  if($('#commentModal')) $('#commentModal').style.display = 'none';
-  window.loadCloudData();
+  if($('#commentModal')) $('#commentModal').style.display = 'none'; window.loadCloudData();
 };
 
 // --- NOTIFY OF RETURNS LOGIC ---
@@ -351,7 +311,7 @@ window.openNotifyReturnModal = function() {
   $('#nr_so').value=''; $('#nr_cust').value=''; $('#nr_skid').value=0; $('#nr_box').value=0; $('#nr_crate').value=0; $('#nr_pipe').value=0; $('#nr_other').value=0; 
   $('#nr_loc').value=''; $('#nr_coords').value=''; $('#nr_weight').value=''; $('#nr_comments').value=''; 
   $('#nr_received_by').value = currentUser ? currentUser.email.split('@')[0] : '';
-  if($('#nr_cc_pm')) $('#nr_cc_pm').value = ''; // <-- Reset the CC field
+  if($('#nr_cc_pm')) $('#nr_cc_pm').value = ''; 
   window.nrPhotoBlobs = []; window.renderNRPhotoStrip();
   $('#notifyReturnModal').style.display = 'flex';
 };
@@ -361,8 +321,6 @@ window.submitNotifyReturn = async function() {
   const custVal = $('#nr_cust').value.trim();
   const locVal = $('#nr_loc').value.trim();
   const receivedByVal = $('#nr_received_by').value.trim();
-  
-  // BULLETPROOF GRAB: Checks for both the new and old HTML ID just in case the browser cached an older version
   const pmInputEl = $('#nr_pm_email') || $('#nr_cc_pm');
   const pmRaw = pmInputEl ? pmInputEl.value.trim() : ''; 
   
@@ -380,7 +338,7 @@ window.submitNotifyReturn = async function() {
     const coordsVal = $('#nr_coords').value.trim();
     const commentsVal = $('#nr_comments').value.trim();
     
-    let attachmentUrls = []; // ONLY keeping the array for Make.com
+    let attachmentUrls = []; 
     
     for (let i = 0; i < window.nrPhotoBlobs.length; i++) {
       const file = window.nrPhotoBlobs[i]; 
@@ -408,7 +366,6 @@ window.submitNotifyReturn = async function() {
     <b>Comments</b>              | ${commentsVal || 'None'}<br>
     ----------------------------------------------------------------------<br><br>`;
     
-    // Notice: The HTML link injection was removed here so the email body stays clean
     emailBody += `For more details, visit: <a href="https://swiftoperations.github.io/staging-tracker/">Swift Staging Tracker</a>`;
 
     // UNIFIED WEBHOOK PAYLOAD
@@ -419,7 +376,8 @@ window.submitNotifyReturn = async function() {
         cc: "warehouse1@swiftsupply.ca", 
         subject: emailSubject, 
         body: emailBody,
-        attachments: attachmentUrls // Passes the URLs to Make.com
+        attachments: attachmentUrls,
+        has_attachments: attachmentUrls.length > 0 // NEW: Bulletproof boolean switch
       })
     }).catch(e => console.warn('Webhook silently caught error:', e));
 
@@ -431,15 +389,12 @@ window.submitNotifyReturn = async function() {
   
   $('#nr_submitBtn').disabled = false; $('#nr_submitBtn').textContent = 'Submit Return Notification';
 };
+
 // NEW: Email Auto-Corrector. Safely converts typed names into valid emails.
 window.resolveEmail = function(inputVal) {
   if (!inputVal) return null;
   let val = inputVal.trim();
-  
-  // 1. If it looks like a manually typed external email, accept it immediately
   if (val.includes('@') && val.includes('.')) return val; 
-  
-  // 2. Otherwise, assume it's a name and search the company directory
   if (typeof rawContactsData !== 'undefined') {
     const match = rawContactsData.find(c => c.name.toLowerCase() === val.toLowerCase() || c.name.toLowerCase().includes(val.toLowerCase()));
     if (match && match.email && match.email !== 'N/A') return match.email;
