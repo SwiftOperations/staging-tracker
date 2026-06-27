@@ -50,6 +50,7 @@ window.loadCloudData = async function() {
     if(typeof window.syncMapPins === 'function') window.syncMapPins();
   } catch(e) { console.error("Data load failed:", e); }
 };
+
 window.deleteCurrentRecord = async function() {
   if(confirm("Are you sure you want to PERMANENTLY delete this record?")) {
     await supabaseClient.from(editTargetRecord.table).delete().eq('id', currentEditId);
@@ -98,13 +99,16 @@ window.submitReturnToStock = async function() {
       const cachedSubject = `RETURN TO STOCK: ${editTargetRecord.so} for ${$('#e_cust').value.trim()}`;
       const cachedBody = `Your order/pick has now been Returned to Stock. Return details:<br><br><b>Reason:</b> ${reason}<br><br>----------------------------------------------------------------------<br><b>SO#</b>                   | ${editTargetRecord.so}<br><b>Customer</b>              | ${$('#e_cust').value.trim()}<br><b>Container(s)</b>          | ${window.getDynamicType('e')}<br><b>Total Weight (In lbs)</b> | ${$('#e_weight').value.trim() || '—'}<br><b>Picked by</b>             | ${pickedBy}<br><b>Returned At</b>           | ${currentTimeStamp}<br><b>Returned By</b>           | ${returnedBy}<br>----------------------------------------------------------------------<br><br>For more shipment details, visit: <a href="https://swiftoperations.github.io/staging-tracker/">Swift Staging Tracker</a><br><br>Thanks`;
 
+      const attachmentUrls = editTargetRecord.photo_urls ? editTargetRecord.photo_urls.map(p => `https://gdrpdiwykmnybmkadlrv.supabase.co/storage/v1/object/public/freight-photos/${p}`) : [];
+
       fetch('https://hook.us2.make.com/xouhxvxi22q9b3gdwnthe4bre7z2jgu9', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           to: finalPmEmail, 
           cc: "warehouse1@swiftsupply.ca", 
           subject: cachedSubject, 
-          body: cachedBody 
+          body: cachedBody,
+          attachments: attachmentUrls 
         })
       }).catch(err => console.warn(err));
     }
@@ -115,7 +119,6 @@ window.submitReturnToStock = async function() {
 
   } catch(err) { alert("Return to Stock error: " + err.message); }
 };
-
 
 window.saveEditedRecord = async function() {
   const dynamicQty = window.getDynamicQty('e');
@@ -230,13 +233,16 @@ window.submitFreightDispatch = async function() {
       const cachedSubject = `CONFIRMATION OF SHIPOUT: ${activeShipTargetItem.customer} ${activeShipTargetItem.so} @ ${activeShipTargetItem.type} via ${carrierVal}`;
       const cachedBody = `Your order has now been shipped! Order details:<br><br>----------------------------------------------------------------------<br><b>SO#</b>                   | ${activeShipTargetItem.so}<br><b>Customer</b>              | ${activeShipTargetItem.customer}<br><b>Container(s)</b>          | ${activeShipTargetItem.type}<br><b>Total Weight (In lbs)</b> | ${activeShipTargetItem.weight || '—'}<br><b>Carrier</b>               | ${carrierVal}<br><b>Shipped At</b>            | ${currentTimeStamp}<br><b>Shipped By</b>            | ${dispatcher}<br><b>Comments</b>              | ${shipComments || 'None'}<br>----------------------------------------------------------------------<br><br>For more shipment details, visit: <a href="https://swiftoperations.github.io/staging-tracker/">Swift Staging Tracker</a><br><br>Thanks`;
 
+      const attachmentUrls = photoUrls.map(p => `https://gdrpdiwykmnybmkadlrv.supabase.co/storage/v1/object/public/freight-photos/${p}`);
+
       fetch('https://hook.us2.make.com/xouhxvxi22q9b3gdwnthe4bre7z2jgu9', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           to: finalPmEmail, 
           cc: "warehouse1@swiftsupply.ca", 
           subject: cachedSubject, 
-          body: cachedBody 
+          body: cachedBody,
+          attachments: attachmentUrls 
         })
       }).catch(err => console.warn(err));
     }
@@ -250,8 +256,6 @@ window.submitFreightDispatch = async function() {
     if($('#modalConfirmBtn')) $('#modalConfirmBtn').disabled = false; 
   }
 };
-
-
 
 window.submitStagingEntry = async function() {
   const sk = parseInt($('#c_skid').value)||0, bx = parseInt($('#c_box').value)||0, cr = parseInt($('#c_crate').value)||0, pi = parseInt($('#c_pipe').value)||0, ot = parseInt($('#c_other').value)||0;
@@ -376,6 +380,7 @@ window.submitNotifyReturn = async function() {
     const coordsVal = $('#nr_coords').value.trim();
     const commentsVal = $('#nr_comments').value.trim();
     let photoLinksHTML = "";
+    let attachmentUrls = []; // NEW: Array to hold full URLs
     
     for (let i = 0; i < window.nrPhotoBlobs.length; i++) {
       const file = window.nrPhotoBlobs[i]; 
@@ -385,6 +390,7 @@ window.submitNotifyReturn = async function() {
       if(!uploadError) {
         const publicUrl = `https://gdrpdiwykmnybmkadlrv.supabase.co/storage/v1/object/public/freight-photos/${path}`;
         photoLinksHTML += `<a href="${publicUrl}">View Attached Photo ${i+1}</a><br>`;
+        attachmentUrls.push(publicUrl); // NEW: Push URL to array
       }
     }
 
@@ -413,7 +419,8 @@ window.submitNotifyReturn = async function() {
         to: finalPmEmail, 
         cc: "warehouse1@swiftsupply.ca", 
         subject: emailSubject, 
-        body: emailBody 
+        body: emailBody,
+        attachments: attachmentUrls // Passes the URLs to Make.com
       })
     }).catch(e => console.warn('Webhook silently caught error:', e));
 
@@ -425,6 +432,7 @@ window.submitNotifyReturn = async function() {
   
   $('#nr_submitBtn').disabled = false; $('#nr_submitBtn').textContent = 'Submit Return Notification';
 };
+
 // NEW: Email Auto-Corrector. Safely converts typed names into valid emails.
 window.resolveEmail = function(inputVal) {
   if (!inputVal) return null;
