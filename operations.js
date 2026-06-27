@@ -379,8 +379,8 @@ window.submitNotifyReturn = async function() {
     const weightVal = $('#nr_weight').value.trim();
     const coordsVal = $('#nr_coords').value.trim();
     const commentsVal = $('#nr_comments').value.trim();
-    let photoLinksHTML = "";
-    let attachmentUrls = []; // NEW: Array to hold full URLs
+    
+    let attachmentUrls = []; // ONLY keeping the array for Make.com
     
     for (let i = 0; i < window.nrPhotoBlobs.length; i++) {
       const file = window.nrPhotoBlobs[i]; 
@@ -389,8 +389,7 @@ window.submitNotifyReturn = async function() {
       const { error: uploadError } = await supabaseClient.storage.from('freight-photos').upload(path, file);
       if(!uploadError) {
         const publicUrl = `https://gdrpdiwykmnybmkadlrv.supabase.co/storage/v1/object/public/freight-photos/${path}`;
-        photoLinksHTML += `<a href="${publicUrl}">View Attached Photo ${i+1}</a><br>`;
-        attachmentUrls.push(publicUrl); // NEW: Push URL to array
+        attachmentUrls.push(publicUrl); 
       }
     }
 
@@ -409,7 +408,7 @@ window.submitNotifyReturn = async function() {
     <b>Comments</b>              | ${commentsVal || 'None'}<br>
     ----------------------------------------------------------------------<br><br>`;
     
-    if (photoLinksHTML !== "") emailBody += `<b>Photos:</b><br>${photoLinksHTML}<br><br>`;
+    // Notice: The HTML link injection was removed here so the email body stays clean
     emailBody += `For more details, visit: <a href="https://swiftoperations.github.io/staging-tracker/">Swift Staging Tracker</a>`;
 
     // UNIFIED WEBHOOK PAYLOAD
@@ -432,7 +431,6 @@ window.submitNotifyReturn = async function() {
   
   $('#nr_submitBtn').disabled = false; $('#nr_submitBtn').textContent = 'Submit Return Notification';
 };
-
 // NEW: Email Auto-Corrector. Safely converts typed names into valid emails.
 window.resolveEmail = function(inputVal) {
   if (!inputVal) return null;
