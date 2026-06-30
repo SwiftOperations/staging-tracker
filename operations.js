@@ -106,7 +106,7 @@ window.submitReturnToStock = async function() {
           subject: cachedSubject, 
           body: cachedBody,
           attachments: attachmentUrls,
-          has_attachments: attachmentUrls.length > 0 // NEW: Bulletproof boolean switch
+          has_attachments: attachmentUrls.length > 0 // <-- THE TRUE/FALSE SWITCH
         })
       }).catch(err => console.warn(err));
     }
@@ -225,7 +225,7 @@ window.submitFreightDispatch = async function() {
           subject: cachedSubject, 
           body: cachedBody,
           attachments: attachmentUrls,
-          has_attachments: attachmentUrls.length > 0 // NEW: Bulletproof boolean switch
+          has_attachments: attachmentUrls.length > 0 // <-- THE TRUE/FALSE SWITCH
         })
       }).catch(err => console.warn(err));
     }
@@ -377,7 +377,7 @@ window.submitNotifyReturn = async function() {
         subject: emailSubject, 
         body: emailBody,
         attachments: attachmentUrls,
-        has_attachments: attachmentUrls.length > 0 // NEW: Bulletproof boolean switch
+        has_attachments: attachmentUrls.length > 0 // <-- THE TRUE/FALSE SWITCH
       })
     }).catch(e => console.warn('Webhook silently caught error:', e));
 
